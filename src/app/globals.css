@@ -5,6 +5,19 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Status badge colors */
+  --color-status-pending-bg: #fef9c3;
+  --color-status-pending-text: #854d0e;
+  --color-status-confirmed-bg: #dcfce7;
+  --color-status-confirmed-text: #166534;
+  --color-status-in-progress-bg: #dbeafe;
+  --color-status-in-progress-text: #1e40af;
+  --color-status-completed-bg: #f4f4f5;
+  --color-status-completed-text: #52525b;
+  --color-status-cancelled-bg: #fee2e2;
+  --color-status-cancelled-text: #b91c1c;
+  --color-status-no-show-bg: #fecaca;
+  --color-status-no-show-text: #991b1b;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
