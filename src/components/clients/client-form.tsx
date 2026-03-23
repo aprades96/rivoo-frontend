@@ -101,7 +101,7 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
         <SheetHeader>
           <SheetTitle>{isEditing ? "Editar cliente" : "Nuevo cliente"}</SheetTitle>
         </SheetHeader>
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3 px-4 pb-4">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Nombre *</Label>

@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/book", "/api/auth"]
+const PUBLIC_PATHS = ["/login", "/register", "/book", "/api/auth"]
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -13,7 +13,12 @@ export default auth((req) => {
     if (isLoggedIn && pathname === "/login") {
       return NextResponse.redirect(new URL("/today", req.url))
     }
-    return NextResponse.next()
+    const response = NextResponse.next()
+    // Disable bfcache on login page so the button works after browser back
+    if (pathname === "/login") {
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    }
+    return response
   }
 
   // Not logged in → redirect to login

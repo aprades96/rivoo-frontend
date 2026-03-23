@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth"
 
 export default function SalonSetupPage() {
   const router = useRouter()
-  const { setCurrentStep, setSalonId } = useOnboardingStore()
+  const { setCurrentStep } = useOnboardingStore()
   const { user } = useAuth()
 
   useEffect(() => {
@@ -24,7 +24,6 @@ export default function SalonSetupPage() {
 
   const [form, setForm] = useState({
     name: "",
-    slug: "",
     phone: "",
     description: "",
     addressStreet: "",
@@ -32,42 +31,26 @@ export default function SalonSetupPage() {
     addressPostalCode: "",
   })
 
+  // TODO: Post-login onboarding should use PUT /api/v1/salons/me (update), not register.
+  // The salon was already created during registration. This is a temporary fix.
   const mutation = useMutation({
     mutationFn: () =>
-      salonsApi.register({
+      salonsApi.update({
         name: form.name,
-        slug: form.slug,
-        ownerEmail: user?.email ?? "",
         phone: form.phone,
         description: form.description || undefined,
-        addressStreet: form.addressStreet,
-        addressCity: form.addressCity,
-        addressPostalCode: form.addressPostalCode,
-      }),
-    onSuccess: (salon) => {
-      setSalonId(salon.id)
-      toast.success("Salon creado")
+      }, ""),
+    onSuccess: () => {
+      toast.success("Salon actualizado")
       router.push("/business-hours")
     },
-    onError: () => toast.error("Error al crear el salon. Revisa los datos."),
+    onError: () => toast.error("Error al actualizar el salon. Revisa los datos."),
   })
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
-  // Auto-generate slug from name
-  const handleNameChange = (value: string) => {
-    update("name", value)
-    const slug = value
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-    update("slug", slug)
-  }
-
-  const isValid = form.name && form.slug && form.phone && form.addressStreet && form.addressCity && form.addressPostalCode
+  const isValid = form.name && form.phone && form.addressStreet && form.addressCity && form.addressPostalCode
 
   return (
     <div className="space-y-4">
@@ -81,14 +64,7 @@ export default function SalonSetupPage() {
       <div className="space-y-3">
         <div>
           <Label className="text-xs">Nombre del salon *</Label>
-          <Input value={form.name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Mi Peluqueria" />
-        </div>
-        <div>
-          <Label className="text-xs">URL de reservas *</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">rivoo.com/book/</span>
-            <Input value={form.slug} onChange={(e) => update("slug", e.target.value)} placeholder="mi-peluqueria" className="flex-1" />
-          </div>
+          <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Mi Peluqueria" />
         </div>
         <div>
           <Label className="text-xs">Telefono *</Label>

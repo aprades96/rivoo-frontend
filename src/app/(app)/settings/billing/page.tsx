@@ -66,7 +66,7 @@ export default function BillingSettingsPage() {
   const statusInfo = subscription ? STATUS_LABELS[subscription.status] : null
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 md:py-6 space-y-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />

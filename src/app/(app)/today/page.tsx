@@ -53,7 +53,7 @@ export default function TodayPage() {
   )
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4 md:py-6">
       {/* Greeting */}
       <div className="flex items-center justify-between">
         <div>

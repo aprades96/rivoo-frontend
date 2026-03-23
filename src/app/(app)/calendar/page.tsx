@@ -41,7 +41,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-3 p-4 md:py-6">
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <DateNavigator

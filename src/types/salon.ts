@@ -8,6 +8,8 @@ export interface Salon {
   email: string
   phone: string
   description: string | null
+  logoUrl: string | null
+  primaryColor: string | null
   addressStreet: string
   addressCity: string
   addressPostalCode: string
@@ -25,6 +27,8 @@ export interface SalonPublic {
   slug: string
   phone: string
   description: string | null
+  logoUrl: string | null
+  primaryColor: string | null
   address: string
   businessHours: BusinessHoursResponse[]
 }
@@ -49,19 +53,27 @@ export interface BusinessHoursRequest {
 
 export interface RegisterSalonRequest {
   name: string
-  slug: string
-  ownerEmail: string
+  email: string
   phone: string
   description?: string
   addressStreet: string
-  addressCity: string
+  addressCity?: string
   addressPostalCode: string
-  timezone?: string
-  currency?: string
+  ownerFirstName: string
+  ownerLastName: string
+  ownerPassword: string
+}
+
+export interface RegisterSalonResponse {
+  id: string
+  slug: string
+  status: string
 }
 
 export interface UpdateSalonRequest {
   name?: string
   phone?: string
   description?: string
+  logoUrl?: string
+  primaryColor?: string
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +19,7 @@ export default function AddServicePage() {
   const { setCurrentStep } = useOnboardingStore()
 
   useEffect(() => {
-    setCurrentStep(5)
+    setCurrentStep(4)
   }, [setCurrentStep])
 
   const [form, setForm] = useState({
@@ -54,6 +54,14 @@ export default function AddServicePage() {
 
   return (
     <div className="space-y-4">
+      <button
+        onClick={() => router.push("/add-employee")}
+        className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Volver
+      </button>
+
       <div>
         <h2 className="text-lg font-semibold">Anade tu primer servicio</h2>
         <p className="text-sm text-muted-foreground">
@@ -88,7 +96,7 @@ export default function AddServicePage() {
       </div>
 
       <button
-        className="w-full py-2 text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+        className="w-full cursor-pointer py-2 text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
         onClick={() => router.push("/complete")}
       >
         Omitir este paso

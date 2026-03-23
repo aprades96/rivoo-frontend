@@ -4,11 +4,11 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { ArrowLeft } from "lucide-react"
 import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
 import { useOnboardingStore } from "@/lib/stores/onboarding-store"
-import { Button } from "@/components/ui/button"
 import type { BusinessHoursRequest } from "@/types/salon"
 
 export default function OnboardingBusinessHoursPage() {
@@ -17,7 +17,7 @@ export default function OnboardingBusinessHoursPage() {
   const { setCurrentStep } = useOnboardingStore()
 
   useEffect(() => {
-    setCurrentStep(3)
+    setCurrentStep(2)
   }, [setCurrentStep])
 
   const mutation = useMutation({
@@ -32,6 +32,14 @@ export default function OnboardingBusinessHoursPage() {
 
   return (
     <div className="space-y-4">
+      <button
+        onClick={() => router.push("/welcome")}
+        className="flex cursor-pointer items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Volver
+      </button>
+
       <div>
         <h2 className="text-lg font-semibold">Horarios de apertura</h2>
         <p className="text-sm text-muted-foreground">
@@ -46,7 +54,7 @@ export default function OnboardingBusinessHoursPage() {
       />
 
       <button
-        className="w-full py-2 text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+        className="w-full cursor-pointer py-2 text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
         onClick={() => router.push("/add-employee")}
       >
         Configurar mas tarde

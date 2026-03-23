@@ -38,7 +38,7 @@ export default function StaffPage() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 md:py-6">
       <Tabs defaultValue="employees">
         <div className="flex items-center justify-between">
           <TabsList>

@@ -9,7 +9,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
   return (
     <div className="flex min-h-full flex-col">
       {/* Progress bar */}
-      <div className="sticky top-0 z-40 bg-background px-4 py-3">
+      <div className="sticky top-0 z-40 bg-background px-4 py-3 mx-auto w-full max-w-3xl">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Paso {currentStep} de {totalSteps}</span>
           <span className="font-semibold text-primary">Rivoo</span>
@@ -22,7 +22,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
         </div>
       </div>
 
-      <main className="flex-1 p-4">{children}</main>
+      <main className="mx-auto w-full max-w-3xl flex-1 p-4 md:py-6">{children}</main>
     </div>
   )
 }

@@ -35,6 +35,8 @@ export interface CreateEmployeeRequest {
   phone?: string
   jobTitle?: string
   colorHex?: string
+  createKeycloakAccount?: boolean
+  password?: string
 }
 
 export interface UpdateEmployeeRequest {

@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { signOut } from "next-auth/react"
 import { ChevronRight, Store, Clock, CreditCard, Globe, User, LogOut } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/hooks/use-auth"
 
 const menuItems = [
   { href: "/settings/salon", label: "Perfil del salon", icon: Store },
@@ -14,8 +14,10 @@ const menuItems = [
 ] as const
 
 export default function SettingsPage() {
+  const { logout } = useAuth()
+
   return (
-    <div className="p-4">
+    <div className="p-4 md:py-6">
       <h1 className="text-lg font-semibold">Ajustes</h1>
       <div className="mt-4 space-y-1">
         {menuItems.map(({ href, label, icon: Icon }) => (
@@ -33,8 +35,8 @@ export default function SettingsPage() {
         ))}
         <Separator className="my-2" />
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-destructive transition-colors hover:bg-muted"
+          onClick={logout}
+          className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-sm text-destructive transition-colors hover:bg-muted"
         >
           <LogOut className="h-4 w-4" />
           <span>Cerrar sesion</span>

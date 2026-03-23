@@ -105,7 +105,7 @@ export function ServiceFormSheet({ open, onOpenChange, service }: ServiceFormShe
           <SheetTitle>{isEditing ? "Editar servicio" : "Nuevo servicio"}</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3 px-4 pb-4">
           <div>
             <Label className="text-xs">Nombre *</Label>
             <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Corte hombre, Tinte..." />

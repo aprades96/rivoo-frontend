@@ -55,9 +55,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = roles.find((r: string) => r.startsWith("ROLE_")) ?? "ROLE_EMPLOYEE"
       }
 
-      // Token refresh: if expired, use refresh_token
+      // Token refresh: if expired or about to expire, use refresh_token
       const expiresAt = token.expiresAt as number | undefined
-      if (expiresAt && Date.now() / 1000 > expiresAt - 60) {
+      const now = Date.now() / 1000
+      if (expiresAt) {
+        const secsRemaining = Math.round(expiresAt - now)
+        console.log(`[auth] Token check: ${secsRemaining}s remaining`)
+      }
+      if (expiresAt && now > expiresAt - 60) {
+        console.log("[auth] Token expiring soon, refreshing...")
         try {
           const issuer = process.env.AUTH_KEYCLOAK_ISSUER!
           const response = await fetch(`${issuer}/protocol/openid-connect/token`, {

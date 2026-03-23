@@ -16,12 +16,13 @@ export default function OnboardingCompletePage() {
   const { setCurrentStep, reset } = useOnboardingStore()
 
   useEffect(() => {
-    setCurrentStep(6)
+    setCurrentStep(5)
   }, [setCurrentStep])
 
   const handleGoToDashboard = () => {
-    // Invalidate salon query so OnboardingGate re-checks status
     queryClient.invalidateQueries({ queryKey: ["salon"] })
+    queryClient.invalidateQueries({ queryKey: ["employees"] })
+    queryClient.invalidateQueries({ queryKey: ["services"] })
     reset()
     router.push("/today")
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, KeyRound } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -35,6 +35,8 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
     phone: "",
     jobTitle: "",
     colorHex: "",
+    createAccount: false,
+    password: "",
   })
 
   useEffect(() => {
@@ -46,9 +48,11 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
         phone: employee.phone ?? "",
         jobTitle: employee.jobTitle ?? "",
         colorHex: employee.colorHex ?? "",
+        createAccount: false,
+        password: "",
       })
     } else {
-      setForm({ firstName: "", lastName: "", email: "", phone: "", jobTitle: "", colorHex: "" })
+      setForm({ firstName: "", lastName: "", email: "", phone: "", jobTitle: "", colorHex: "", createAccount: false, password: "" })
     }
   }, [employee, open])
 
@@ -57,7 +61,7 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
       staffApi.createEmployee(data, accessToken!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] })
-      toast.success("Empleado creado")
+      toast.success(form.createAccount ? "Empleado creado con cuenta de acceso" : "Empleado creado")
       onOpenChange(false)
     },
     onError: () => toast.error("Error al crear empleado"),
@@ -79,25 +83,36 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
 
   const handleSubmit = () => {
     if (!form.firstName || !form.lastName || !form.email) return
-
-    const data = {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      email: form.email,
-      phone: form.phone || undefined,
-      jobTitle: form.jobTitle || undefined,
-      colorHex: form.colorHex || undefined,
-    }
+    if (form.createAccount && (!form.password || form.password.length < 8)) return
 
     if (isEditing) {
-      updateMutation.mutate(data)
+      updateMutation.mutate({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone || undefined,
+        jobTitle: form.jobTitle || undefined,
+        colorHex: form.colorHex || undefined,
+      })
     } else {
-      createMutation.mutate(data)
+      createMutation.mutate({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone || undefined,
+        jobTitle: form.jobTitle || undefined,
+        colorHex: form.colorHex || undefined,
+        createKeycloakAccount: form.createAccount || undefined,
+        password: form.createAccount ? form.password : undefined,
+      })
     }
   }
 
-  const update = (field: string, value: string) =>
+  const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }))
+
+  const isValid = form.firstName && form.lastName && form.email &&
+    (!form.createAccount || form.password.length >= 8)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -106,7 +121,7 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
           <SheetTitle>{isEditing ? "Editar empleado" : "Nuevo empleado"}</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3 px-4 pb-4">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Nombre *</Label>
@@ -142,7 +157,42 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
             </div>
           </div>
 
-          <Button className="w-full" onClick={handleSubmit} disabled={isPending || !form.firstName || !form.lastName || !form.email}>
+          {!isEditing && (
+            <>
+              <div className="border-t pt-3">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.createAccount}
+                    onChange={(e) => update("createAccount", e.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded accent-primary"
+                  />
+                  <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm">Crear cuenta de acceso</span>
+                </label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Permite al empleado iniciar sesion y gestionar sus citas
+                </p>
+              </div>
+
+              {form.createAccount && (
+                <div>
+                  <Label className="text-xs">Contraseña temporal *</Label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => update("password", e.target.value)}
+                    placeholder="Min. 8 caracteres"
+                  />
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    El empleado podra cambiarla despues
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          <Button className="w-full" onClick={handleSubmit} disabled={isPending || !isValid}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? "Guardar cambios" : "Crear empleado"}
           </Button>

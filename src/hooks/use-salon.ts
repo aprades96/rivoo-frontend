@@ -12,6 +12,7 @@ export function useSalon() {
     queryKey: ["salon", "me"],
     queryFn: () => salonsApi.getMine(accessToken!),
     enabled: isAuthenticated && !!accessToken,
-    staleTime: 5 * 60 * 1000, // 5 min — salon data rarely changes
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   })
 }

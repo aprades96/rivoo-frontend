@@ -90,7 +90,7 @@ export function AppointmentDetailSheet({
             </div>
           </SheetHeader>
 
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4 px-4 pb-4">
             {/* Time & Date */}
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-muted-foreground" />
