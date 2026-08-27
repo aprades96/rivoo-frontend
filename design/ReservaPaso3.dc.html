@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .slotbtn { display: flex; align-items: center; justify-content: center; height: 46px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 52px; height: 62px; border-radius: 10px; border: 1px solid #E7DCCF; background: #FFFFFF; flex-shrink: 0; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; padding: 0 16px 0 8px; background: #F5EEE6; border-bottom: 1px solid #E7DCCF;">
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <span class="display" style="font-size: 19px;">Bella Vista</span>
+    </div>
+    <span class="num" style="font-size: 11px; color: #7A6A5F;">3 / 6</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 18px; padding: 18px 20px 0 20px;">
+
+    <div style="display: flex; gap: 5px;">
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #E7DCCF;"></div>
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #E7DCCF;"></div>
+      <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #E7DCCF;"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span class="display" style="font-size: 28px; line-height: 1.1; letter-spacing: -0.015em;">Elige fecha y hora</span>
+      <span style="font-size: 13px; color: #7A6A5F;">Corte + Tinte &middot; 1h 30min &middot; <span class="num">65,00 &euro;</span></span>
+      <span style="font-size: 13px; color: #7A6A5F;">Solo huecos de Laura Martinez</span>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <div class="day" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C;">
+        <span style="font-size: 10px;">MAR</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">27</span>
+      </div>
+      <div class="day" style="border-color: #B4522F; background: #B4522F; color: #FFFFFF;">
+        <span style="font-size: 10px; opacity: 0.85;">MIE</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">28</span>
+      </div>
+      <div class="day">
+        <span style="font-size: 10px; color: #7A6A5F;">JUE</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">29</span>
+      </div>
+      <div class="day">
+        <span style="font-size: 10px; color: #7A6A5F;">VIE</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">30</span>
+      </div>
+      <div class="day" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C;">
+        <span style="font-size: 10px;">SAB</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">31</span>
+      </div>
+      <div class="day">
+        <span style="font-size: 10px; color: #7A6A5F;">LUN</span>
+        <span class="display num" style="font-size: 20px; line-height: 1;">02</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E;">Manana</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <div class="slotbtn">09:00</div>
+        <div class="slotbtn">09:30</div>
+        <div class="slotbtn" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C; text-decoration: line-through;">10:00</div>
+        <div class="slotbtn" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C; text-decoration: line-through;">10:30</div>
+        <div class="slotbtn" style="border-color: #B4522F; background: #B4522F; color: #FFFFFF; font-weight: 600;">11:00</div>
+        <div class="slotbtn">11:30</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E;">Tarde</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <div class="slotbtn">16:00</div>
+        <div class="slotbtn">16:30</div>
+        <div class="slotbtn">17:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 20px 20px 20px; border-top: 1px solid #E7DCCF; background: #FBF7F2;">
+    <span style="font-size: 12px; color: #7A6A5F; text-align: center;">Miercoles 28 de agosto &middot; <span class="num">11:00 - 12:30</span></span>
+    <div style="display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600;">Continuar</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

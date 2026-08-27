@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .row { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+    .sep { height: 1px; background: #EFE6DA; }
+    .time { display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; }
+    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; }
+    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
+    .day { font-size: 15px; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 14px 0 8px; border-bottom: 1px solid #E7DCCF;">
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <span style="font-size: 15px; font-weight: 600;">Horario de apertura</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 13px; font-weight: 600;">Guardar</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 0 16px;">
+
+    <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">La reserva online solo ofrece huecos dentro de este horario. El descanso bloquea la agenda de todo el salon.</span>
+
+    <div style="display: flex; flex-direction: column; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; overflow: hidden;">
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Lunes</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">20:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg>
+            <span class="num" style="font-size: 11px; color: #7A6A5F;">14-16</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Martes</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">20:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg>
+            <span class="num" style="font-size: 11px; color: #7A6A5F;">14-16</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Miercoles</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">20:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg>
+            <span class="num" style="font-size: 11px; color: #7A6A5F;">14-16</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Jueves</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">20:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/></svg>
+            <span class="num" style="font-size: 11px; color: #7A6A5F;">14-16</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Viernes</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">21:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span style="font-size: 11px; color: #B8A99C;">Pausa</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="row">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="day">Sabado</span>
+          <div class="on"><div class="knob"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="time" style="flex-grow: 1;">09:00</div>
+          <span style="font-size: 12px; color: #9A8A7E;">a</span>
+          <div class="time" style="flex-grow: 1;">14:00</div>
+          <div style="display: flex; align-items: center; gap: 5px; padding-left: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span style="font-size: 11px; color: #B8A99C;">Pausa</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 54px; padding: 0 14px; background: #FAF6F0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="day" style="color: #9A8A7E;">Domingo</span>
+          <span style="font-size: 12px; color: #B8A99C;">Cerrado</span>
+        </div>
+        <div class="off"><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #F5EEE6;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span style="font-size: 12px; color: #7A6A5F;">Copiar el horario del lunes al resto de dias</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

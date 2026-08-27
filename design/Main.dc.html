@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 16px; border-bottom: 1px solid #E7DCCF; background: #FBF7F2;">
+    <span class="display" style="font-size: 21px; letter-spacing: -0.01em;">Bella Vista</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 12px; color: #7A6A5F;">Maria G.</span>
+      <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; background: {{accentSoft}}; color: {{accentDark}}; font-size: 11px; font-weight: 600;">MG</div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 80px 16px;">
+
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span class="display" style="font-size: 27px; line-height: 1.1; letter-spacing: -0.015em;">Buenos dias, Maria</span>
+        <span style="font-size: 13px; color: #7A6A5F;">Martes, 27 de agosto</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; flex-shrink: 0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+      <div style="display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #7A6A5F;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+          <span style="font-size: 11px;">Total</span>
+        </div>
+        <span class="display num" style="font-size: 30px; line-height: 1.05;">8</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid #E8D3A6; border-radius: 8px; background: #FAEFD6;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #8A5B12;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span style="font-size: 11px;">Pendientes</span>
+        </div>
+        <span class="display num" style="font-size: 30px; line-height: 1.05; color: #8A5B12;">2</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+        <div style="display: flex; align-items: center; gap: 6px; color: #7A6A5F;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 10"/></svg>
+          <span style="font-size: 11px;">Completadas</span>
+        </div>
+        <span class="display num" style="font-size: 30px; line-height: 1.05;">3</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid {{accentLine}}; border-radius: 10px; background: {{accentSoft}};">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {{accentDark}};">Ahora mismo</span>
+        <span class="num" style="font-size: 11px; font-weight: 600; color: {{accentDark}};">10:10</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="width: 8px; height: 8px; margin-top: 5px; border-radius: 999px; background: #B4522F; flex-shrink: 0;"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600;">Laura Martinez</span>
+              <span style="padding: 2px 8px; border-radius: 999px; background: #E2E9EE; color: #3A5A70; font-size: 10px; font-weight: 600; white-space: nowrap;">En curso</span>
+            </div>
+            <span style="font-size: 12px; color: #7A6A5F;">Ana Garcia &middot; Corte + Tinte &middot; hasta las <span class="num">11:30</span></span>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: {{accentLine}};"></div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="width: 8px; height: 8px; margin-top: 5px; border-radius: 999px; background: #5C7A5E; flex-shrink: 0;"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600;">Sofia Puig</span>
+              <span style="padding: 2px 8px; border-radius: 999px; border: 1px solid #D8C9B8; color: #7A6A5F; font-size: 10px; font-weight: 600; white-space: nowrap;">Libre 2h 20min</span>
+            </div>
+            <span style="font-size: 12px; color: #7A6A5F;">Siguiente: <span class="num">12:30</span> &middot; Laia Roca</span>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: {{accentLine}};"></div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="width: 8px; height: 8px; margin-top: 5px; border-radius: 999px; background: #4A6274; flex-shrink: 0;"></div>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600;">Marc Oliva</span>
+              <span style="padding: 2px 8px; border-radius: 999px; border: 1px solid #D8C9B8; color: #7A6A5F; font-size: 10px; font-weight: 600; white-space: nowrap;">Libre 1h 20min</span>
+            </div>
+            <span style="font-size: 12px; color: #7A6A5F;">Siguiente: <span class="num">11:30</span> &middot; Pedro Sanchez</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 13px; font-weight: 500; color: #7A6A5F;">Todas las citas de hoy</span>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0;">
+          <span class="display num" style="font-size: 22px; line-height: 1.1;">09:00</span>
+          <span style="font-size: 10px; color: #7A6A5F;">1h</span>
+        </div>
+        <div style="width: 2px; align-self: stretch; border-radius: 999px; background: #5C7A5E; flex-shrink: 0;"></div>
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1; min-width: 0;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600;">Carla Ruiz</span>
+            <span style="padding: 3px 8px; border-radius: 999px; background: #E4EDE1; color: #3F6B4F; font-size: 10px; font-weight: 600; white-space: nowrap;">Confirmada</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; color: #7A6A5F; font-size: 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Corte y secado</span>
+            <span>&middot;</span>
+            <span class="num">35,00 &euro;</span>
+          </div>
+          <span style="font-size: 12px; color: #7A6A5F;">Sofia Puig &middot; 09:00 - 10:00</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0;">
+          <span class="display num" style="font-size: 22px; line-height: 1.1;">10:00</span>
+          <span style="font-size: 10px; color: #7A6A5F;">1h 30min</span>
+        </div>
+        <div style="width: 2px; align-self: stretch; border-radius: 999px; background: #B4522F; flex-shrink: 0;"></div>
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1; min-width: 0;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600;">Ana Garcia</span>
+            <span style="padding: 3px 8px; border-radius: 999px; background: #E2E9EE; color: #3A5A70; font-size: 10px; font-weight: 600; white-space: nowrap;">En curso</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; color: #7A6A5F; font-size: 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Corte + Tinte</span>
+            <span>&middot;</span>
+            <span class="num">65,00 &euro;</span>
+          </div>
+          <span style="font-size: 12px; color: #7A6A5F;">Laura Martinez &middot; 10:00 - 11:30</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0;">
+          <span class="display num" style="font-size: 22px; line-height: 1.1;">11:30</span>
+          <span style="font-size: 10px; color: #7A6A5F;">30min</span>
+        </div>
+        <div style="width: 2px; align-self: stretch; border-radius: 999px; background: #4A6274; flex-shrink: 0;"></div>
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1; min-width: 0;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600;">Pedro Sanchez</span>
+            <span style="padding: 3px 8px; border-radius: 999px; background: #E4EDE1; color: #3F6B4F; font-size: 10px; font-weight: 600; white-space: nowrap;">Confirmada</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; color: #7A6A5F; font-size: 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <span>Afeitado clasico</span>
+            <span>&middot;</span>
+            <span class="num">18,00 &euro;</span>
+          </div>
+          <span style="font-size: 12px; color: #7A6A5F;">Marc Oliva &middot; 11:30 - 12:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; right: 16px; bottom: 80px; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: {{accent}}; box-shadow: 0 6px 18px rgba(42, 35, 32, 0.22);">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around; height: 64px; border-top: 1px solid #E7DCCF; background: #FBF7F2;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: {{accent}};">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+      <span style="font-size: 11px; font-weight: 600;">Hoy</span>
+      <div style="width: 4px; height: 4px; border-radius: 999px; background: {{accent}};"></div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span style="font-size: 11px;">Citas</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      <span style="font-size: 11px;">Equipo</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span style="font-size: 11px;">Mas</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#B4522F","options":["#B4522F","#8C5A3C","#7A5C52","#A8762F"],"section":"Marca"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  mix(a, b, t) {
+    var p = function (h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); };
+    var c1 = p(a), c2 = p(b);
+    var ch = function (x, y) { return Math.round(x + (y - x) * t).toString(16).padStart(2, '0'); };
+    return '#' + ch(c1[0], c2[0]) + ch(c1[1], c2[1]) + ch(c1[2], c2[2]);
+  }
+  renderVals() {
+    var accent = this.props.accent || '#B4522F';
+    return {
+      accent: accent,
+      accentSoft: this.mix(accent, '#FFFFFF', 0.92),
+      accentLine: this.mix(accent, '#FFFFFF', 0.74),
+      accentDark: this.mix(accent, '#000000', 0.2)
+    };
+  }
+}
+</script>
+</body>
+</html>

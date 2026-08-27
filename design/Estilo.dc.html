@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .mono { font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace; }
+    .sec { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #9A8A7E; }
+    .sw { display: flex; flex-direction: column; gap: 6px; }
+    .chip { height: 60px; border-radius: 8px; border: 1px solid rgba(42,35,32,0.09); }
+    .swname { font-size: 12px; font-weight: 600; }
+    .swmeta { font-size: 11px; color: #7A6A5F; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .card { display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; gap: 26px; width: 1000px; height: 1420px; padding: 36px 40px; background: #FBF7F2; overflow: hidden;">
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid #E7DCCF;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <svg width="42" height="42" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span class="display" style="font-size: 34px; line-height: 1.05; letter-spacing: -0.02em;">Sistema visual Rivoo</span>
+        <span style="font-size: 13px; color: #7A6A5F;">Calida / artesanal &mdash; valores para <span class="mono">src/app/globals.css</span></span>
+      </div>
+    </div>
+    <span style="font-size: 12px; color: #9A8A7E; text-align: right;">Reskin sobre la arquitectura de tokens actual.<br>Rutas, hooks y logica sin tocar.</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="sec">Paleta</span>
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;">
+      <div class="sw"><div class="chip" style="background: #FBF7F2;"></div><span class="swname">Crema</span><span class="swmeta mono">--background<br>#FBF7F2</span></div>
+      <div class="sw"><div class="chip" style="background: #FFFFFF;"></div><span class="swname">Superficie</span><span class="swmeta mono">--card<br>#FFFFFF</span></div>
+      <div class="sw"><div class="chip" style="background: #F5EEE6;"></div><span class="swname">Relleno</span><span class="swmeta mono">--muted<br>#F5EEE6</span></div>
+      <div class="sw"><div class="chip" style="background: #E7DCCF;"></div><span class="swname">Borde</span><span class="swmeta mono">--border<br>#E7DCCF</span></div>
+      <div class="sw"><div class="chip" style="background: #2A2320;"></div><span class="swname">Texto</span><span class="swmeta mono">--foreground<br>#2A2320</span></div>
+      <div class="sw"><div class="chip" style="background: #7A6A5F;"></div><span class="swname">Texto tenue</span><span class="swmeta mono">--muted-foreground<br>#7A6A5F</span></div>
+      <div class="sw"><div class="chip" style="background: #B4522F;"></div><span class="swname">Terracota</span><span class="swmeta mono">--primary<br>#B4522F</span></div>
+      <div class="sw"><div class="chip" style="background: #8F3F24;"></div><span class="swname">Terracota oscuro</span><span class="swmeta mono">hover / press<br>#8F3F24</span></div>
+      <div class="sw"><div class="chip" style="background: #F6E7E0;"></div><span class="swname">Terracota tenue</span><span class="swmeta mono">--accent<br>#F6E7E0</span></div>
+      <div class="sw"><div class="chip" style="background: #D9A441;"></div><span class="swname">Ambar</span><span class="swmeta mono">acento secundario<br>#D9A441</span></div>
+      <div class="sw"><div class="chip" style="background: #A34434;"></div><span class="swname">Destructivo</span><span class="swmeta mono">--destructive<br>#A34434</span></div>
+      <div class="sw"><div class="chip" style="background: #9A8A7E;"></div><span class="swname">Tenue 2</span><span class="swmeta mono">placeholders<br>#9A8A7E</span></div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <span class="sec">Tipografia</span>
+      <div class="card" style="gap: 10px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span class="display" style="font-size: 34px; line-height: 1.05; letter-spacing: -0.02em;">Buenas tardes, Maria</span>
+          <span class="swmeta mono">34 / 1.05</span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span class="display" style="font-size: 27px; line-height: 1.1;">Elige fecha y hora</span>
+          <span class="swmeta mono">27 / 1.1</span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span class="display" style="font-size: 21px;">Bella Vista</span>
+          <span class="swmeta mono">21 &mdash; titulo de pantalla</span>
+        </div>
+        <div style="height: 1px; background: #EFE6DA;"></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span style="font-size: 15px; font-weight: 600;">Ana Garcia &mdash; nombre principal</span>
+          <span class="swmeta mono">15 / 600</span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span style="font-size: 13px; color: #7A6A5F;">Corte + Tinte &middot; 90min &mdash; secundario</span>
+          <span class="swmeta mono">13 / 400</span>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+          <span style="font-size: 11px; color: #9A8A7E;">Fuente: Reserva online &mdash; meta</span>
+          <span class="swmeta mono">11 / 400</span>
+        </div>
+        <div style="height: 1px; background: #EFE6DA;"></div>
+        <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">Una sola familia: <b>Schibsted Grotesk</b> (fallback system-ui). Los titulares destacan por peso 600 y tracking -0.02em, no por familia. Horas y precios con <span class="mono">font-variant-numeric: tabular-nums</span>.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <span class="sec">Radios y alturas</span>
+      <div class="card">
+        <div style="display: flex; align-items: flex-end; gap: 14px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 1px solid #D8C9B8; border-radius: 5px; background: #F5EEE6;"></div><span class="swmeta mono">sm 5</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 1px solid #D8C9B8; border-radius: 8px; background: #F5EEE6;"></div><span class="swmeta mono">base 8</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 1px solid #D8C9B8; border-radius: 12px; background: #F5EEE6;"></div><span class="swmeta mono">lg 12</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 1px solid #D8C9B8; border-radius: 16px 16px 0 0; background: #F5EEE6;"></div><span class="swmeta mono">sheet 16</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 56px; height: 44px; border: 1px solid #D8C9B8; border-radius: 999px; background: #F5EEE6;"></div><span class="swmeta mono">pill</span></div>
+        </div>
+        <div style="height: 1px; background: #EFE6DA;"></div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 130px; height: 48px; border-radius: 8px; background: #B4522F;"></div><span class="swmeta">48 &mdash; accion principal en sheet</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 130px; height: 44px; border-radius: 8px; background: #C9714F;"></div><span class="swmeta">44 &mdash; minimo tactil en movil</span></div>
+          <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 130px; height: 38px; border-radius: 8px; background: #DCA089;"></div><span class="swmeta">38 &mdash; escritorio y cabeceras</span></div>
+        </div>
+        <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">Cambio respecto al app actual: los controles de movil suben de 36 a <b>44px</b>. El radio base baja de 10 a <b>8px</b>.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="sec">Componentes</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Botones</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600;">Confirmar cita</div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 14px; font-weight: 500;">Secundario</div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid #EDD6D0; background: #FFFFFF; color: #A34434; font-size: 14px; font-weight: 500;">Cancelar cita</div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; background: #F5EEE6; color: #B8A99C; font-size: 14px; font-weight: 500;">Deshabilitado</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Estados de cita</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="badge" style="background: #FAEFD6; color: #8A5B12;">Pendiente</span>
+          <span class="badge" style="background: #E4EDE1; color: #3F6B4F;">Confirmada</span>
+          <span class="badge" style="background: #E2E9EE; color: #3A5A70;">En curso</span>
+          <span class="badge" style="background: #F0EAE3; color: #7A6A5F;">Completada</span>
+          <span class="badge" style="background: #F7E2DD; color: #A34434;">Cancelada</span>
+          <span class="badge" style="background: #F2D9D3; color: #8A3125;">No asistio</span>
+        </div>
+        <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">Sustituyen los <span class="mono">--color-status-*</span> actuales (verdes y azules frios) por versiones templadas sobre crema.</span>
+      </div>
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Campos</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #9A8A7E;">Buscar clientes...</div>
+          <div style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #B4522F; border-radius: 8px; background: #FFFFFF; font-size: 14px; box-shadow: 0 0 0 3px rgba(180, 82, 47, 0.12);">Ana Garcia</div>
+          <div style="display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #DFB3A8; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #A34434;">Email no valido</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Pills de empleado</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px; font-weight: 500;">Todos</div>
+          <div style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 5px; border-radius: 999px; background: #B4522F; color: #FFFFFF; font-size: 12px; font-weight: 600;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: rgba(255,255,255,0.22); font-size: 9px; font-weight: 700;">LM</div>Laura
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 5px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #E8EEE7; color: #5C7A5E; font-size: 9px; font-weight: 700;">SP</div>Sofia
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Colores de empleado</span>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+          <div class="sw"><div style="height: 40px; border-radius: 8px; background: #B4522F;"></div><span class="swmeta mono">#B4522F</span></div>
+          <div class="sw"><div style="height: 40px; border-radius: 8px; background: #5C7A5E;"></div><span class="swmeta mono">#5C7A5E</span></div>
+          <div class="sw"><div style="height: 40px; border-radius: 8px; background: #4A6274;"></div><span class="swmeta mono">#4A6274</span></div>
+          <div class="sw"><div style="height: 40px; border-radius: 8px; background: #A8762F;"></div><span class="swmeta mono">#A8762F</span></div>
+        </div>
+        <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">Reemplazan violet / sky / emerald de <span class="mono">colorHex</span>. Misma luminosidad para que ningun empleado destaque sobre otro.</span>
+      </div>
+
+      <div class="card">
+        <span style="font-size: 13px; font-weight: 600;">Bloque de agenda</span>
+        <div style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid #E7DCCF; border-left: 3px solid #3F6B4F; border-radius: 8px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(42,35,32,0.05);">
+          <span style="font-size: 13px; font-weight: 600;">Carla Ruiz</span>
+          <span style="font-size: 12px; color: #7A6A5F;">Corte y secado</span>
+          <span class="num" style="font-size: 11px; color: #9A8A7E;">09:00 - 10:00 &middot; 35,00 &euro;</span>
+        </div>
+        <div style="display: flex; align-items: center; height: 44px; padding: 0 12px; border: 1px dashed #D8C9B8; border-radius: 8px; background: #F5EEE6; font-size: 11px; color: #9A8A7E;">Libre &middot; toca para crear</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1000,"height":1420}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

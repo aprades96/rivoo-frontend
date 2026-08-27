@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .step { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #B8A99C; }
+    .dot { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; }
+    .av { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+    .sum { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .sumlbl { font-size: 12px; color: #9A8A7E; }
+    .sumval { font-size: 14px; font-weight: 600; text-align: right; }
+    .slotbtn { display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 68px; border-radius: 10px; border: 1px solid #E7DCCF; background: #FFFFFF; }
+    .lbl { font-size: 12px; font-weight: 600; color: #7A6A5F; }
+    .in { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; }
+    .ph { color: #9A8A7E; }
+    .fld { display: flex; flex-direction: column; gap: 6px; }
+    .secl { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; width: 1440px; height: 900px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: center; gap: 12px; height: 76px; flex-shrink: 0; background: #F5EEE6; border-bottom: 1px solid #E7DCCF;">
+    <svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg>
+    <div style="display: flex; flex-direction: column;">
+      <span class="display" style="font-size: 26px; line-height: 1.05;">Bella Vista</span>
+      <span style="font-size: 12px; color: #7A6A5F;">Carrer de Verdi 42, Gracia &middot; Barcelona</span>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: center; padding: 32px 40px;">
+    <div style="display: flex; gap: 40px; width: 1120px;">
+
+      <div style="display: flex; flex-direction: column; gap: 26px; flex-grow: 1; min-width: 0;">
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="step" style="color: #2A2320; font-weight: 600;"><div class="dot" style="background: #B4522F; color: #FFFFFF;">1</div>Servicio</div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="step"><div class="dot" style="border: 1px solid #D8C9B8;">2</div>Profesional</div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="step"><div class="dot" style="border: 1px solid #D8C9B8;">3</div>Fecha y hora</div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="step"><div class="dot" style="border: 1px solid #D8C9B8;">4</div>Tus datos</div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="step"><div class="dot" style="border: 1px solid #D8C9B8;">5</div>Confirmar</div>
+          </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="display" style="font-size: 34px; line-height: 1.05;">Elige un servicio</span>
+          <span style="font-size: 14px; color: #7A6A5F;">Reserva en menos de un minuto. No necesitas crear cuenta.</span>
+        </div>
+
+        <span class="secl">Cabello</span>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Corte mujer</span>
+              <span style="font-size: 12px; color: #7A6A5F;">45min</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">28,00 &euro;</span>
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Corte + Tinte</span>
+              <span style="font-size: 12px; color: #7A6A5F;">1h 30min</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">65,00 &euro;</span>
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Mechas balayage</span>
+              <span style="font-size: 12px; color: #7A6A5F;">2h 30min</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">95,00 &euro;</span>
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Recogido de novia</span>
+              <span style="font-size: 12px; color: #7A6A5F;">2h</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">120,00 &euro;</span>
+          </div>
+        </div>
+
+        <span class="secl">Barberia y unas</span>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Corte hombre</span>
+              <span style="font-size: 12px; color: #7A6A5F;">30min</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">18,00 &euro;</span>
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Afeitado clasico</span>
+              <span style="font-size: 12px; color: #7A6A5F;">30min</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">18,00 &euro;</span>
+          </div>
+
+          <div class="card" style="justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 15px; font-weight: 600;">Manicura francesa</span>
+              <span style="font-size: 12px; color: #7A6A5F;">1h</span>
+            </div>
+            <span class="display num" style="font-size: 20px;">22,00 &euro;</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; width: 320px; flex-shrink: 0; padding: 22px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; align-self: flex-start;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">El salon</span>
+        <span style="font-size: 13px; color: #7A6A5F; line-height: 1.55;">Peluqueria de barrio en Gracia desde 1998. Color, corte y recogidos.</span>
+        <div style="height: 1px; background: #EFE6DA;"></div>
+        <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 7px; height: 7px; border-radius: 999px; background: #5C7A5E;"></div><span style="font-size: 13px; color: #3F6B4F; font-weight: 500;">Abierto hoy hasta las 20:00</span></div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <div class="sum"><span class="sumlbl">Lun - Jue</span><span class="num" style="font-size: 13px;">09:00 - 20:00</span></div>
+          <div class="sum"><span class="sumlbl">Viernes</span><span class="num" style="font-size: 13px;">09:00 - 21:00</span></div>
+          <div class="sum"><span class="sumlbl">Sabado</span><span class="num" style="font-size: 13px;">09:00 - 14:00</span></div>
+          <div class="sum"><span class="sumlbl">Domingo</span><span style="font-size: 13px; color: #B8A99C;">Cerrado</span></div>
+        </div>
+        <div style="height: 1px; background: #EFE6DA;"></div>
+        <div style="display: flex; align-items: center; gap: 8px; color: #B4522F;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span class="num" style="font-size: 14px; font-weight: 600;">932 145 067</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

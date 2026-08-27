@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; }
+    .av { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .chip { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px; white-space: nowrap; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 12px 0 8px; border-bottom: 1px solid #E7DCCF;">
+    <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+    <span style="font-size: 14px; font-weight: 600;">Nueva cita</span>
+    <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 5px; padding: 14px 16px 0 16px;">
+    <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+    <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+    <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+    <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #B4522F;"></div>
+    <div style="height: 3px; flex-grow: 1; border-radius: 999px; background: #E7DCCF;"></div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 14px 16px 0 16px;">
+
+    <div style="display: flex; flex-direction: column; gap: 3px;">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Paso 4 de 5</span>
+      <span class="display" style="font-size: 27px; line-height: 1.1; letter-spacing: -0.015em;">Selecciona un cliente</span>
+    </div>
+
+    <div style="display: flex; gap: 6px;">
+      <div class="chip" style="padding: 0 11px 0 5px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 9px; font-weight: 700;">LM</div>
+        Laura
+      </div>
+      <div class="chip">Corte + Tinte</div>
+      <div class="chip"><span class="num">28 &middot; 11:00</span></div>
+    </div>
+
+    <div style="position: relative; display: flex; align-items: center; height: 44px; padding: 0 14px 0 40px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 13px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="font-size: 14px; color: #9A8A7E;">Buscar por nombre...</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+
+      <div class="row" style="border-style: dashed; border-color: #DCC9BB; background: #F6E7E0;">
+        <div class="av" style="background: #FFFFFF; color: #B4522F;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #8F3F24;">Crear nuevo cliente</span>
+          <span style="font-size: 12px; color: #7A6A5F;">Anadir datos manualmente</span>
+        </div>
+      </div>
+
+      <span style="font-size: 12px; color: #7A6A5F; margin-top: 4px;">Clientes recientes</span>
+
+      <div class="row">
+        <div class="av" style="background: #F6E7E0; color: #B4522F;">AG</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Ana Garcia</span>
+          <span class="num" style="font-size: 12px; color: #7A6A5F;">612 345 678 &middot; 14 visitas</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="av" style="background: #E8EEE7; color: #5C7A5E;">CR</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Carla Ruiz</span>
+          <span class="num" style="font-size: 12px; color: #7A6A5F;">655 908 221 &middot; 7 visitas</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="av" style="background: #E4EAEE; color: #4A6274;">PS</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Pedro Sanchez</span>
+          <span class="num" style="font-size: 12px; color: #7A6A5F;">633 112 004 &middot; 23 visitas</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="av" style="background: #F5EDDD; color: #A8762F;">NC</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Nuria Camps</span>
+          <span style="font-size: 12px; color: #9A8A7E;">Sin contacto &middot; 2 visitas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .slot { height: 48px; border-top: 1px solid #EFE6DA; }
+    .slot-hour { height: 48px; border-top: 1px solid #E2D6C6; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 16px; border-bottom: 1px solid #E7DCCF;">
+    <span class="display" style="font-size: 21px; letter-spacing: -0.01em;">Citas</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #EFE6DA;">
+    <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1px;">
+      <span class="display" style="font-size: 19px; line-height: 1.1;">Martes, 27 de agosto</span>
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #B4522F;">Hoy</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 6px; padding: 12px 16px; overflow: hidden;">
+    <div style="display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px; font-weight: 500; flex-shrink: 0;">Todos</div>
+    <div style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 5px; border-radius: 999px; border: 1px solid #B4522F; background: #B4522F; color: #FFFFFF; font-size: 12px; font-weight: 600; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: rgba(255,255,255,0.22); font-size: 9px; font-weight: 700;">LM</div>
+      Laura
+    </div>
+    <div style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 5px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px; font-weight: 500; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #E8EEE7; color: #5C7A5E; font-size: 9px; font-weight: 700;">SP</div>
+      Sofia
+    </div>
+    <div style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 5px; border-radius: 999px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 12px; font-weight: 500; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #E4EAEE; color: #4A6274; font-size: 9px; font-weight: 700;">MO</div>
+      Marc
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 0; padding: 0 12px; height: 604px; overflow: hidden;">
+
+    <div style="width: 46px; flex-shrink: 0;">
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">08:00</span></div>
+      <div class="slot"></div>
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">09:00</span></div>
+      <div class="slot"></div>
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">10:00</span></div>
+      <div class="slot"></div>
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">11:00</span></div>
+      <div class="slot"></div>
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">12:00</span></div>
+      <div class="slot"></div>
+      <div class="slot-hour" style="position: relative;"><span class="num" style="position: absolute; top: -7px; font-size: 10px; color: #9A8A7E;">13:00</span></div>
+      <div class="slot"></div>
+    </div>
+
+    <div style="position: relative; flex-grow: 1;">
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+      <div class="slot-hour"></div>
+      <div class="slot"></div>
+
+      <div style="position: absolute; top: 96px; left: 4px; right: 4px; height: 92px; padding: 8px 10px; border-radius: 8px; border: 1px solid #E7DCCF; border-left: 3px solid #3F6B4F; background: #FFFFFF; box-shadow: 0 1px 2px rgba(42,35,32,0.05); display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 13px; font-weight: 600; line-height: 1.2;">Carla Ruiz</span>
+        <span style="font-size: 11px; color: #7A6A5F;">Corte y secado &middot; 09:00</span>
+        <span class="num" style="font-size: 11px; color: #7A6A5F;">60min &middot; 35,00 &euro;</span>
+      </div>
+
+      <div style="position: absolute; top: 240px; left: 4px; right: 4px; height: 140px; padding: 8px 10px; border-radius: 8px; border: 1px solid #E8D3A6; border-left: 3px solid #C08A2E; background: #FFFCF5; box-shadow: 0 1px 2px rgba(42,35,32,0.05); display: flex; flex-direction: column; gap: 3px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 600; line-height: 1.2;">Ana Garcia</span>
+          <span style="padding: 2px 7px; border-radius: 999px; background: #FAEFD6; color: #8A5B12; font-size: 9px; font-weight: 700; white-space: nowrap;">Pendiente</span>
+        </div>
+        <span style="font-size: 11px; color: #7A6A5F;">Corte + Tinte &middot; 10:30</span>
+        <span class="num" style="font-size: 11px; color: #7A6A5F;">90min &middot; 65,00 &euro;</span>
+      </div>
+
+      <div style="position: absolute; top: 384px; left: 4px; right: 4px; height: 44px; padding: 6px 10px; border-radius: 8px; border: 1px dashed #D8C9B8; background: #F5EEE6; display: flex; align-items: center;">
+        <span style="font-size: 11px; color: #9A8A7E;">Libre &middot; toca para crear</span>
+      </div>
+
+      <div style="position: absolute; top: 480px; left: 4px; right: 4px; height: 92px; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2D6C6; background: repeating-linear-gradient(135deg, #F5EEE6, #F5EEE6 6px, #EFE6DA 6px, #EFE6DA 12px); display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 12px; font-weight: 600; color: #7A6A5F;">Almuerzo</span>
+        <span class="num" style="font-size: 11px; color: #9A8A7E;">13:00 - 14:00</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; right: 16px; bottom: 80px; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: #B4522F; box-shadow: 0 6px 18px rgba(42, 35, 32, 0.22);">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around; height: 64px; border-top: 1px solid #E7DCCF; background: #FBF7F2;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+      <span style="font-size: 11px;">Hoy</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #B4522F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span style="font-size: 11px; font-weight: 600;">Citas</span>
+      <div style="width: 4px; height: 4px; border-radius: 999px; background: #B4522F;"></div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      <span style="font-size: 11px;">Equipo</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span style="font-size: 11px;">Mas</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

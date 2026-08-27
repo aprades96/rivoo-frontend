@@ -1,0 +1,270 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .lbl { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
+    .cap { font-size: 12px; color: #7A6A5F; line-height: 1.5; }
+    .panel { border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+
+    .track { position: relative; width: 180px; height: 30px; border-radius: 8px; background: #F0E8DE; }
+    .dot { position: absolute; top: 5px; left: 5px; width: 20px; height: 20px; border-radius: 6px; background: #B4522F; }
+    .track:hover .dot { transform: translateX(150px); }
+
+    .demo { display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+    .demostage { display: flex; align-items: center; justify-content: center; height: 96px; border-radius: 8px; background: #FAF6F0; }
+
+    .btn { display: flex; align-items: center; justify-content: center; height: 44px; padding: 0 26px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; user-select: none; transition: transform 90ms cubic-bezier(0.65, 0, 0.35, 1), background-color 140ms ease; }
+    .btn:active { transform: scale(0.96); background: #8F3F24; }
+
+    .hid { position: absolute; opacity: 0; pointer-events: none; }
+
+    .seg { position: relative; display: flex; width: 200px; padding: 3px; border-radius: 999px; background: #F0E8DE; }
+    .segpill { position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px); border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(42, 35, 32, 0.14); transition: transform 220ms cubic-bezier(0.65, 0, 0.35, 1); }
+    .seg label { position: relative; z-index: 1; flex: 1; text-align: center; line-height: 32px; font-size: 13px; font-weight: 600; color: #8A7A6E; cursor: pointer; transition: color 140ms ease; }
+    #sg-d:checked ~ label[for="sg-d"] { color: #2A2320; }
+    #sg-s:checked ~ label[for="sg-s"] { color: #2A2320; }
+    #sg-s:checked ~ .segpill { transform: translateX(100%); }
+
+    .tg { display: flex; align-items: center; width: 48px; height: 28px; padding: 3px; border-radius: 999px; background: #E0D3C4; cursor: pointer; transition: background-color 220ms cubic-bezier(0.65, 0, 0.35, 1); }
+    .knob { width: 22px; height: 22px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(42, 35, 32, 0.18); transition: transform 220ms cubic-bezier(0.65, 0, 0.35, 1); }
+    #tg-1:checked + .tg { background: #B4522F; }
+    #tg-1:checked + .tg .knob { transform: translateX(20px); }
+
+    .hcard { display: flex; align-items: center; gap: 12px; width: 210px; padding: 14px; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease; }
+    .hcard:hover { transform: translateY(-2px); border-color: #D9BCAB; box-shadow: 0 8px 18px rgba(42, 35, 32, 0.09); }
+
+    .sheetbox { position: relative; display: block; width: 130px; height: 96px; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; overflow: hidden; cursor: pointer; }
+    .dim { position: absolute; inset: 0; background: rgba(42, 35, 32, 0.32); opacity: 0; transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 62px; padding: 12px; border-radius: 12px 12px 0 0; background: #FFFFFF; box-shadow: 0 -4px 14px rgba(42, 35, 32, 0.12); transform: translateY(100%); transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+    #sh-1:checked + .sheetbox .dim { opacity: 1; }
+    #sh-1:checked + .sheetbox .sheet { transform: translateY(0); }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .sk { border-radius: 6px; background: #EFE6DA; animation: pulse 1600ms ease-in-out infinite; }
+
+    .rule { display: flex; gap: 10px; align-items: flex-start; }
+    .bullet { width: 5px; height: 5px; margin-top: 7px; border-radius: 999px; background: #B4522F; flex-shrink: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; gap: 30px; width: 1000px; height: 1560px; padding: 40px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <span class="display" style="font-size: 34px; line-height: 1.05;">Movimiento</span>
+    <span class="cap" style="font-size: 13px; max-width: 720px;">Todo lo de esta hoja es real: pasa el raton o pincha. Cada valor es una variable de src/app/globals.css, igual que los colores. Si algo no esta aqui, no se anima.</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="lbl">Duraciones &middot; pasa el raton por la barra</span>
+    <div class="panel" style="display: flex; flex-direction: column; padding: 6px 18px;">
+
+      <div style="display: grid; grid-template-columns: 160px 74px 180px 1fr; align-items: center; gap: 18px; height: 56px;">
+        <span class="mono" style="color: #7A6A5F;">--motion-press</span>
+        <span class="mono" style="font-weight: 700;">90ms</span>
+        <div class="track"><div class="dot" style="transition: transform 90ms cubic-bezier(0.65, 0, 0.35, 1);"></div></div>
+        <span class="cap">Respuesta al dedo. Solo el hundido del boton: por debajo de 100ms se percibe como instantaneo.</span>
+      </div>
+      <div style="height: 1px; background: #EFE6DA;"></div>
+
+      <div style="display: grid; grid-template-columns: 160px 74px 180px 1fr; align-items: center; gap: 18px; height: 56px;">
+        <span class="mono" style="color: #7A6A5F;">--motion-fast</span>
+        <span class="mono" style="font-weight: 700;">140ms</span>
+        <div class="track"><div class="dot" style="transition: transform 140ms cubic-bezier(0.65, 0, 0.35, 1);"></div></div>
+        <span class="cap">Color, borde, opacidad. Hover de tarjeta, foco de campo, badge que cambia de estado.</span>
+      </div>
+      <div style="height: 1px; background: #EFE6DA;"></div>
+
+      <div style="display: grid; grid-template-columns: 160px 74px 180px 1fr; align-items: center; gap: 18px; height: 56px;">
+        <span class="mono" style="color: #7A6A5F;">--motion-base</span>
+        <span class="mono" style="font-weight: 700;">220ms</span>
+        <div class="track"><div class="dot" style="transition: transform 220ms cubic-bezier(0.65, 0, 0.35, 1);"></div></div>
+        <span class="cap">Algo que se desplaza dentro de la pantalla. Pildora Dia/Semana, knob del toggle, barra de pasos del wizard.</span>
+      </div>
+      <div style="height: 1px; background: #EFE6DA;"></div>
+
+      <div style="display: grid; grid-template-columns: 160px 74px 180px 1fr; align-items: center; gap: 18px; height: 56px;">
+        <span class="mono" style="color: #7A6A5F;">--motion-slow</span>
+        <span class="mono" style="font-weight: 700;">320ms</span>
+        <div class="track"><div class="dot" style="transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+        <span class="cap">Superficies que entran desde fuera. Hoja inferior, dialogo, detalle de cita. El techo: nada dura mas.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="lbl">Curvas</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+
+      <div class="panel" style="display: flex; gap: 14px; padding: 18px;">
+        <svg width="74" height="74" viewBox="-6 -6 112 112" style="flex-shrink: 0;">
+          <rect x="0" y="0" width="100" height="100" rx="6" fill="#FAF6F0"/>
+          <line x1="0" y1="100" x2="100" y2="0" stroke="#E7DCCF" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <path d="M0,100 C22,0 36,0 100,0" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 14px; font-weight: 600;">Salida</span>
+          <span class="mono" style="color: #7A6A5F; font-size: 10.5px;">cubic-bezier(.22,1,.36,1)</span>
+          <span class="cap">Arranca rapido y frena. Todo lo que aparece o se mueve por su cuenta.</span>
+        </div>
+      </div>
+
+      <div class="panel" style="display: flex; gap: 14px; padding: 18px;">
+        <svg width="74" height="74" viewBox="-6 -6 112 112" style="flex-shrink: 0;">
+          <rect x="0" y="0" width="100" height="100" rx="6" fill="#FAF6F0"/>
+          <line x1="0" y1="100" x2="100" y2="0" stroke="#E7DCCF" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <path d="M0,100 C65,100 35,0 100,0" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 14px; font-weight: 600;">De A a B</span>
+          <span class="mono" style="color: #7A6A5F; font-size: 10.5px;">cubic-bezier(.65,0,.35,1)</span>
+          <span class="cap">Sale y llega despacio. Lo que va de una posicion conocida a otra: pildora, knob.</span>
+        </div>
+      </div>
+
+      <div class="panel" style="display: flex; gap: 14px; padding: 18px;">
+        <svg width="74" height="74" viewBox="-6 -6 112 112" style="flex-shrink: 0;">
+          <rect x="0" y="0" width="100" height="100" rx="6" fill="#FAF6F0"/>
+          <line x1="0" y1="100" x2="100" y2="0" stroke="#E7DCCF" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <path d="M0,100 C55,100 100,55 100,0" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 14px; font-weight: 600;">Entrada</span>
+          <span class="mono" style="color: #7A6A5F; font-size: 10.5px;">cubic-bezier(.55,0,1,.45)</span>
+          <span class="cap">Acelera al irse. Solo para lo que abandona la pantalla.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="lbl">Patrones</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+
+      <div class="demo">
+        <div class="demostage"><div class="btn">Guardar</div></div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Pulsar</span>
+          <span class="mono" style="color: #7A6A5F;">scale(.96) &middot; 90ms</span>
+          <span class="cap">Shadcn ya lo trae. Solo hay que no quitarlo.</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <div class="demostage">
+          <div class="seg">
+            <input class="hid" type="radio" name="sg" id="sg-d" checked>
+            <input class="hid" type="radio" name="sg" id="sg-s">
+            <div class="segpill"></div>
+            <label for="sg-d">Dia</label>
+            <label for="sg-s">Semana</label>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Dia / Semana</span>
+          <span class="mono" style="color: #7A6A5F;">translateX &middot; 220ms</span>
+          <span class="cap">Se mueve la pildora, no se repinta el fondo de cada opcion.</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <div class="demostage">
+          <input class="hid" type="checkbox" id="tg-1">
+          <label class="tg" for="tg-1"><span class="knob"></span></label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Toggle</span>
+          <span class="mono" style="color: #7A6A5F;">translateX + color &middot; 220ms</span>
+          <span class="cap">El de Horario de apertura, uno por dia.</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <div class="demostage">
+          <div class="hcard">
+            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 12px; font-weight: 600;">LM</div>
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-size: 13px; font-weight: 600;">Laura Martinez</span>
+              <span style="font-size: 11px; color: #7A6A5F;">Corte y peinado</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Tarjeta (escritorio)</span>
+          <span class="mono" style="color: #7A6A5F;">-2px + borde &middot; 140ms</span>
+          <span class="cap">Solo con raton. En movil no existe el hover.</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <div class="demostage">
+          <input class="hid" type="checkbox" id="sh-1">
+          <label class="sheetbox" for="sh-1">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px;">
+              <div style="width: 60%; height: 7px; border-radius: 4px; background: #EFE6DA;"></div>
+              <div style="width: 85%; height: 7px; border-radius: 4px; background: #F3ECE3;"></div>
+              <div style="width: 75%; height: 7px; border-radius: 4px; background: #F3ECE3;"></div>
+            </div>
+            <div class="dim"></div>
+            <div class="sheet">
+              <div style="width: 34px; height: 4px; margin: 0 auto 10px auto; border-radius: 999px; background: #E0D3C4;"></div>
+              <div style="width: 55%; height: 8px; border-radius: 4px; background: #EFE6DA;"></div>
+            </div>
+          </label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Hoja inferior</span>
+          <span class="mono" style="color: #7A6A5F;">translateY(100%) &middot; 320ms</span>
+          <span class="cap">Detalle de cita y selector de hora en movil.</span>
+        </div>
+      </div>
+
+      <div class="demo">
+        <div class="demostage">
+          <div style="display: flex; flex-direction: column; gap: 9px; width: 150px;">
+            <div class="sk" style="width: 100%; height: 12px;"></div>
+            <div class="sk" style="width: 78%; height: 12px; animation-delay: 120ms;"></div>
+            <div class="sk" style="width: 88%; height: 12px; animation-delay: 240ms;"></div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600;">Cargando</span>
+          <span class="mono" style="color: #7A6A5F;">opacity 1 &rarr; .4 &middot; 1600ms</span>
+          <span class="cap">Esqueleto con la altura real de lo que llega. Nunca un spinner.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <span class="lbl">Reglas</span>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px;">
+      <div class="rule"><div class="bullet"></div><span class="cap">Se animan <b>transform</b>, <b>opacity</b>, <b>color</b> y <b>border-color</b>. Nunca width, height, top ni left: eso recalcula el layout y se ve a tirones en un movil de gama media.</span></div>
+      <div class="rule"><div class="bullet"></div><span class="cap"><b>prefers-reduced-motion: reduce</b> deja todo en 0.01ms. Esta hoja ya lo respeta. No es un extra.</span></div>
+      <div class="rule"><div class="bullet"></div><span class="cap">La agenda del dia <b>no entra en cascada</b>. Aparece y ya. El dueno abre esa pantalla cuarenta veces al dia y la espera se acumula.</span></div>
+      <div class="rule"><div class="bullet"></div><span class="cap">Cambiar de pestana <b>no anima el contenido</b>: el App Router desmonta la pagina. Se anima el punto del icono activo, que es lo unico que sobrevive a la navegacion.</span></div>
+      <div class="rule"><div class="bullet"></div><span class="cap">El <b>gesto horizontal</b> pertenece al calendario: dia anterior y dia siguiente. No se usa para saltar de pestana.</span></div>
+      <div class="rule"><div class="bullet"></div><span class="cap">Una cita que se confirma o se cancela <b>cambia de color, no se mueve</b>. Si la fila salta, el dedo pincha otra cosa.</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1000,"height":1560}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .slotbtn { display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 68px; border-radius: 10px; border: 1px solid #E7DCCF; background: #FFFFFF; }
+    .stepdone { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #7A6A5F; }
+    .dot { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; width: 1440px; height: 900px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; justify-content: center; gap: 12px; height: 76px; flex-shrink: 0; background: #F5EEE6; border-bottom: 1px solid #E7DCCF;">
+    <svg width="30" height="30" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg>
+    <div style="display: flex; flex-direction: column;">
+      <span class="display" style="font-size: 26px; line-height: 1.05;">Bella Vista</span>
+      <span style="font-size: 12px; color: #7A6A5F;">Carrer de Verdi 42, Gracia &middot; Barcelona</span>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: center; padding: 32px 40px;">
+    <div style="display: flex; gap: 40px; width: 1120px;">
+
+      <div style="display: flex; flex-direction: column; gap: 26px; flex-grow: 1; min-width: 0;">
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="stepdone">
+            <div class="dot" style="background: #E4EDE1; color: #3F6B4F;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            Servicio
+          </div>
+          <div style="width: 26px; height: 1px; background: #D8C9B8;"></div>
+          <div class="stepdone">
+            <div class="dot" style="background: #E4EDE1; color: #3F6B4F;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            Profesional
+          </div>
+          <div style="width: 26px; height: 1px; background: #D8C9B8;"></div>
+          <div class="stepdone" style="color: #2A2320; font-weight: 600;">
+            <div class="dot" style="background: #B4522F; color: #FFFFFF;">3</div>
+            Fecha y hora
+          </div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="stepdone" style="color: #B8A99C;">
+            <div class="dot" style="border: 1px solid #D8C9B8; color: #B8A99C;">4</div>
+            Tus datos
+          </div>
+          <div style="width: 26px; height: 1px; background: #E7DCCF;"></div>
+          <div class="stepdone" style="color: #B8A99C;">
+            <div class="dot" style="border: 1px solid #D8C9B8; color: #B8A99C;">5</div>
+            Confirmar
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="display" style="font-size: 34px; line-height: 1.05; letter-spacing: -0.02em;">Elige fecha y hora</span>
+          <span style="font-size: 14px; color: #7A6A5F;">Mostrando solo los huecos libres de Laura Martinez.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E;">Agosto 2026</span>
+            <div style="display: flex; gap: 6px;">
+              <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px;">
+            <div class="day" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C;">
+              <span style="font-size: 11px;">MAR</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">27</span>
+              <span style="font-size: 10px;">Sin huecos</span>
+            </div>
+            <div class="day" style="border-color: #B4522F; background: #B4522F; color: #FFFFFF;">
+              <span style="font-size: 11px; opacity: 0.85;">MIE</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">28</span>
+              <span style="font-size: 10px; opacity: 0.85;">9 huecos</span>
+            </div>
+            <div class="day">
+              <span style="font-size: 11px; color: #7A6A5F;">JUE</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">29</span>
+              <span style="font-size: 10px; color: #9A8A7E;">6 huecos</span>
+            </div>
+            <div class="day">
+              <span style="font-size: 11px; color: #7A6A5F;">VIE</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">30</span>
+              <span style="font-size: 10px; color: #9A8A7E;">3 huecos</span>
+            </div>
+            <div class="day" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C;">
+              <span style="font-size: 11px;">SAB</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">31</span>
+              <span style="font-size: 10px;">Cerrado</span>
+            </div>
+            <div class="day" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C;">
+              <span style="font-size: 11px;">DOM</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">01</span>
+              <span style="font-size: 10px;">Cerrado</span>
+            </div>
+            <div class="day">
+              <span style="font-size: 11px; color: #7A6A5F;">LUN</span>
+              <span class="display num" style="font-size: 21px; line-height: 1;">02</span>
+              <span style="font-size: 10px; color: #9A8A7E;">11 huecos</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E;">Manana</span>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px;">
+            <div class="slotbtn">09:00</div>
+            <div class="slotbtn">09:30</div>
+            <div class="slotbtn" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C; text-decoration: line-through;">10:00</div>
+            <div class="slotbtn" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C; text-decoration: line-through;">10:30</div>
+            <div class="slotbtn" style="border-color: #B4522F; background: #B4522F; color: #FFFFFF; font-weight: 600;">11:00</div>
+            <div class="slotbtn">11:30</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E;">Tarde</span>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px;">
+            <div class="slotbtn">16:00</div>
+            <div class="slotbtn">16:30</div>
+            <div class="slotbtn">17:00</div>
+            <div class="slotbtn" style="border-color: #EFE6DA; background: #F5EEE6; color: #B8A99C; text-decoration: line-through;">17:30</div>
+            <div class="slotbtn">18:00</div>
+            <div class="slotbtn">18:30</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; width: 340px; flex-shrink: 0; padding: 22px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; align-self: flex-start;">
+
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Tu reserva</span>
+
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 16px; font-weight: 600;">Corte + Tinte</span>
+            <span style="font-size: 12px; color: #7A6A5F;">1h 30min</span>
+          </div>
+          <span class="display num" style="font-size: 22px;">65,00 &euro;</span>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 12px; font-weight: 700;">LM</div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 14px; font-weight: 600;">Laura Martinez</span>
+            <span style="font-size: 11px; color: #9A8A7E;">Estilista</span>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span class="display num" style="font-size: 24px; line-height: 1.1;">11:00 - 12:30</span>
+          <span style="font-size: 13px; color: #7A6A5F;">Miercoles, 28 de agosto</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600;">Continuar</div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 7px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span style="font-size: 11px; color: #9A8A7E;">Sin registro &middot; cancela gratis hasta 24h antes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

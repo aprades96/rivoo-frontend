@@ -1,0 +1,404 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Pantallas"
+    },
+    {
+      "id": "page-2",
+      "name": "Flujo nueva cita"
+    },
+    {
+      "id": "page-3",
+      "name": "Flujo reserva publica"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Hoy"
+    },
+    {
+      "file": "Calendario.dc.html",
+      "page": "page-1",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Calendario - dia"
+    },
+    {
+      "file": "DetalleCita.dc.html",
+      "page": "page-1",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Detalle de cita"
+    },
+    {
+      "file": "Clientes.dc.html",
+      "page": "page-1",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Clientes"
+    },
+    {
+      "file": "CalendarioDesktop.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Calendario - escritorio"
+    },
+    {
+      "file": "Estilo.dc.html",
+      "page": "page-1",
+      "x": 3120,
+      "y": 1000,
+      "w": 1000,
+      "h": 1420,
+      "title": "Sistema visual"
+    },
+    {
+      "file": "NuevaCitaPaso1.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1. Profesional"
+    },
+    {
+      "file": "NuevaCitaPaso2.dc.html",
+      "page": "page-2",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "2. Servicio"
+    },
+    {
+      "file": "NuevaCitaPaso3.dc.html",
+      "page": "page-2",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "3. Fecha y hora"
+    },
+    {
+      "file": "NuevaCitaPaso4.dc.html",
+      "page": "page-2",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "4. Cliente"
+    },
+    {
+      "file": "NuevaCitaPaso5.dc.html",
+      "page": "page-2",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "5. Confirmacion"
+    },
+    {
+      "file": "ReservaPaso1.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1. Servicio"
+    },
+    {
+      "file": "ReservaPaso2.dc.html",
+      "page": "page-3",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "2. Profesional"
+    },
+    {
+      "file": "ReservaPaso3.dc.html",
+      "page": "page-3",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "3. Fecha y hora"
+    },
+    {
+      "file": "ReservaPaso4.dc.html",
+      "page": "page-3",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "4. Tus datos"
+    },
+    {
+      "file": "ReservaPaso5.dc.html",
+      "page": "page-3",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "5. Confirmar"
+    },
+    {
+      "file": "ReservaPaso6.dc.html",
+      "page": "page-3",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "6. Reserva hecha"
+    },
+    {
+      "file": "HoyDesktop.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 2020,
+      "w": 1440,
+      "h": 900,
+      "title": "Hoy - escritorio"
+    },
+    {
+      "file": "Ajustes.dc.html",
+      "page": "page-1",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Ajustes"
+    },
+    {
+      "file": "AjustesDesktop.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 3040,
+      "w": 1440,
+      "h": 900,
+      "title": "Ajustes - escritorio"
+    },
+    {
+      "file": "Horario.dc.html",
+      "page": "page-1",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Horario de apertura"
+    },
+    {
+      "file": "HorarioDesktop.dc.html",
+      "page": "page-1",
+      "x": 1560,
+      "y": 3040,
+      "w": 1440,
+      "h": 900,
+      "title": "Horario - escritorio"
+    },
+    {
+      "file": "NuevaCitaDesktopPaso1.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "1. Profesional - escritorio"
+    },
+    {
+      "file": "NuevaCitaDesktopPaso2.dc.html",
+      "page": "page-2",
+      "x": 1560,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "2. Servicio - escritorio"
+    },
+    {
+      "file": "NuevaCitaDesktopPaso3.dc.html",
+      "page": "page-2",
+      "x": 3120,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "3. Fecha y hora - escritorio"
+    },
+    {
+      "file": "NuevaCitaDesktopPaso4.dc.html",
+      "page": "page-2",
+      "x": 4680,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "4. Cliente - escritorio"
+    },
+    {
+      "file": "NuevaCitaDesktopPaso5.dc.html",
+      "page": "page-2",
+      "x": 6240,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "5. Confirmacion - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso1.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "1. Servicio - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso2.dc.html",
+      "page": "page-3",
+      "x": 1560,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "2. Profesional - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso3.dc.html",
+      "page": "page-3",
+      "x": 3120,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "3. Fecha y hora - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso4.dc.html",
+      "page": "page-3",
+      "x": 4680,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "4. Tus datos - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso5.dc.html",
+      "page": "page-3",
+      "x": 6240,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "5. Confirmar - escritorio"
+    },
+    {
+      "file": "ReservaDesktopPaso6.dc.html",
+      "page": "page-3",
+      "x": 7800,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "6. Reserva hecha - escritorio"
+    },
+    {
+      "file": "Movimiento.dc.html",
+      "page": "page-1",
+      "x": 4200,
+      "y": 1000,
+      "w": 1000,
+      "h": 1560,
+      "title": "Movimiento",
+      "is_interactive": true
+    },
+    {
+      "file": "DetalleCitaDesktop.dc.html",
+      "page": "page-1",
+      "x": 1560,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Detalle de cita - escritorio"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "page": "page-1",
+      "x": 0,
+      "y": -190,
+      "w": 700,
+      "text": "Rivoo - direccion calida / artesanal.\nTerracota #B4522F sobre crema #FBF7F2, una sola familia tipografica (Schibsted Grotesk).\nMockups estaticos: misma anatomia y mismos textos que el frontend actual, solo cambia la capa visual."
+    },
+    {
+      "id": "sistema",
+      "page": "page-1",
+      "x": 3120,
+      "y": 2480,
+      "w": 700,
+      "text": "Esta hoja es la que se traduce a codigo: cada swatch lleva el nombre del token de src/app/globals.css que sustituye. El resto de pantallas se derivan de aqui."
+    },
+    {
+      "id": "flujo-interno",
+      "page": "page-2",
+      "x": 0,
+      "y": -190,
+      "w": 900,
+      "text": "Wizard interno (dueno o empleado), 5 pasos segun appointments/new/page.tsx:\nEmpleado - Servicio - Fecha y hora - Cliente - Confirmacion.\nArriba movil (390), abajo escritorio (1440): mismo flujo con resumen fijo a la derecha que se va rellenando paso a paso."
+    },
+    {
+      "id": "flujo-publico",
+      "page": "page-3",
+      "x": 0,
+      "y": -190,
+      "w": 950,
+      "text": "Reserva publica sin login, 6 pasos: Servicio - Profesional - Fecha y hora - Tus datos - Confirmar - Reserva hecha.\nArriba movil (390), abajo escritorio (1440).\nEl paso Profesional NO existe en el codigo: hoy la reserva envia employeeExternalId vacio contra un campo @NotBlank, asi que ninguna reserva online llega a crearse."
+    },
+    {
+      "id": "escritorio",
+      "page": "page-1",
+      "x": 0,
+      "y": 1930,
+      "w": 900,
+      "text": "Shell de escritorio: sidebar 248px + topbar 72px + contenido. Clientes, Equipo y Ajustes son este mismo shell con su lista dentro, no necesitan artboard propio."
+    },
+    {
+      "id": "ajustes",
+      "page": "page-1",
+      "x": 0,
+      "y": 2950,
+      "w": 950,
+      "text": "Ajustes dibujado solo con lo que el backend soporta: UpdateSalonRequest (nombre, email, telefono, descripcion, calle, ciudad, CP, timezone, currency, logoUrl, primaryColor), business-hours y billing.\nNO existe API para preferencias de reserva online ni para cuenta/password.\nNavegacion: en movil el bottom-nav mantiene 4 pestanas y Clientes vive dentro de Mas; en escritorio Clientes va en el lateral. Empleados y Servicios NO se repiten en Ajustes."
+    },
+    {
+      "id": "movimiento",
+      "page": "page-1",
+      "x": 4200,
+      "y": 2620,
+      "w": 700,
+      "text": "Hoja viva: los patrones se pinchan y se pasa el raton por encima, no son dibujos. Se traduce a globals.css igual que los colores: cuatro duraciones y tres curvas.\nEl resto de artboards siguen siendo mockups estaticos."
+    },
+    {
+      "id": "detalle",
+      "page": "page-1",
+      "x": 1560,
+      "y": 1930,
+      "w": 900,
+      "text": "En escritorio el detalle NO es una pantalla aparte: es un panel de 360px sobre el calendario, con la cita marcada detras en la rejilla. En movil si es pantalla completa (hoja inferior sobre Hoy).\nLas acciones dependen del estado: aqui la cita esta pendiente, asi que manda Confirmar. Si ya esta confirmada, ese boton pasa a Completar; una vez pasada la hora, aparece No asistio.\nEn el codigo appointments/[id] es un placeholder de 10 lineas: esto es la especificacion."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-2"
+  }
+}
