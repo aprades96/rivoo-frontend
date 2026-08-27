@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format, addDays, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { useQuery } from "@tanstack/react-query"
@@ -10,18 +10,26 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { appointmentsApi } from "@/lib/api/appointments"
 import type { AvailabilityResponse } from "@/types/appointment"
+import type { SalonPublic } from "@/types/salon"
 
 const DAYS_AHEAD = 30
 const today = new Date()
 const dates = Array.from({ length: DAYS_AHEAD }, (_, i) => addDays(today, i))
 
-export function PublicDateTimeStep() {
+interface PublicDateTimeStepProps {
+  salon: SalonPublic
+}
+
+export function PublicDateTimeStep({ salon }: PublicDateTimeStepProps) {
   const {
+    salonSlug,
     selectedService,
     selectedEmployeeId,
+    anyEmployee,
     selectedDate,
     selectedSlot,
     selectDateTime,
+    selectEmployee,
     nextStep,
   } = usePublicBookingStore()
 
@@ -29,19 +37,26 @@ export function PublicDateTimeStep() {
   const browseDate = dates[browseDateIndex]
   const dateStr = format(browseDate, "yyyy-MM-dd")
 
-  // Public availability — uses the same endpoint but without auth token
+  // "Sin preferencia" carries anyEmployee=true but no employeeId. The public
+  // availability endpoint needs a concrete employee, so pin the first one that
+  // offers the selected service while keeping anyEmployee=true for the UI.
+  useEffect(() => {
+    if (!anyEmployee || selectedEmployeeId || !selectedService) return
+    const fallback = salon.employees.find((e) => e.serviceIds.includes(selectedService.id))
+    if (fallback) selectEmployee(fallback.id, true)
+  }, [anyEmployee, selectedEmployeeId, selectedService, salon.employees, selectEmployee])
+
+  // Public availability — no auth token, resolved via the salon slug
   const { data, isLoading } = useQuery<AvailabilityResponse>({
     queryKey: ["public-availability", selectedEmployeeId, selectedService?.id, dateStr],
     queryFn: () =>
-      appointmentsApi.getAvailability(
-        {
-          employeeId: selectedEmployeeId ?? "any",
-          date: dateStr,
-          serviceId: selectedService?.id,
-        },
-        "" // no token for public
-      ),
-    enabled: !!selectedService,
+      appointmentsApi.getPublicAvailability({
+        salonSlug,
+        employeeId: selectedEmployeeId!,
+        date: dateStr,
+        serviceId: selectedService?.id,
+      }),
+    enabled: !!selectedService && !!selectedEmployeeId,
   })
 
   const slots = data?.availableSlots ?? []

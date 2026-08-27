@@ -8,6 +8,7 @@ import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { salonsApi } from "@/lib/api/salons"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { PublicServiceStep } from "@/components/booking/public-service-step"
+import { PublicEmployeeStep } from "@/components/booking/public-employee-step"
 import { PublicDateTimeStep } from "@/components/booking/public-datetime-step"
 import { PublicClientStep } from "@/components/booking/public-client-step"
 import { PublicConfirmStep } from "@/components/booking/public-confirm-step"
@@ -47,7 +48,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
       {/* Salon header */}
       <div className="mb-4">
         <div className="flex items-center gap-2">
-          {step > 1 && step < 5 && (
+          {step > 1 && step < 6 && (
             <Button variant="ghost" size="icon-sm" onClick={prevStep}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -61,9 +62,9 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Progress */}
-        {step < 5 && (
+        {step < 6 && (
           <div className="mt-3 flex gap-1">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5, 6].map((s) => (
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full ${
@@ -77,10 +78,11 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
 
       {/* Steps */}
       {step === 1 && <PublicServiceStep salon={salon} />}
-      {step === 2 && <PublicDateTimeStep />}
-      {step === 3 && <PublicClientStep />}
-      {step === 4 && <PublicConfirmStep salon={salon} />}
-      {step === 5 && <PublicSuccessStep salon={salon} />}
+      {step === 2 && <PublicEmployeeStep salon={salon} />}
+      {step === 3 && <PublicDateTimeStep salon={salon} />}
+      {step === 4 && <PublicClientStep />}
+      {step === 5 && <PublicConfirmStep salon={salon} />}
+      {step === 6 && <PublicSuccessStep salon={salon} />}
     </div>
   )
 }

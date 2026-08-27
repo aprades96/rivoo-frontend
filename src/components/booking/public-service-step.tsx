@@ -4,26 +4,22 @@ import { Card } from "@/components/ui/card"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
-import type { SalonPublic } from "@/types/salon"
-import type { ServiceOffering } from "@/types/service"
+import type { SalonPublic, ServicePublic } from "@/types/salon"
 
 interface PublicServiceStepProps {
   salon: SalonPublic
 }
 
-// Note: In a real implementation, the public salon endpoint would include
-// available services. For now we'll type it as if they're embedded.
-// The backend GET /api/v1/salons/public/{slug} returns services.
-
 export function PublicServiceStep({ salon }: PublicServiceStepProps) {
   const { selectedService, selectService, nextStep } = usePublicBookingStore()
 
-  // Services would come from the salon public data
-  // For MVP, we show a message if not available
-  const services: ServiceOffering[] = (salon as unknown as { services?: ServiceOffering[] }).services ?? []
+  const services: ServicePublic[] = salon.services
 
-  const handleSelect = (service: ServiceOffering) => {
-    selectService(service)
+  const handleSelect = (service: ServicePublic) => {
+    // The store's selectedService keeps the ServiceOffering shape shared with the
+    // internal wizard. The public endpoint doesn't expose category/isActive, and
+    // neither field is read anywhere in the public booking flow, so we default them.
+    selectService({ ...service, category: null, isActive: true })
     nextStep()
   }
 

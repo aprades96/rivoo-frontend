@@ -34,20 +34,28 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const mutation = useMutation({
-    mutationFn: () =>
-      appointmentsApi.bookPublic({
+    mutationFn: () => {
+      if (!selectedEmployeeId) {
+        // Should never happen: the employee/datetime steps always resolve a
+        // concrete employeeId (even for "sin preferencia") before this step
+        // is reachable. Fail loudly instead of sending a request the backend
+        // is guaranteed to reject with 400 (employeeExternalId is @NotBlank).
+        throw new Error("No se ha podido determinar el profesional para la reserva")
+      }
+      return appointmentsApi.bookPublic({
         salonSlug,
         serviceExternalId: selectedService!.id,
-        employeeExternalId: selectedEmployeeId ?? undefined,
+        employeeExternalId: selectedEmployeeId,
         requestedTime: selectedSlot!,
         clientFirstName: clientForm.firstName,
         clientLastName: clientForm.lastName,
         clientEmail: clientForm.email,
         clientPhone: clientForm.phone,
         honeypot: honeypot || undefined,
-      }),
+      })
+    },
     onSuccess: () => {
-      nextStep() // → step 5 (success)
+      nextStep() // → step 6 (success)
     },
     onError: (err) => {
       const message = err instanceof Error ? err.message : "Error al crear la reserva"
