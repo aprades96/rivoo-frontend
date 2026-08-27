@@ -30,10 +30,10 @@ export function AppointmentCard({ appointment, onTap }: AppointmentCardProps) {
       className="cursor-pointer p-3 transition-colors hover:bg-muted/50 active:bg-muted"
       onClick={() => onTap?.(appointment)}
     >
-      <div className="flex items-start gap-3">
-        {/* Time column */}
-        <div className="flex w-14 shrink-0 flex-col items-center text-center">
-          <span className="text-lg font-semibold leading-tight">
+      <div className="flex items-stretch gap-3">
+        {/* Time column — centrada respecto al contenido de la derecha */}
+        <div className="flex w-14 shrink-0 flex-col items-center justify-center text-center">
+          <span className="text-lg font-semibold leading-tight tabular-nums">
             {formatTime(startTime)}
           </span>
           <span className="text-[10px] text-muted-foreground">
@@ -41,8 +41,8 @@ export function AppointmentCard({ appointment, onTap }: AppointmentCardProps) {
           </span>
         </div>
 
-        {/* Divider */}
-        <div className="mt-1 h-10 w-0.5 shrink-0 rounded-full bg-primary/20" />
+        {/* Divider — ocupa toda la altura de la tarjeta */}
+        <div className="w-0.5 shrink-0 rounded-full bg-primary/20" />
 
         {/* Content */}
         <div className="min-w-0 flex-1">

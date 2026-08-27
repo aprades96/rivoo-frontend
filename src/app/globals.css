@@ -2,27 +2,32 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* No hay modo oscuro. Esta variante se mantiene a proposito: ata dark: a una
+   clase .dark que nadie pone, dejando inertes los dark: que traen de serie los
+   componentes de shadcn. Sin ella, Tailwind usaria prefers-color-scheme y esos
+   estilos se activarian solos sobre una paleta clara. */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   /* Status badge colors */
-  --color-status-pending-bg: #fef9c3;
-  --color-status-pending-text: #854d0e;
-  --color-status-confirmed-bg: #dcfce7;
-  --color-status-confirmed-text: #166534;
-  --color-status-in-progress-bg: #dbeafe;
-  --color-status-in-progress-text: #1e40af;
-  --color-status-completed-bg: #f4f4f5;
-  --color-status-completed-text: #52525b;
-  --color-status-cancelled-bg: #fee2e2;
-  --color-status-cancelled-text: #b91c1c;
-  --color-status-no-show-bg: #fecaca;
-  --color-status-no-show-text: #991b1b;
+  --color-status-pending-bg: #faefd6;
+  --color-status-pending-text: #8a5b12;
+  --color-status-confirmed-bg: #e4ede1;
+  --color-status-confirmed-text: #3f6b4f;
+  --color-status-in-progress-bg: #e2e9ee;
+  --color-status-in-progress-text: #3a5a70;
+  --color-status-completed-bg: #f0eae3;
+  --color-status-completed-text: #7a6a5f;
+  --color-status-cancelled-bg: #f7e2dd;
+  --color-status-cancelled-text: #a34434;
+  --color-status-no-show-bg: #f2d9d3;
+  --color-status-no-show-text: #8a3125;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-heading);
+  /* Una sola familia: los titulos se distinguen por peso y tracking, no por familia */
+  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -59,75 +64,61 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Tracking de titulos */
+  --tracking-display: -0.02em;
+}
+
+/* Movimiento: curvas del sistema. Sustituyen a las de Tailwind, asi que
+   ease-out / ease-in-out / ease-in y el transition por defecto ya salen bien. */
+@theme {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --default-transition-duration: 140ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* Duraciones. Uso: duration-[var(--motion-base)] */
+  --motion-press: 90ms;
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 320ms;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #fbf7f2;
+  --foreground: #2a2320;
+  --card: #ffffff;
+  --card-foreground: #2a2320;
+  --popover: #ffffff;
+  --popover-foreground: #2a2320;
+  --primary: #b4522f;
+  --primary-foreground: #ffffff;
+  --secondary: #f5eee6;
+  --secondary-foreground: #2a2320;
+  --muted: #f5eee6;
+  --muted-foreground: #7a6a5f;
+  --accent: #f6e7e0;
+  --accent-foreground: #b4522f;
+  --destructive: #a34434;
+  --border: #e7dccf;
+  --input: #e7dccf;
+  --ring: #b4522f;
+  /* Colores de empleado en la agenda */
+  --chart-1: #b4522f;
+  --chart-2: #5c7a5e;
+  --chart-3: #4a6274;
+  --chart-4: #a8762f;
+  --chart-5: #7a6a5f;
+  --radius: 0.5rem;
+  --sidebar: #f8f2ea;
+  --sidebar-foreground: #2a2320;
+  --sidebar-primary: #b4522f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f6e7e0;
+  --sidebar-accent-foreground: #b4522f;
+  --sidebar-border: #e7dccf;
+  --sidebar-ring: #b4522f;
 }
 
 @layer base {
@@ -139,5 +130,16 @@
   }
   html {
     @apply font-sans;
+  }
+  /* El movimiento nunca es obligatorio */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

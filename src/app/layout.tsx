@@ -1,20 +1,16 @@
 import type { Metadata, Viewport } from "next"
-import { Inter, DM_Sans } from "next/font/google"
+import { Schibsted_Grotesk } from "next/font/google"
 import { Geist_Mono } from "next/font/google"
 import { SessionProvider } from "@/providers/session-provider"
 import { QueryProvider } from "@/providers/query-provider"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
-const inter = Inter({
+// Fuente variable (400-900): una sola descarga cubre texto y titulos.
+// --font-heading apunta a --font-sans en globals.css.
+const schibstedGrotesk = Schibsted_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],
-})
-
-const dmSans = DM_Sans({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
 })
 
 const geistMono = Geist_Mono({
@@ -32,7 +28,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#ffffff",
+  themeColor: "#fbf7f2",
 }
 
 export default function RootLayout({
@@ -43,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${schibstedGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <SessionProvider>
