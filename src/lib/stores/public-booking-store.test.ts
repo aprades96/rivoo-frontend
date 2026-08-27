@@ -36,13 +36,22 @@ describe("public-booking-store", () => {
     expect(store.getState().step).toBe(2)
   })
 
-  it("caps at step 5 and step 1", () => {
+  it("nextStep increments and caps at step 6", () => {
     const store = usePublicBookingStore
     store.getState().setStep(5)
     store.getState().nextStep()
-    expect(store.getState().step).toBe(5)
+    expect(store.getState().step).toBe(6)
 
-    store.getState().setStep(1)
+    store.getState().nextStep()
+    expect(store.getState().step).toBe(6)
+  })
+
+  it("prevStep decrements and caps at step 1", () => {
+    const store = usePublicBookingStore
+    store.getState().setStep(2)
+    store.getState().prevStep()
+    expect(store.getState().step).toBe(1)
+
     store.getState().prevStep()
     expect(store.getState().step).toBe(1)
   })
@@ -85,10 +94,12 @@ describe("public-booking-store", () => {
     expect(store.getState().honeypot).toBe("bot-value")
   })
 
-  it("reset clears everything", () => {
+  it("reset clears step, service, employee, date, and client form", () => {
     const store = usePublicBookingStore
     store.getState().setStep(4)
     store.getState().selectService(mockService)
+    store.getState().selectEmployee("emp_123", false)
+    store.getState().selectDateTime("2026-04-01", "10:00")
     store.getState().setClientForm({ firstName: "Test" })
     store.getState().setHoneypot("spam")
 
@@ -96,6 +107,10 @@ describe("public-booking-store", () => {
     const state = store.getState()
     expect(state.step).toBe(1)
     expect(state.selectedService).toBeNull()
+    expect(state.selectedEmployeeId).toBeNull()
+    expect(state.anyEmployee).toBe(true)
+    expect(state.selectedDate).toBeNull()
+    expect(state.selectedSlot).toBeNull()
     expect(state.clientForm.firstName).toBe("")
     expect(state.honeypot).toBe("")
   })
