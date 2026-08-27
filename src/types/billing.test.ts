@@ -25,7 +25,6 @@ describe("billing types", () => {
       currentPeriodStart: "2026-03-01T00:00:00Z",
       currentPeriodEnd: "2026-04-01T00:00:00Z",
       createdAt: "2026-01-01T00:00:00Z",
-      updatedAt: "2026-03-01T00:00:00Z",
     }
     expect(sub.planName).toBe("BASIC")
     expect(sub.status).toBe("ACTIVE")

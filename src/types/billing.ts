@@ -13,7 +13,6 @@ export interface Subscription {
   currentPeriodStart: string | null
   currentPeriodEnd: string | null
   createdAt: string
-  updatedAt: string
 }
 
 export interface PlanInfo {
