@@ -3,7 +3,7 @@
 import { CalendarCheck, Phone } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
-import { formatCurrency } from "@/lib/utils/format"
+import { formatAddress, formatCurrency } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
 import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
@@ -50,9 +50,9 @@ export function PublicSuccessStep({ salon }: PublicSuccessStepProps) {
 
       <Card className="mt-4 w-full p-3 text-left">
         <p className="text-xs font-medium">{salon.name}</p>
-        {salon.address && (
-          <p className="text-xs text-muted-foreground">{salon.address}</p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          {formatAddress(salon.addressStreet, salon.addressCity, salon.addressPostalCode)}
+        </p>
         {salon.phone && (
           <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
             <Phone className="h-3 w-3" />

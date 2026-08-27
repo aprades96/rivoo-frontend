@@ -21,16 +21,36 @@ export interface Salon {
   updatedAt: string
 }
 
-export interface SalonPublic {
+export interface EmployeePublic {
   id: string
+  firstName: string
+  lastName: string
+  jobTitle: string | null
+  serviceIds: string[]
+}
+
+export interface ServicePublic {
+  id: string
+  name: string
+  description: string | null
+  durationMinutes: number
+  price: number
+  currency: string
+}
+
+export interface SalonPublic {
   name: string
   slug: string
   phone: string
   description: string | null
   logoUrl: string | null
   primaryColor: string | null
-  address: string
+  addressStreet: string
+  addressCity: string
+  addressPostalCode: string
   businessHours: BusinessHoursResponse[]
+  services: ServicePublic[]
+  employees: EmployeePublic[]
 }
 
 export interface BusinessHoursResponse {

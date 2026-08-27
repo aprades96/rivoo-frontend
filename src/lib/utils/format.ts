@@ -22,3 +22,7 @@ export function initials(firstName: string, lastName?: string): string {
   const last = lastName ? lastName.charAt(0).toUpperCase() : ""
   return `${first}${last}`
 }
+
+export function formatAddress(street: string, city: string, postalCode: string): string {
+  return `${street}, ${city} ${postalCode}`
+}

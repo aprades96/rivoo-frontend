@@ -12,6 +12,7 @@ import { PublicDateTimeStep } from "@/components/booking/public-datetime-step"
 import { PublicClientStep } from "@/components/booking/public-client-step"
 import { PublicConfirmStep } from "@/components/booking/public-confirm-step"
 import { PublicSuccessStep } from "@/components/booking/public-success-step"
+import { formatAddress } from "@/lib/utils/format"
 import type { SalonPublic } from "@/types/salon"
 
 export default function PublicBookingPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -53,9 +54,9 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
           )}
           <div>
             <h1 className="text-lg font-semibold">{salon.name}</h1>
-            {salon.address && (
-              <p className="text-xs text-muted-foreground">{salon.address}</p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {formatAddress(salon.addressStreet, salon.addressCity, salon.addressPostalCode)}
+            </p>
           </div>
         </div>
 

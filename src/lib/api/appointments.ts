@@ -38,4 +38,14 @@ export const appointmentsApi = {
   // Public booking — no auth
   bookPublic: (data: PublicBookingRequest) =>
     apiFetch<PublicBookingResponse>("/api/v1/appointments/book", { method: "POST", body: data }),
+
+  getPublicAvailability: (params: {
+    salonSlug: string
+    employeeId: string
+    date: string
+    serviceId?: string
+  }) =>
+    apiFetch<AvailabilityResponse>(
+      `/api/v1/appointments/public/availability?${toQueryString(params)}`
+    ),
 }
