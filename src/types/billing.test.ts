@@ -38,10 +38,7 @@ describe("billing types", () => {
       name: "BASIC",
       displayName: "Rivoo Basic",
       monthlyPrice: 29,
-      description: "Para salones pequenos",
-      isActive: true,
     }
     expect(plan.monthlyPrice).toBe(29)
-    expect(plan.isActive).toBe(true)
   })
 })

@@ -122,7 +122,8 @@ export default function BillingSettingsPage() {
       <div>
         <h2 className="mb-2 text-sm font-medium">Planes disponibles</h2>
         <div className="space-y-2">
-          {(plans ?? []).filter((p) => p.isActive).map((plan) => {
+          {/* Backend already returns only active plans (repository.findByActiveTrue()). Do not re-filter here. */}
+          {(plans ?? []).map((plan) => {
             const isCurrent = subscription?.planName === plan.name
             return (
               <Card key={plan.id} className={`p-3 ${isCurrent ? "border-primary" : ""}`}>
@@ -132,7 +133,6 @@ export default function BillingSettingsPage() {
                       <p className="text-sm font-medium">{plan.displayName}</p>
                       {isCurrent && <Badge variant="secondary" className="text-[10px]">Actual</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{plan.description}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-base font-bold">{formatCurrency(plan.monthlyPrice)}</p>

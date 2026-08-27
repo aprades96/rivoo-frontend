@@ -21,8 +21,6 @@ export interface PlanInfo {
   name: string
   displayName: string
   monthlyPrice: number
-  description: string
-  isActive: boolean
 }
 
 export interface CheckoutRequest {
