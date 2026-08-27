@@ -80,10 +80,12 @@ export function ServiceFormSheet({ open, onOpenChange, service }: ServiceFormShe
 
     const data = {
       name: form.name,
-      description: form.description || undefined,
+      // Sent as "" rather than omitted: the backend PUT merges by presence, so an
+      // omitted key means "leave unchanged" and clearing the input would be ignored.
+      description: form.description,
       durationMinutes: parseInt(form.durationMinutes),
       price: parseFloat(form.price),
-      category: form.category || undefined,
+      category: form.category,
     }
 
     if (isEditing) {
