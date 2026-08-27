@@ -13,6 +13,12 @@ describe("formatCurrency", () => {
     expect(result).toContain("0")
     expect(result).toMatch(/€/)
   })
+
+  it("formats with an explicit currency", () => {
+    const result = formatCurrency(29.99, "USD")
+    expect(result).toContain("29")
+    expect(result).toMatch(/\$/)
+  })
 })
 
 describe("formatPhone", () => {

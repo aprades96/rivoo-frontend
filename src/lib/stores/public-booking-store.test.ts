@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { usePublicBookingStore } from "./public-booking-store"
-import type { ServiceOffering } from "@/types/service"
+import type { ServicePublic } from "@/types/salon"
 
-const mockService: ServiceOffering = {
+const mockService: ServicePublic = {
   id: "svc_1",
   name: "Corte hombre",
   description: null,
   durationMinutes: 30,
   price: 15,
-  category: null,
-  isActive: true,
+  currency: "EUR",
 }
 
 describe("public-booking-store", () => {

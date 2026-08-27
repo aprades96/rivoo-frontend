@@ -16,10 +16,7 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
   const services: ServicePublic[] = salon.services
 
   const handleSelect = (service: ServicePublic) => {
-    // The store's selectedService keeps the ServiceOffering shape shared with the
-    // internal wizard. The public endpoint doesn't expose category/isActive, and
-    // neither field is read anywhere in the public booking flow, so we default them.
-    selectService({ ...service, category: null, isActive: true })
+    selectService(service)
     nextStep()
   }
 
@@ -58,7 +55,7 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
                     </p>
                   </div>
                   <span className="text-sm font-semibold">
-                    {formatCurrency(service.price)}
+                    {formatCurrency(service.price, service.currency)}
                   </span>
                 </div>
               </Card>

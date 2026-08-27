@@ -102,7 +102,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
             </p>
           </div>
           <span className="text-sm font-semibold">
-            {selectedService && formatCurrency(selectedService.price)}
+            {selectedService && formatCurrency(selectedService.price, selectedService.currency)}
           </span>
         </div>
 

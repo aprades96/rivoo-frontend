@@ -33,7 +33,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
         {selectedService && (
           <p className="text-sm text-muted-foreground">
             {selectedService.name} &middot; {formatDuration(selectedService.durationMinutes)}{" "}
-            &middot; {formatCurrency(selectedService.price)}
+            &middot; {formatCurrency(selectedService.price, selectedService.currency)}
           </p>
         )}
       </div>

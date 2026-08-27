@@ -41,7 +41,7 @@ export function PublicSuccessStep({ salon }: PublicSuccessStepProps) {
         <p className="text-sm font-medium capitalize">{dateDisplay}</p>
         <p className="text-sm">{slotDisplay} — {selectedService?.name}</p>
         <p className="text-xs text-muted-foreground">
-          {selectedService && formatDuration(selectedService.durationMinutes)} · {selectedService && formatCurrency(selectedService.price)}
+          {selectedService && formatDuration(selectedService.durationMinutes)} · {selectedService && formatCurrency(selectedService.price, selectedService.currency)}
         </p>
         <p className="text-xs text-muted-foreground">
           {clientForm.firstName} {clientForm.lastName}

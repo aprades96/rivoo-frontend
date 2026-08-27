@@ -1,12 +1,12 @@
 "use client"
 
 import { create } from "zustand"
-import type { ServiceOffering } from "@/types/service"
+import type { ServicePublic } from "@/types/salon"
 
 export interface PublicBookingState {
   step: number
   salonSlug: string
-  selectedService: ServiceOffering | null
+  selectedService: ServicePublic | null
   selectedEmployeeId: string | null
   anyEmployee: boolean
   selectedDate: string | null
@@ -24,7 +24,7 @@ export interface PublicBookingState {
   nextStep: () => void
   prevStep: () => void
   setSalonSlug: (slug: string) => void
-  selectService: (service: ServiceOffering) => void
+  selectService: (service: ServicePublic) => void
   selectEmployee: (id: string | null, any: boolean) => void
   selectDateTime: (date: string, slot: string) => void
   setClientForm: (data: Partial<PublicBookingState["clientForm"]>) => void
