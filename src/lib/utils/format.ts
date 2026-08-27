@@ -1,7 +1,10 @@
+const VALID_CURRENCY_CODE = /^[A-Za-z]{3}$/
+
 export function formatCurrency(amount: number, currency: string = "EUR"): string {
+  const safeCurrency = typeof currency === "string" && VALID_CURRENCY_CODE.test(currency) ? currency : "EUR"
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
-    currency,
+    currency: safeCurrency,
   }).format(amount)
 }
 

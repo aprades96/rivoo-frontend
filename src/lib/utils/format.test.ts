@@ -19,6 +19,36 @@ describe("formatCurrency", () => {
     expect(result).toContain("29")
     expect(result).toMatch(/\$/)
   })
+
+  it("formats with a lowercase currency code", () => {
+    const result = formatCurrency(15, "eur")
+    expect(result).toContain("15")
+    expect(result).toMatch(/€/)
+  })
+
+  it("falls back to EUR when currency is null", () => {
+    const result = formatCurrency(15, null as unknown as string)
+    expect(result).toContain("15")
+    expect(result).toMatch(/€/)
+  })
+
+  it("falls back to EUR when currency is an empty string", () => {
+    const result = formatCurrency(15, "")
+    expect(result).toContain("15")
+    expect(result).toMatch(/€/)
+  })
+
+  it("falls back to EUR when currency has fewer than 3 letters", () => {
+    const result = formatCurrency(15, "EU")
+    expect(result).toContain("15")
+    expect(result).toMatch(/€/)
+  })
+
+  it("falls back to EUR when currency is a non-letter symbol", () => {
+    const result = formatCurrency(15, "€")
+    expect(result).toContain("15")
+    expect(result).toMatch(/€/)
+  })
 })
 
 describe("formatPhone", () => {
