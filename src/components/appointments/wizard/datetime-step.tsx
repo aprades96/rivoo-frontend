@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { format, addDays, isSameDay, parseISO } from "date-fns"
+import { format, addDays, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useAvailability } from "@/hooks/use-availability"
 import { useWizardStore } from "@/lib/stores/wizard-store"
+import type { AvailableSlot } from "@/types/appointment"
 
 const DAYS_AHEAD = 30
 const today = new Date()
@@ -35,10 +36,14 @@ export function DateTimeStep() {
     dateStr
   )
 
-  const slots = data?.availableSlots ?? []
+  // El backend responde {date, employeeId, slots:[{startTime, endTime}]} con
+  // las horas sueltas ("09:00:00"). CreateAppointmentRequest.startTime es un
+  // LocalDateTime, asi que el hueco se guarda recompuesto como fecha+hora.
+  const availabilityDate = data?.date ?? dateStr
+  const slots = data?.slots ?? []
 
-  const handleSlotSelect = (slot: string) => {
-    selectDateTime(dateStr, slot)
+  const handleSlotSelect = (slot: AvailableSlot) => {
+    selectDateTime(availabilityDate, `${availabilityDate}T${slot.startTime}`)
     nextStep()
   }
 
@@ -122,12 +127,13 @@ export function DateTimeStep() {
         ) : (
           <div className="grid grid-cols-4 gap-2">
             {slots.map((slot) => {
-              const isSelected = selectedDate === dateStr && selectedSlot === slot
-              // slot format: "HH:mm" or ISO string — display as HH:mm
-              const display = slot.length > 5 ? format(parseISO(slot), "HH:mm") : slot
+              const slotDateTime = `${availabilityDate}T${slot.startTime}`
+              const isSelected =
+                selectedDate === availabilityDate && selectedSlot === slotDateTime
+              const display = slot.startTime.slice(0, 5)
               return (
                 <button
-                  key={slot}
+                  key={slot.startTime}
                   onClick={() => handleSlotSelect(slot)}
                   className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition-colors ${
                     isSelected

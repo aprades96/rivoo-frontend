@@ -75,8 +75,31 @@ export interface PublicBookingResponse {
   confirmationToken: string
 }
 
+/**
+ * Un hueco libre tal y como lo serializa el backend: el record
+ * `AvailableSlot(LocalTime startTime, LocalTime endTime)`. Jackson 3 escribe
+ * `LocalTime` con ISO_LOCAL_TIME, que siempre incluye los segundos
+ * ("09:00:00"), no "09:00".
+ */
+export interface AvailableSlot {
+  startTime: string
+  endTime: string
+}
+
+/**
+ * Cuerpo de GET /api/v1/appointments/availability y de
+ * GET /api/v1/appointments/public/availability. Nombres exactos de los
+ * componentes del record `AvailabilityResponse(LocalDate date, String
+ * employeeId, List<AvailableSlot> slots)`: en ese repo no hay ninguna
+ * `PropertyNamingStrategy`, asi que el nombre del componente es el del JSON.
+ *
+ * Ejemplo real:
+ * {"date":"2026-08-28","employeeId":"emp_1","slots":[{"startTime":"09:00:00","endTime":"09:30:00"}]}
+ */
 export interface AvailabilityResponse {
-  availableSlots: string[]
+  date: string
+  employeeId: string
+  slots: AvailableSlot[]
 }
 
 export interface AppointmentListParams {

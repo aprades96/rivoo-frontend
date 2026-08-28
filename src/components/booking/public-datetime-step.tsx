@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { format, addDays, parseISO } from "date-fns"
+import { format, addDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { useQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { appointmentsApi } from "@/lib/api/appointments"
-import type { AvailabilityResponse } from "@/types/appointment"
+import type { AvailabilityResponse, AvailableSlot } from "@/types/appointment"
 import type { SalonPublic } from "@/types/salon"
 
 const DAYS_AHEAD = 30
@@ -59,10 +59,14 @@ export function PublicDateTimeStep({ salon }: PublicDateTimeStepProps) {
     enabled: !!selectedService && !!selectedEmployeeId,
   })
 
-  const slots = data?.availableSlots ?? []
+  // El backend responde {date, employeeId, slots:[{startTime, endTime}]} con
+  // las horas sueltas ("09:00:00"). PublicBookingRequest.requestedTime es un
+  // LocalDateTime, asi que el hueco se guarda recompuesto como fecha+hora.
+  const availabilityDate = data?.date ?? dateStr
+  const slots = data?.slots ?? []
 
-  const handleSlotSelect = (slot: string) => {
-    selectDateTime(dateStr, slot)
+  const handleSlotSelect = (slot: AvailableSlot) => {
+    selectDateTime(availabilityDate, `${availabilityDate}T${slot.startTime}`)
     nextStep()
   }
 
@@ -137,11 +141,13 @@ export function PublicDateTimeStep({ salon }: PublicDateTimeStepProps) {
       ) : (
         <div className="grid grid-cols-4 gap-2">
           {slots.map((slot) => {
-            const isSelected = selectedDate === dateStr && selectedSlot === slot
-            const display = slot.length > 5 ? format(parseISO(slot), "HH:mm") : slot
+            const slotDateTime = `${availabilityDate}T${slot.startTime}`
+            const isSelected =
+              selectedDate === availabilityDate && selectedSlot === slotDateTime
+            const display = slot.startTime.slice(0, 5)
             return (
               <button
-                key={slot}
+                key={slot.startTime}
                 onClick={() => handleSlotSelect(slot)}
                 className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition-colors ${
                   isSelected
