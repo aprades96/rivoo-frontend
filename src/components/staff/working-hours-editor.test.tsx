@@ -23,12 +23,18 @@ const savedHours: WorkingHoursResponse[] = Array.from({ length: 7 }, (_, i) => (
   breakEndTime: null,
 }))
 
-function renderEditor(hours: WorkingHoursResponse[] | undefined, isSaving = false) {
+function renderEditor(
+  hours: WorkingHoursResponse[] | undefined,
+  isSaving = false,
+  showSaveButton?: boolean
+) {
+  const onSave = vi.fn().mockResolvedValue(undefined)
   const ui = (h: WorkingHoursResponse[] | undefined, saving: boolean) => (
     <WorkingHoursEditor
       hours={h}
-      onSave={vi.fn().mockResolvedValue(undefined)}
+      onSave={onSave}
       isSaving={saving}
+      showSaveButton={showSaveButton}
     />
   )
   const utils = render(ui(hours, isSaving))
@@ -36,14 +42,17 @@ function renderEditor(hours: WorkingHoursResponse[] | undefined, isSaving = fals
     Array.from(
       utils.container.querySelectorAll<HTMLInputElement>('input[type="time"]')
     )
-  const dayCheckboxes = () =>
-    Array.from(
-      utils.container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
-    )
+  // The day toggle is now the Switch primitive: an accessible `role="switch"`
+  // element, not a raw checkbox (base-ui does render a hidden, aria-hidden
+  // checkbox behind it for form purposes, but that is an implementation
+  // detail -- assert against the actual interactive/accessible node instead).
+  const daySwitches = () =>
+    Array.from(utils.container.querySelectorAll<HTMLElement>('[role="switch"]'))
   return {
     ...utils,
+    onSave,
     timeInputs,
-    dayCheckboxes,
+    daySwitches,
     firstOpenTime: () => timeInputs()[0],
     // DEFAULT_HOURS opens Mon-Fri, so each open day contributes two time inputs:
     // index 2 is Tuesday's opening time.
@@ -118,18 +127,37 @@ describe("WorkingHoursEditor", () => {
   })
 
   it("disables the day toggles and time inputs while saving", () => {
-    const { timeInputs, dayCheckboxes } = renderEditor(serverHours, true)
+    const { timeInputs, daySwitches } = renderEditor(serverHours, true)
 
     expect(timeInputs().length).toBeGreaterThan(0)
     expect(timeInputs().every((i) => i.disabled)).toBe(true)
-    expect(dayCheckboxes().length).toBe(7)
-    expect(dayCheckboxes().every((c) => c.disabled)).toBe(true)
+    expect(daySwitches().length).toBe(7)
+    expect(daySwitches().every((s) => s.getAttribute("aria-disabled") === "true")).toBe(true)
   })
 
   it("leaves the day toggles and time inputs editable when not saving", () => {
-    const { timeInputs, dayCheckboxes } = renderEditor(serverHours)
+    const { timeInputs, daySwitches } = renderEditor(serverHours)
 
     expect(timeInputs().some((i) => i.disabled)).toBe(false)
-    expect(dayCheckboxes().some((c) => c.disabled)).toBe(false)
+    expect(daySwitches().some((s) => s.getAttribute("aria-disabled") === "true")).toBe(false)
+  })
+
+  it("shows the internal save button by default", () => {
+    const { getByRole } = renderEditor(serverHours)
+
+    expect(getByRole("button", { name: /guardar horarios/i })).toBeInTheDocument()
+  })
+
+  it("hides the internal save button when showSaveButton is false", () => {
+    const { queryByRole } = renderEditor(serverHours, false, false)
+
+    expect(queryByRole("button", { name: /guardar horarios/i })).not.toBeInTheDocument()
+  })
+
+  it("renders closed days (isOpen=false) with the muted 'Cerrado' state instead of time fields", () => {
+    const { getAllByText } = renderEditor(serverHours)
+
+    // serverHours opens Mon-Fri (i < 5): Saturday and Sunday (dayOfWeek 6-7) are closed.
+    expect(getAllByText("Cerrado")).toHaveLength(2)
   })
 })
