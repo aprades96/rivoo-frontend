@@ -30,6 +30,18 @@ export default function OnboardingCompletePage() {
     try {
       const updated = await salonsApi.completeOnboarding(accessToken)
 
+      // Defensa anticipada por src/types/salon.ts:22-28: si el backend
+      // respondiera 200 sin `onboardingCompletedAt` (p.ej. el campo llegara
+      // con otro nombre), `updated.onboardingCompletedAt` seria `undefined` y
+      // escribirlo tal cual en cache reintroduciria el bucle original -- el
+      // portero (onboarding-gate.tsx) volveria a mandar a /welcome, esta vez
+      // en silencio porque el POST "funciono". Ni se escribe ni se navega.
+      if (!updated.onboardingCompletedAt) {
+        toast.error("No se pudo completar el alta. Intentalo de nuevo.")
+        setIsCompleting(false)
+        return
+      }
+
       // Mata cualquier refetch en vuelo antes de escribir: refetchOnWindowFocus
       // esta en true global (query-provider.tsx:21) y esta pantalla monta
       // useSalon(), asi que uno podria resolver DESPUES con el payload viejo y

@@ -160,6 +160,24 @@ describe("OnboardingCompletePage", () => {
     expect(queryClient.getQueryData<Salon>(SALON_KEY)?.onboardingCompletedAt).toBeNull()
   })
 
+  it("does NOT navigate nor write the cache when completeOnboarding answers 200 without onboardingCompletedAt", async () => {
+    // A backend that renamed the field, or a proxy that stripped it: the 200
+    // itself proves nothing. Writing this into cache as-is would restore the
+    // exact silent bounce (/complete -> /today -> onboarding-gate -> /welcome)
+    // this comment chain was written to prevent.
+    completeOnboarding.mockResolvedValue({ ...UPDATED_SALON, onboardingCompletedAt: null })
+    const user = userEvent.setup()
+    const { queryClient } = renderPage()
+
+    await user.click(screen.getByRole("button", { name: /ir al dashboard/i }))
+
+    await waitFor(() => expect(completeOnboarding).toHaveBeenCalled())
+
+    expect(push).not.toHaveBeenCalled()
+    expect(reset).not.toHaveBeenCalled()
+    expect(queryClient.getQueryData<Salon>(SALON_KEY)?.onboardingCompletedAt).toBeNull()
+  })
+
   it("shows the /book/ booking URL built from the salon slug", () => {
     renderPage()
 
