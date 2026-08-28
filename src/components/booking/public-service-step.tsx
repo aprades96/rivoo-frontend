@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
+import { dayName } from "@/lib/utils/business-hours"
 import type { SalonPublic, ServicePublic } from "@/types/salon"
 
 interface PublicServiceStepProps {
@@ -82,9 +83,4 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
       )}
     </div>
   )
-}
-
-const DAYS = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"]
-function dayName(dayOfWeek: number): string {
-  return DAYS[dayOfWeek - 1] ?? ""
 }

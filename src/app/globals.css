@@ -74,6 +74,13 @@
   --color-success-soft: var(--success-soft);
   --color-success: var(--success);
 
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-disabled: var(--primary-disabled);
+  --color-warning-border: var(--warning-border);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-border: var(--destructive-border);
+  --color-text-placeholder: var(--text-placeholder);
+
   /* Tracking de titulos */
   --tracking-display: -0.02em;
 }
@@ -137,6 +144,14 @@
   --label: #5f534b;
   --success-soft: #e4ede1;
   --success: #3f6b4f;
+
+  /* Reserva publica: valores del canvas que no tenian token. */
+  --primary-pressed: #8f3f24; /* Estilo.dc.html — pulsacion del CTA */
+  --primary-disabled: #e3d3c6; /* ReservaDesktopPaso2.dc.html:109 */
+  --warning-border: #e8d3a6; /* ReservaPaso5.dc.html:77 */
+  --destructive-soft: #faefe9; /* ReservaError.dc.html:32 */
+  --destructive-border: #edd6d0; /* ReservaError.dc.html:47 */
+  --text-placeholder: #c4b5a6; /* ReservaDesktopPaso2.dc.html:106 — valor vacio */
 }
 
 @layer base {
