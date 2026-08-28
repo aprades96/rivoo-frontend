@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { useOnboardingStore } from "./onboarding-store"
+import { useOnboardingStore, onboardingCardMaxWidthClass } from "./onboarding-store"
 
 describe("onboarding-store", () => {
   beforeEach(() => {
@@ -38,5 +38,18 @@ describe("onboarding-store", () => {
     store.getState().setCurrentStep(4)
     store.getState().reset()
     expect(store.getState().currentStep).toBe(1)
+  })
+})
+
+describe("onboardingCardMaxWidthClass", () => {
+  it("uses 640px for steps 1 and 5", () => {
+    expect(onboardingCardMaxWidthClass(1)).toBe("md:max-w-[640px]")
+    expect(onboardingCardMaxWidthClass(5)).toBe("md:max-w-[640px]")
+  })
+
+  it("uses 760px for steps 2, 3 and 4", () => {
+    expect(onboardingCardMaxWidthClass(2)).toBe("md:max-w-[760px]")
+    expect(onboardingCardMaxWidthClass(3)).toBe("md:max-w-[760px]")
+    expect(onboardingCardMaxWidthClass(4)).toBe("md:max-w-[760px]")
   })
 })
