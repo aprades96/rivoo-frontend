@@ -1,15 +1,34 @@
 "use client"
 
 import { LogOut, Scissors } from "lucide-react"
+import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { onboardingCardMaxWidthClass, useOnboardingStore } from "@/lib/stores/onboarding-store"
 
+// Cada pagina sigue llamando a `setCurrentStep` (mantiene el store correcto
+// para quien lo lea mas adelante y a los tests que lo comprueban), pero ese
+// efecto corre DESPUES del montaje. El chasis no puede esperar a eso: entrar
+// directo en /add-employee pintaria un frame al paso 1/2 (tarjeta de 640px,
+// progreso al 20%) antes de saltar a los 760px/60% reales. Derivar el paso
+// de la URL deja el primer pintado ya correcto.
+const STEP_BY_PATHNAME: Record<string, number> = {
+  "/welcome": 1,
+  "/business-hours": 2,
+  "/add-employee": 3,
+  "/add-service": 4,
+  "/complete": 5,
+}
+
 export default function OnboardingLayout({ children }: { children: ReactNode }) {
-  const { currentStep, totalSteps } = useOnboardingStore()
+  const { currentStep: storeCurrentStep, totalSteps } = useOnboardingStore()
+  const pathname = usePathname()
   const { logout } = useAuth()
+  // Cae al valor del store solo para una ruta que no este en el mapa (no
+  // deberia ocurrir dentro de este grupo de rutas), nunca como caso normal.
+  const currentStep = STEP_BY_PATHNAME[pathname] ?? storeCurrentStep
   const progressValue = (currentStep / totalSteps) * 100
 
   return (

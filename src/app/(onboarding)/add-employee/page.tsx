@@ -78,7 +78,7 @@ export default function AddEmployeePage() {
   return (
     <>
       <div className="flex flex-col gap-[5px] md:gap-1.5">
-        <h1 className="font-heading text-[26px] font-semibold leading-[1.12] tracking-display md:text-[32px]">
+        <h1 className="font-heading text-[26px] font-semibold leading-[1.12] tracking-display md:text-[32px] md:leading-[1.08]">
           Anade tu primer empleado
         </h1>
         <p className="text-[13px] leading-[1.5] text-muted-foreground md:hidden">
@@ -155,7 +155,7 @@ export default function AddEmployeePage() {
                     "h-[30px] w-[30px] shrink-0 cursor-pointer rounded-full",
                     swatch.className,
                     form.colorHex === swatch.hex &&
-                      "ring-4 ring-primary ring-offset-2 ring-offset-background"
+                      "ring-2 ring-primary ring-offset-2 ring-offset-background"
                   )}
                 />
               ))}

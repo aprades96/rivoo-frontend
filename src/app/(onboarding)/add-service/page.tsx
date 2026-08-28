@@ -59,8 +59,8 @@ export default function AddServicePage() {
 
   return (
     <>
-      <div className="flex flex-col gap-[5px]">
-        <h1 className="font-heading text-[26px] font-semibold leading-[1.12] tracking-display md:text-[32px]">
+      <div className="flex flex-col gap-[5px] md:gap-1.5">
+        <h1 className="font-heading text-[26px] font-semibold leading-[1.12] tracking-display md:text-[32px] md:leading-[1.08]">
           Anade tu primer servicio
         </h1>
         <p className="text-[13px] leading-[1.5] text-muted-foreground md:hidden">
