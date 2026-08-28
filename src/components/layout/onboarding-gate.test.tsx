@@ -168,6 +168,14 @@ describe("OnboardingGate", () => {
     expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
     // A real failure must not be silently treated as "send to the wizard".
     expect(replace).not.toHaveBeenCalledWith("/welcome")
+
+    // Positive assertion, not just absence: without it, `unavailable` being
+    // permanently false and the 500 falling into the infinite spinner branch
+    // would still make every assertion above pass.
+    expect(
+      screen.getByText("No se ha podido cargar tu salon")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument()
   })
 
   it("renders the children for an owner with the flag set even with no employees or services", () => {
@@ -204,6 +212,7 @@ describe("OnboardingGate", () => {
     expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
     expect(container.querySelector(".animate-spin")).toBeInTheDocument()
+    expect(screen.getByRole("status")).toBeInTheDocument()
     expect(replace).not.toHaveBeenCalled()
   })
 })

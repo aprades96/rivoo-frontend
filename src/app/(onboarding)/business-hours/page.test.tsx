@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import OnboardingBusinessHoursPage from "./page"
@@ -88,17 +88,34 @@ describe("OnboardingBusinessHoursPage", () => {
     expect(screen.queryByText(/configurar mas tarde/i)).not.toBeInTheDocument()
   })
 
-  it("'Continuar' saves the schedule before advancing to /add-employee", async () => {
+  it("'Continuar' saves what the user just edited, not the preloaded schedule, before advancing to /add-employee", async () => {
     getBusinessHours.mockResolvedValue(STORED_HOURS)
     updateBusinessHours.mockResolvedValue(undefined)
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByDisplayValue("10:30")
+    const mondayOpenTime = await screen.findByDisplayValue("10:30")
+    // Native <input type="time">: userEvent.type is unreliable across
+    // browsers for this control (see working-hours-editor.test.tsx), so the
+    // edit is driven the same way that file drives it, via fireEvent.change.
+    fireEvent.change(mondayOpenTime, { target: { value: "11:45" } })
+    expect(await screen.findByDisplayValue("11:45")).toBeInTheDocument()
+
     await user.click(screen.getByRole("button", { name: /continuar/i }))
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/add-employee"))
-    expect(updateBusinessHours).toHaveBeenCalledWith(expect.anything(), "token")
+    // Regression guard for the reflex documented at
+    // working-hours-editor.tsx:97-99: if `useImperativeHandle` ever gains a
+    // dependency array, `save()` freezes the closure captured at that render
+    // and forwards the preloaded schedule instead of what the user just
+    // typed. Asserting the edited value (not `expect.anything()`) is what
+    // catches that.
+    expect(updateBusinessHours).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ dayOfWeek: 1, openTime: "11:45" }),
+      ]),
+      "token"
+    )
 
     // Order matters: the schedule must land before the wizard moves on.
     const saveOrder = updateBusinessHours.mock.invocationCallOrder[0]
