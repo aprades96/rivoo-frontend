@@ -51,6 +51,21 @@ export interface SalonPublic {
   businessHours: BusinessHoursResponse[]
   services: ServicePublic[]
   employees: EmployeePublic[]
+  /**
+   * True cuando salon-service no pudo leer la lista de servicios de
+   * staff-service (red, 5xx, cuerpo ilegible). En ese caso `services` llega
+   * vacio pero NO significa "este salon no tiene servicios". Independiente de
+   * `employeesUnavailable`: las dos llamadas fallan por separado.
+   *
+   * Nombre exacto del componente del record SalonPublicResponse (Jackson 3, sin
+   * PropertyNamingStrategy ni @JsonProperty en salon-service, asi que el nombre
+   * de cable es literalmente el del componente). No renombrar: `apiFetch` es un
+   * cast sin validacion y un nombre erroneo se leeria como `undefined` (falsy)
+   * en silencio.
+   */
+  servicesUnavailable: boolean
+  /** Igual que `servicesUnavailable`, pero para `employees`. */
+  employeesUnavailable: boolean
 }
 
 export interface BusinessHoursResponse {

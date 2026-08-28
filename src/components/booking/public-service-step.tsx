@@ -1,6 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
+import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
@@ -30,11 +31,23 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
       </div>
 
       {services.length === 0 ? (
-        <div className="py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Este salon no tiene servicios disponibles para reserva online.
-          </p>
-        </div>
+        // Una lista vacia tiene dos causas distintas y el visitante no puede
+        // distinguirlas: que el salon no ofrezca nada, o que la lista no haya
+        // llegado. El flag solo cambia como se explica el vacio, nunca oculta
+        // servicios reales. Sin servicios no hay tarjeta que pulsar, asi que en
+        // los dos casos el paso ya no deja avanzar.
+        salon.servicesUnavailable ? (
+          <UnavailableNotice
+            title="No hemos podido cargar los servicios"
+            description="Vuelve a intentarlo en unos minutos."
+          />
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Este salon no tiene servicios disponibles para reserva online.
+            </p>
+          </div>
+        )
       ) : (
         <div className="space-y-2">
           {services.map((service) => {
