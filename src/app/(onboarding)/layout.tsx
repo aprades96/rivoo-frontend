@@ -32,7 +32,17 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
   const progressValue = (currentStep / totalSteps) * 100
 
   return (
-    <div className="flex min-h-full flex-col gap-[18px] bg-background px-4 py-[18px] md:items-center md:gap-0 md:px-10 md:py-11">
+    // `min-h-dvh` (no `min-h-full`) es a proposito: el padre (`body`) solo fija
+    // `min-height`, nunca `height`, asi que un `%` aqui no resuelve a nada
+    // (regla CSS: un porcentaje de altura necesita que el contenedor tenga
+    // una altura EXPLICITA, no un min-height) y el div se queda del alto de
+    // su contenido. Sin una altura real que la columna pueda ocupar, el
+    // `flex-1` de la tarjeta no tiene hueco libre que ganar y el
+    // `margin-top:auto` del pie (`onboarding-footer.tsx`) no empuja nada.
+    // `dvh` es una unidad de viewport, no un porcentaje: resuelve siempre.
+    // En escritorio se vuelve a `min-h-full` (inerte, como antes) para no
+    // tocar un layout que ya coincide con el artboard.
+    <div className="flex min-h-dvh flex-col gap-[18px] bg-background px-4 py-[18px] md:min-h-full md:items-center md:gap-0 md:px-10 md:py-11">
       {/* Bloque de marca: solo escritorio, fuera de la tarjeta */}
       <div className="hidden items-center gap-[11px] md:mb-[26px] md:flex">
         <Scissors size={26} strokeWidth={2.5} className="text-primary" />
