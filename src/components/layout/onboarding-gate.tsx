@@ -21,6 +21,14 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const authReady = isAuthenticated && !!accessToken
   const isLoading = authLoading || salonLoading
 
+  // Irrecoverable, not "needs onboarding": the wizard has no way to create a
+  // salon (only the anonymous /register form does, via RegisterSalonRequest
+  // -- see salons.ts, which the assistant never calls). Sending a 404 to
+  // /welcome walks the owner through 4 steps into a second 404 on step 5 with
+  // no way out but "Salir". A 404 here also happens on a broken X-Tenant-Id
+  // propagation, which would misroute an owner who already completed
+  // onboarding straight back into the wizard. Handled below as its own error
+  // screen, same shape as `unavailable`.
   const salonNotFound =
     !salonLoading && !salon && salonError instanceof ApiError && salonError.problem.status === 404
 
@@ -32,12 +40,18 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   // without a ROLE_-prefixed role, so a mislabeled owner would never be sent to
   // the wizard and would land on an empty panel instead. Accepted knowingly.
   const needsOnboarding =
-    authReady && !isLoading && isOwner && (salonNotFound || (!!salon && !salon.onboardingCompletedAt))
+    authReady && !isLoading && isOwner && !!salon && !salon.onboardingCompletedAt
 
   // A REAL failure (network, 5xx...), not the mere absence of data yet: a
   // disabled query (use-salon.ts's `enabled: isAuthenticated && !!accessToken`)
   // leaves isLoading false and data undefined without that being an error.
-  const unavailable = authReady && !isLoading && !!salonError && !salonNotFound
+  //
+  // Also requires the absence of cached `salon` data: react-query keeps
+  // serving the last successful payload (and setting `error`) when a
+  // background refetch fails, e.g. a window-focus refetch hitting a
+  // transient 5xx. Without `!salon` here, that alone would tear down a panel
+  // that is working fine and replace it with the error screen.
+  const unavailable = authReady && !isLoading && !!salonError && !salonNotFound && !salon
 
   useEffect(() => {
     if (needsOnboarding) {
@@ -59,6 +73,18 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         <EmptyState
           title="No se ha podido cargar tu salon"
           description="Comprueba tu conexion e intentalo de nuevo."
+          action={<Button onClick={() => refetchSalon()}>Reintentar</Button>}
+        />
+      </div>
+    )
+  }
+
+  if (salonNotFound) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <EmptyState
+          title="No hemos encontrado tu salon"
+          description="Ponte en contacto con soporte: el asistente de alta no puede crear uno nuevo."
           action={<Button onClick={() => refetchSalon()}>Reintentar</Button>}
         />
       </div>
