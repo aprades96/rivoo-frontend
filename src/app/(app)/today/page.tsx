@@ -10,7 +10,9 @@ import { AppointmentCard } from "@/components/appointments/appointment-card"
 import { AppointmentDetailSheet } from "@/components/appointments/appointment-detail-sheet"
 import { EmptyState } from "@/components/shared/empty-state"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { useTodayAppointments } from "@/hooks/use-appointments"
+import { useServices } from "@/hooks/use-staff"
 import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
 import type { Appointment } from "@/types/appointment"
@@ -18,7 +20,26 @@ import type { Appointment } from "@/types/appointment"
 export default function TodayPage() {
   const today = format(new Date(), "yyyy-MM-dd")
   const { data, isLoading, refetch, isRefetching } = useTodayAppointments(today)
+  const {
+    data: servicesData,
+    isLoading: servicesLoading,
+    error: servicesError,
+  } = useServices()
   const { user } = useAuth()
+
+  // Sin servicios no hay nada que reservar: no tiene sentido mostrar
+  // contadores de citas ni el hueco vacio generico de "no hay citas hoy" como
+  // si todo funcionase con normalidad. Se espera a que la carga de servicios
+  // resuelva para no mostrar este aviso un instante antes de saber si hay o
+  // no catalogo.
+  //
+  // `!servicesError` es obligatorio: sin el, un 5xx/red en el GET deja
+  // `isLoading` en false y `data` en undefined, y el `?? 0` de abajo confunde
+  // "no ha podido cargar" con "no tiene ninguno" -- sustituyendo la agenda
+  // entera por este aviso y perdiendo tarjetas, proxima cita y citas de hoy
+  // por un fallo que nada tiene que ver con el catalogo real.
+  const hasNoServices =
+    !servicesLoading && !servicesError && (servicesData?.content.length ?? 0) === 0
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -74,70 +95,100 @@ export default function TodayPage() {
         </Button>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-2">
-        <StatCard
-          label="Total"
-          value={stats.total}
-          icon={<CalendarCheck className="h-4 w-4" />}
+      {/*
+        Un fallo puntual del GET de servicios nunca debe tapar la agenda: la
+        pantalla principal del dia sigue pintandose con normalidad y este
+        aviso se limita a informar aparte (nunca sustituye a `hasNoServices`
+        ni al resto del cuerpo).
+      */}
+      {servicesError && (
+        <UnavailableNotice
+          title="No se ha podido comprobar tu catalogo de servicios"
+          description="La agenda de hoy sigue disponible. Vuelve a intentarlo en unos minutos."
         />
-        <StatCard
-          label="Pendientes"
-          value={stats.pending}
-          icon={<Clock className="h-4 w-4" />}
-          highlight={stats.pending > 0}
-        />
-        <StatCard
-          label="Completadas"
-          value={stats.completed}
-          icon={<CalendarCheck className="h-4 w-4" />}
-        />
-      </div>
-
-      {/* Next appointment highlight */}
-      {nextAppointment && (
-        <Card className="border-primary/20 bg-primary/5 p-3">
-          <p className="text-xs font-medium text-primary">Proxima cita</p>
-          <AppointmentCard
-            appointment={nextAppointment}
-            onTap={handleTapAppointment}
-          />
-        </Card>
       )}
 
-      {/* Timeline */}
-      <div>
-        <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-          Todas las citas de hoy
-        </h2>
+      {hasNoServices ? (
+        <EmptyState
+          title="Aun no tienes servicios"
+          description="Sin servicios no se pueden coger citas. Crea el primero para empezar a recibir reservas."
+          action={
+            <Link
+              href="/staff?tab=services"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Crear servicio
+            </Link>
+          }
+        />
+      ) : (
+        <>
+          {/* Stat cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <StatCard
+              label="Total"
+              value={stats.total}
+              icon={<CalendarCheck className="h-4 w-4" />}
+            />
+            <StatCard
+              label="Pendientes"
+              value={stats.pending}
+              icon={<Clock className="h-4 w-4" />}
+              highlight={stats.pending > 0}
+            />
+            <StatCard
+              label="Completadas"
+              value={stats.completed}
+              icon={<CalendarCheck className="h-4 w-4" />}
+            />
+          </div>
 
-        {isLoading ? (
-          <LoadingSkeleton count={4} />
-        ) : sorted.length === 0 ? (
-          <EmptyState
-            title="No hay citas para hoy"
-            description="Crea una nueva cita o espera a que tus clientes reserven."
-            action={
-              <Link
-                href="/appointments/new"
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                Crear cita
-              </Link>
-            }
-          />
-        ) : (
-          <div className="space-y-2">
-            {sorted.map((appointment) => (
+          {/* Next appointment highlight */}
+          {nextAppointment && (
+            <Card className="border-primary/20 bg-primary/5 p-3">
+              <p className="text-xs font-medium text-primary">Proxima cita</p>
               <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
+                appointment={nextAppointment}
                 onTap={handleTapAppointment}
               />
-            ))}
+            </Card>
+          )}
+
+          {/* Timeline */}
+          <div>
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+              Todas las citas de hoy
+            </h2>
+
+            {isLoading ? (
+              <LoadingSkeleton count={4} />
+            ) : sorted.length === 0 ? (
+              <EmptyState
+                title="No hay citas para hoy"
+                description="Crea una nueva cita o espera a que tus clientes reserven."
+                action={
+                  <Link
+                    href="/appointments/new"
+                    className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Crear cita
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="space-y-2">
+                {sorted.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    onTap={handleTapAppointment}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Detail sheet */}
       <AppointmentDetailSheet

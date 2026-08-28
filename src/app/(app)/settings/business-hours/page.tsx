@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { EmptyState } from "@/components/shared/empty-state"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
 import type { BusinessHoursRequest } from "@/types/salon"
@@ -16,7 +17,7 @@ export default function BusinessHoursSettingsPage() {
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
 
-  const { data: hours, isLoading } = useQuery({
+  const { data: hours, isError: hoursFetchFailed, refetch: refetchHours } = useQuery({
     queryKey: ["salon-business-hours"],
     queryFn: () => salonsApi.getBusinessHours(accessToken!),
     enabled: !!accessToken,
@@ -32,6 +33,20 @@ export default function BusinessHoursSettingsPage() {
     onError: () => toast.error("Error al guardar horarios"),
   })
 
+  // Derived from the absence of data, not from the query's `isLoading`: a
+  // disabled query (no accessToken yet) reports `isLoading: false` in React
+  // Query v5, so a hard load of this page could mount the editor on its
+  // defaults with the internal "Guardar horarios" button enabled -- see
+  // business-hours/page.tsx (onboarding) for the full writeup of the window.
+  const hoursNotReady = !accessToken || hours === undefined
+
+  // Same terminal case as the onboarding step (business-hours/page.tsx):
+  // `retry: failureCount < 1` caps retries at one, so after that `hours`
+  // stays undefined forever and `hoursNotReady` alone would leave the
+  // skeleton on screen with no way out. The back arrow in the header above
+  // already lets the owner leave this page regardless.
+  const hoursFailed = !!accessToken && hoursFetchFailed
+
   return (
     <div className="p-4 md:py-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -45,7 +60,13 @@ export default function BusinessHoursSettingsPage() {
         Configura los dias y horas de apertura de tu salon.
       </p>
 
-      {isLoading ? (
+      {hoursFailed ? (
+        <EmptyState
+          title="No se ha podido cargar el horario"
+          description="Comprueba tu conexion e intentalo de nuevo."
+          action={<Button onClick={() => refetchHours()}>Reintentar</Button>}
+        />
+      ) : hoursNotReady ? (
         <LoadingSkeleton count={7} />
       ) : (
         <WorkingHoursEditor

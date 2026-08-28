@@ -31,4 +31,7 @@ export const salonsApi = {
       body: data,
       token,
     }),
+
+  completeOnboarding: (token: string) =>
+    apiFetch<Salon>("/api/v1/salons/me/onboarding/complete", { method: "POST", token }),
 }

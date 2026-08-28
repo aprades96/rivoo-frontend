@@ -12,8 +12,8 @@
   /* Status badge colors */
   --color-status-pending-bg: #faefd6;
   --color-status-pending-text: #8a5b12;
-  --color-status-confirmed-bg: #e4ede1;
-  --color-status-confirmed-text: #3f6b4f;
+  --color-status-confirmed-bg: var(--success-soft);
+  --color-status-confirmed-text: var(--success);
   --color-status-in-progress-bg: #e2e9ee;
   --color-status-in-progress-text: #3a5a70;
   --color-status-completed-bg: #f0eae3;
@@ -64,6 +64,15 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-hairline: var(--hairline);
+  --color-switch-off: var(--switch-off);
+  --color-text-subtle: var(--text-subtle);
+  --color-muted-foreground-2: var(--muted-foreground-2);
+  --color-muted-subtle: var(--muted-subtle);
+  --color-label: var(--label);
+  --color-success-soft: var(--success-soft);
+  --color-success: var(--success);
 
   /* Tracking de titulos */
   --tracking-display: -0.02em;
@@ -119,6 +128,15 @@
   --sidebar-accent-foreground: #b4522f;
   --sidebar-border: #e7dccf;
   --sidebar-ring: #b4522f;
+
+  --hairline: #efe6da;
+  --switch-off: #e0d3c4;
+  --text-subtle: #b8a99c;
+  --muted-foreground-2: #9a8a7e;
+  --muted-subtle: #faf6f0;
+  --label: #5f534b;
+  --success-soft: #e4ede1;
+  --success: #3f6b4f;
 }
 
 @layer base {

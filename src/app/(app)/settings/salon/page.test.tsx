@@ -23,7 +23,6 @@ const mockSalon: Salon = {
   id: "sal_1",
   name: "Rivoo Salon",
   slug: "rivoo-salon",
-  ownerUserId: "usr_1",
   email: "hola@rivoo.test",
   phone: "930000000",
   description: "Peluqueria de barrio",
@@ -38,6 +37,7 @@ const mockSalon: Salon = {
   status: "ACTIVE" as Salon["status"],
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
+  onboardingCompletedAt: "2026-01-01T00:00:00Z",
 }
 
 // The key useSalon() reads; seeding it is what a resolved fetch does.

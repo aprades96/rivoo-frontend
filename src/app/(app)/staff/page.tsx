@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -15,10 +15,28 @@ import { useEmployees, useServices } from "@/hooks/use-staff"
 import type { Employee } from "@/types/employee"
 import type { ServiceOffering } from "@/types/service"
 
+// `useSearchParams` exige un limite de Suspense propio (de lo contrario
+// Next lo trata como error en build): el resto de la pagina no depende de
+// la URL, asi que el fallback solo cubre la lectura de `?tab=`.
 export default function StaffPage() {
+  return (
+    <Suspense fallback={<div className="p-4 md:py-6"><LoadingSkeleton count={4} /></div>}>
+      <StaffPageContent />
+    </Suspense>
+  )
+}
+
+function StaffPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: employeesData, isLoading: empLoading } = useEmployees()
   const { data: servicesData, isLoading: svcLoading } = useServices()
+
+  // `?tab=services` deja aterrizar directamente en la pestana de Servicios
+  // (p.ej. desde el "Crear servicio" de /today): sin esto siempre se abria
+  // en Empleados, que es donde no hay nada que crear para ese caso de uso.
+  // Cualquier otro valor (o su ausencia) mantiene el comportamiento previo.
+  const initialTab = searchParams.get("tab") === "services" ? "services" : "employees"
 
   const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false)
   const [serviceSheetOpen, setServiceSheetOpen] = useState(false)
@@ -39,7 +57,7 @@ export default function StaffPage() {
 
   return (
     <div className="p-4 md:py-6">
-      <Tabs defaultValue="employees">
+      <Tabs defaultValue={initialTab}>
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="employees">Empleados</TabsTrigger>

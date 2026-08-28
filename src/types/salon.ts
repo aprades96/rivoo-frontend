@@ -4,7 +4,6 @@ export interface Salon {
   id: string
   name: string
   slug: string
-  ownerUserId: string
   email: string
   phone: string
   description: string | null
@@ -19,6 +18,14 @@ export interface Salon {
   status: SalonStatus
   createdAt: string
   updatedAt: string
+  /**
+   * Instante en que el dueño terminó el alta, o null si no la ha terminado.
+   * Nombre de cable exacto del componente del record SalonResponse (Jackson 3,
+   * sin PropertyNamingStrategy en salon-service). No renombrar: `apiFetch` es un
+   * cast sin validación y un nombre erróneo se leería como `undefined` —falsy—
+   * en silencio, que aquí significa mandar al asistente a todo el mundo.
+   */
+  onboardingCompletedAt: string | null
 }
 
 export interface EmployeePublic {
@@ -99,10 +106,14 @@ export interface RegisterSalonRequest {
   ownerPassword: string
 }
 
+/**
+ * Deliberately just a message. The endpoint answers identically for an address that is free and
+ * one that already has an account, so it can no longer return an id, a slug or a status: those
+ * exist only when a salon was actually created, and any of them would tell an anonymous caller
+ * which of the two happened. Nothing here is meant to be rendered - the client shows its own copy.
+ */
 export interface RegisterSalonResponse {
-  id: string
-  slug: string
-  status: string
+  message: string
 }
 
 export interface UpdateSalonRequest {

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckEmailNotice } from "@/components/register/check-email-notice"
 import { salonsApi } from "@/lib/api/salons"
 import { ApiError } from "@/lib/api/client"
 import type { SelectedPlan } from "@/app/(auth)/register/page"
@@ -27,7 +27,11 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ selectedPlan, onBack }: RegisterFormProps) {
-  const router = useRouter()
+  // Set once registration has been accepted; swaps the form for the "check your email" screen.
+  // Not a navigation: there is nowhere legitimate to go. The owner cannot sign in until they
+  // confirm the address (Keycloak requires VERIFY_EMAIL), and on the other path there may be no
+  // new account at all - both of which the old router.push("/login?registered=true") contradicted.
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     name: "",
@@ -82,8 +86,9 @@ export function RegisterForm({ selectedPlan, onBack }: RegisterFormProps) {
         ownerPassword: form.ownerPassword,
       }),
     onSuccess: () => {
-      toast.success("Cuenta creada correctamente")
-      router.push("/login?registered=true")
+      // No success toast and no response data read: the server's body is the same fixed message
+      // for both outcomes, and "Cuenta creada correctamente" would be a claim we cannot make.
+      setSubmittedEmail(form.email)
     },
     onError: (error) => {
       if (error instanceof ApiError) {
@@ -98,6 +103,10 @@ export function RegisterForm({ selectedPlan, onBack }: RegisterFormProps) {
     if (validate()) {
       mutation.mutate()
     }
+  }
+
+  if (submittedEmail !== null) {
+    return <CheckEmailNotice email={submittedEmail} />
   }
 
   return (
