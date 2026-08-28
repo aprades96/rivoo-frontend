@@ -106,6 +106,27 @@ describe("OnboardingBusinessHoursPage", () => {
     expect(saveOrder).toBeLessThan(pushOrder)
   })
 
+  it("does not mount the editor nor allow 'Continuar' while the stored schedule is still loading", async () => {
+    let resolveHours!: (value: BusinessHoursResponse[]) => void
+    getBusinessHours.mockReturnValue(
+      new Promise<BusinessHoursResponse[]>((resolve) => {
+        resolveHours = resolve
+      })
+    )
+    renderPage()
+
+    // While the GET is in flight there is no editor to type into (nothing to
+    // overwrite the user's keystrokes) and no way to send default values by
+    // pressing Continuar too early.
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeDisabled()
+
+    resolveHours(STORED_HOURS)
+
+    expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeEnabled()
+  })
+
   it("does NOT navigate to /add-employee when the save fails, so the user can retry", async () => {
     getBusinessHours.mockResolvedValue(STORED_HOURS)
     updateBusinessHours.mockRejectedValue(new Error("network down"))

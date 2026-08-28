@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { WorkingHoursEditor, type WorkingHoursEditorHandle } from "@/components/staff/working-hours-editor"
+import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
 import { useOnboardingStore } from "@/lib/stores/onboarding-store"
@@ -67,7 +68,16 @@ export default function OnboardingBusinessHoursPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-[12px] border border-border bg-white">
+      {/*
+        No se monta el editor hasta que el GET resuelve: con `hours={undefined}`
+        el bloque de sincronizacion de WorkingHoursEditor (linea ~82) adopta
+        CUALQUIER respuesta posterior como "primera llegada", asi que una
+        respuesta en vuelo pisaria lo que el usuario ya hubiese tecleado.
+        Mismo patron que settings/business-hours/page.tsx.
+      */}
+      {hoursQuery.isLoading ? (
+        <LoadingSkeleton count={7} />
+      ) : (
         <WorkingHoursEditor
           ref={editorRef}
           hours={hoursQuery.data}
@@ -75,18 +85,21 @@ export default function OnboardingBusinessHoursPage() {
           isSaving={mutation.isPending}
           showSaveButton={false}
         />
-      </div>
+      )}
 
       {/*
         Sin boton "Omitir": el diseno no lo dibuja en este paso. Sin boton
         interno tampoco (showSaveButton={false}): el pie ya tiene su propio
         "Continuar", que guarda a traves de editorRef y solo avanza si el
-        guardado resuelve (handleContinue, arriba).
+        guardado resuelve (handleContinue, arriba). Deshabilitado tambien
+        mientras el horario todavia esta cargando: sin esto, pulsar antes de
+        que el GET resuelva enviaria los valores por defecto del editor y
+        pisaria el horario ya guardado.
       */}
       <OnboardingFooter
         ctaLabel="Continuar"
         onCta={handleContinue}
-        ctaDisabled={mutation.isPending}
+        ctaDisabled={hoursQuery.isLoading || mutation.isPending}
         ctaLoading={mutation.isPending}
       />
     </>
