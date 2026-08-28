@@ -114,7 +114,7 @@ export default function TodayPage() {
           description="Sin servicios no se pueden coger citas. Crea el primero para empezar a recibir reservas."
           action={
             <Link
-              href="/staff"
+              href="/staff?tab=services"
               className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Crear servicio

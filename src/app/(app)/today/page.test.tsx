@@ -76,7 +76,9 @@ describe("TodayPage", () => {
 
     expect(screen.getByText("Aun no tienes servicios")).toBeInTheDocument()
     const link = screen.getByRole("link", { name: "Crear servicio" })
-    expect(link).toHaveAttribute("href", "/staff")
+    // /staff abre por defecto en Empleados (defaultValue="employees"); sin la
+    // query el dueño aterriza donde no hay nada que crear para este flujo.
+    expect(link).toHaveAttribute("href", "/staff?tab=services")
 
     // El vacio generico de citas no debe convivir con este aviso: serian dos
     // mensajes contradictorios (uno dice "sin servicios", el otro "crea una
