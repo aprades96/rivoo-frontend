@@ -178,6 +178,30 @@ describe("OnboardingBusinessHoursPage", () => {
     expect(push).not.toHaveBeenCalled()
   })
 
+  it("shows an error with a retry action instead of an infinite skeleton when the stored schedule fails to load, and recovers once the retry succeeds", async () => {
+    getBusinessHours.mockRejectedValueOnce(new Error("network down"))
+    getBusinessHours.mockResolvedValueOnce(STORED_HOURS)
+    const user = userEvent.setup()
+    const { container } = renderPage()
+
+    expect(await screen.findByText(/no se ha podido cargar tu horario/i)).toBeInTheDocument()
+    // Not the perpetual skeleton this whole guard exists to replace, and no
+    // editor mounted on defaults either -- "Continuar" stays disabled: the
+    // ref it drives is null with the editor unmounted, so enabling it would
+    // just advance the wizard without saving anything.
+    expect(container.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument()
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeDisabled()
+
+    await user.click(screen.getByRole("button", { name: /reintentar/i }))
+
+    // Proves the retry's data actually landed (react-query's notifyManager
+    // macrotask, per AGENTS.md), not just that the error text disappeared.
+    expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
+    expect(screen.queryByText(/no se ha podido cargar tu horario/i)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeEnabled()
+  })
+
   it("marks the wizard at step 2 on mount", () => {
     getBusinessHours.mockResolvedValue(STORED_HOURS)
     renderPage()

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import EmployeeDetailPage from "./page"
 import type { Employee } from "@/types/employee"
@@ -108,5 +109,27 @@ describe("EmployeeDetailPage", () => {
 
     expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /guardar horarios/i })).toBeEnabled()
+  })
+
+  it("shows an error with a retry action instead of an infinite skeleton in the 'Horarios' tab when the schedule fails to load, and recovers once the retry succeeds", async () => {
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockRejectedValueOnce(new Error("network down"))
+    getWorkingHours.mockResolvedValueOnce([
+      { dayOfWeek: 1, isOpen: true, openTime: "10:30", closeTime: "18:00", breakStartTime: null, breakEndTime: null },
+    ])
+    const user = userEvent.setup()
+    const { container } = renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    expect(await screen.findByText(/no se ha podido cargar el horario/i)).toBeInTheDocument()
+    expect(container.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument()
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /reintentar/i }))
+
+    // Proves the retry's data actually landed (react-query's notifyManager
+    // macrotask, per AGENTS.md), not just that the error text disappeared.
+    expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
+    expect(screen.queryByText(/no se ha podido cargar el horario/i)).not.toBeInTheDocument()
   })
 })
