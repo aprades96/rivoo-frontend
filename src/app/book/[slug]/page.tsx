@@ -2,9 +2,10 @@
 
 import { use, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { salonsApi } from "@/lib/api/salons"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { PublicServiceStep } from "@/components/booking/public-service-step"
@@ -25,7 +26,7 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
     setSalonSlug(slug)
   }, [slug, reset, setSalonSlug])
 
-  const { data: salon, isLoading, error } = useQuery<SalonPublic>({
+  const { data: salon, isLoading, error, refetch, isRefetching } = useQuery<SalonPublic>({
     queryKey: ["salon-public", slug],
     queryFn: () => salonsApi.getPublic(slug),
   })
@@ -39,6 +40,51 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
         <p className="mt-1 text-sm text-muted-foreground">
           No existe ningun salon con esta direccion.
         </p>
+      </div>
+    )
+  }
+
+  // Lista vacia con el flag en false: es el catalogo real del salon, no un
+  // fallo de carga. En ese caso no hay nada que reservar y no tiene sentido
+  // ofrecer el asistente de pasos (progreso, siguiente, etc.) - se sustituye
+  // la pagina entera por un aviso, igual que "Salon no encontrado" arriba.
+  // Lista vacia con el flag en true es justo lo contrario: el catalogo no ha
+  // podido cargarse (red o 5xx de staff-service) y decir "no acepta reservas"
+  // seria mentirle al visitante y costarle una reserva real al salon.
+  if (salon.services.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="mb-4">
+          <h1 className="text-lg font-semibold">{salon.name}</h1>
+          <p className="text-xs text-muted-foreground">
+            {formatAddress(salon.addressStreet, salon.addressCity, salon.addressPostalCode)}
+          </p>
+        </div>
+
+        {salon.servicesUnavailable ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <UnavailableNotice
+              title="No hemos podido cargar el catalogo"
+              description="Vuelve a intentarlo en unos minutos."
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              <RefreshCw className={`mr-1.5 h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+              Reintentar
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <h2 className="text-base font-semibold">Este salon aun no acepta reservas online</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ponte en contacto directamente con el salon para reservar tu cita.
+            </p>
+          </div>
+        )}
       </div>
     )
   }
