@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { OnboardingGate } from "./onboarding-gate"
 import { ApiError } from "@/lib/api/client"
 import type { Salon } from "@/types/salon"
@@ -48,12 +49,15 @@ function auth(overrides: Partial<ReturnType<typeof defaultAuth>> = {}) {
   return { ...defaultAuth(), ...overrides }
 }
 
+const logout = vi.fn()
+
 function defaultAuth() {
   return {
     isAuthenticated: true,
     isLoading: false,
     accessToken: "token" as string | null,
     isOwner: true,
+    logout,
   }
 }
 
@@ -96,6 +100,7 @@ describe("OnboardingGate", () => {
     replace.mockClear()
     listEmployees.mockClear()
     listServices.mockClear()
+    logout.mockClear()
     useAuthMock.mockReset()
     useSalonMock.mockReset()
   })
@@ -150,7 +155,35 @@ describe("OnboardingGate", () => {
     expect(replace).not.toHaveBeenCalled()
     expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
     expect(screen.getByText("No hemos encontrado tu salon")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument()
+    // No "Reintentar" here: a 404 on /salons/me is not fixed by repeating the
+    // same request, and the screen's own text tells the owner to contact
+    // support instead.
+    expect(screen.queryByRole("button", { name: /reintentar/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /cerrar sesion/i })).toBeInTheDocument()
+  })
+
+  it("lets the owner log out from the unrecoverable 404 screen -- AppHeader never mounts there, so this is the only way out", async () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({
+        data: undefined,
+        error: new ApiError({
+          type: "https://rivoo.com/errors/salon-not-found",
+          title: "Salon Not Found",
+          status: 404,
+          detail: "No salon for this owner yet",
+          instance: "/api/v1/salons/me",
+          timestamp: "2026-08-28T10:00:00Z",
+          correlationId: "corr-404-logout",
+        }),
+      })
+    )
+    const user = userEvent.setup()
+
+    renderGate()
+    await user.click(screen.getByRole("button", { name: /cerrar sesion/i }))
+
+    expect(logout).toHaveBeenCalledTimes(1)
   })
 
   it("does NOT render the children when GET /salons/me answers 500", () => {
@@ -183,6 +216,31 @@ describe("OnboardingGate", () => {
       screen.getByText("No se ha podido cargar tu salon")
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /cerrar sesion/i })).toBeInTheDocument()
+  })
+
+  it("lets the owner log out from the 'unavailable' screen -- AppHeader never mounts there, so this is the only way out besides retrying", async () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({
+        data: undefined,
+        error: new ApiError({
+          type: "https://rivoo.com/errors/internal",
+          title: "Internal Server Error",
+          status: 500,
+          detail: "Something broke upstream",
+          instance: "/api/v1/salons/me",
+          timestamp: "2026-08-28T10:00:00Z",
+          correlationId: "corr-500-logout",
+        }),
+      })
+    )
+    const user = userEvent.setup()
+
+    renderGate()
+    await user.click(screen.getByRole("button", { name: /cerrar sesion/i }))
+
+    expect(logout).toHaveBeenCalledTimes(1)
   })
 
   it("keeps rendering the children when a background refetch fails but cached salon data is still valid", () => {
