@@ -122,7 +122,13 @@ describe("OnboardingGate", () => {
     expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
   })
 
-  it("redirects to /welcome when GET /salons/me answers 404", () => {
+  it("shows a dedicated, unrecoverable error (not the wizard) when GET /salons/me answers 404", () => {
+    // The wizard cannot create a salon (only the anonymous /register form
+    // can), so redirecting a 404 to /welcome is a dead end: the owner would
+    // reach step 5 and hit a second 404 with no way out but "Salir". A
+    // broken X-Tenant-Id propagation produces this same 404 for an owner who
+    // already completed onboarding, so it must never be treated as "needs
+    // onboarding".
     useAuthMock.mockReturnValue(auth({ isOwner: true }))
     useSalonMock.mockReturnValue(
       salonHook({
@@ -141,8 +147,10 @@ describe("OnboardingGate", () => {
 
     renderGate()
 
-    expect(replace).toHaveBeenCalledWith("/welcome")
+    expect(replace).not.toHaveBeenCalled()
     expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
+    expect(screen.getByText("No hemos encontrado tu salon")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument()
   })
 
   it("does NOT render the children when GET /salons/me answers 500", () => {
@@ -175,6 +183,38 @@ describe("OnboardingGate", () => {
       screen.getByText("No se ha podido cargar tu salon")
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument()
+  })
+
+  it("keeps rendering the children when a background refetch fails but cached salon data is still valid", () => {
+    // React Query keeps serving the last successful payload (and setting
+    // `error`) when a background refetch fails -- e.g. a window-focus
+    // refetch hitting a transient 5xx. `unavailable` must require the
+    // absence of `salon`, not just the presence of `salonError`: otherwise a
+    // fully working panel gets torn down and replaced by the error screen
+    // on every flaky refetch.
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({
+        data: { ...mockSalon, onboardingCompletedAt: "2026-01-01T00:00:00Z" },
+        error: new ApiError({
+          type: "https://rivoo.com/errors/internal",
+          title: "Internal Server Error",
+          status: 500,
+          detail: "Transient refetch failure",
+          instance: "/api/v1/salons/me",
+          timestamp: "2026-08-28T10:00:00Z",
+          correlationId: "corr-transient",
+        }),
+      })
+    )
+
+    renderGate()
+
+    expect(screen.getByText(CHILD_TEXT)).toBeInTheDocument()
+    expect(
+      screen.queryByText("No se ha podido cargar tu salon")
+    ).not.toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
   })
 
   it("renders the children for an owner with the flag set even with no employees or services", () => {
