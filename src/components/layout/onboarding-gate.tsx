@@ -7,12 +7,12 @@ import { useAuth } from "@/hooks/use-auth"
 import { ApiError } from "@/lib/api/client"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { Loader2, LogOut } from "lucide-react"
 import type { ReactNode } from "react"
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, accessToken, isOwner } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, accessToken, isOwner, logout } = useAuth()
   const { data: salon, isLoading: salonLoading, error: salonError, refetch: refetchSalon } = useSalon()
 
   // Half-alive session: authenticated but the token is gone while use-auth.ts:22-27
@@ -67,13 +67,29 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     )
   }
 
+  // Both error screens below render before AppHeader (app/(app)/layout.tsx
+  // mounts it only inside this gate's `children`), so without this the owner
+  // has no way to leave the screen at all -- not even to log out and come
+  // back with a different account.
+  const logoutAction = (
+    <Button variant="ghost" onClick={() => logout()}>
+      <LogOut className="h-4 w-4" />
+      Cerrar sesion
+    </Button>
+  )
+
   if (unavailable) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <EmptyState
           title="No se ha podido cargar tu salon"
           description="Comprueba tu conexion e intentalo de nuevo."
-          action={<Button onClick={() => refetchSalon()}>Reintentar</Button>}
+          action={
+            <div className="flex flex-col items-center gap-2 sm:flex-row">
+              <Button onClick={() => refetchSalon()}>Reintentar</Button>
+              {logoutAction}
+            </div>
+          }
         />
       </div>
     )
@@ -85,7 +101,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         <EmptyState
           title="No hemos encontrado tu salon"
           description="Ponte en contacto con soporte: el asistente de alta no puede crear uno nuevo."
-          action={<Button onClick={() => refetchSalon()}>Reintentar</Button>}
+          // No "Reintentar" aqui: un 404 de /salons/me no lo arregla repetir
+          // la misma peticion (a diferencia de `unavailable`, que si puede
+          // ser un 5xx transitorio). Cerrar sesion es la unica salida real
+          // desde esta pantalla.
+          action={logoutAction}
         />
       </div>
     )
