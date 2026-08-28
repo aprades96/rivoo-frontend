@@ -1,0 +1,209 @@
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { OnboardingGate } from "./onboarding-gate"
+import { ApiError } from "@/lib/api/client"
+import type { Salon } from "@/types/salon"
+
+const replace = vi.fn()
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, push: vi.fn(), back: vi.fn() }),
+}))
+
+// Driving the gate through mocked hooks (not a live QueryClient) keeps every
+// case below a plain, synchronous render: no react-query notifyManager
+// macrotask involved anywhere in this file (see AGENTS.md).
+const useAuthMock = vi.fn()
+const useSalonMock = vi.fn()
+
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => useAuthMock(),
+}))
+
+vi.mock("@/hooks/use-salon", () => ({
+  useSalon: () => useSalonMock(),
+}))
+
+const listEmployees = vi.fn()
+const listServices = vi.fn()
+
+vi.mock("@/lib/api/staff", () => ({
+  staffApi: {
+    listEmployees: (...args: unknown[]) => listEmployees(...args),
+    listServices: (...args: unknown[]) => listServices(...args),
+  },
+}))
+
+const CHILD_TEXT = "Protected dashboard content"
+
+function renderGate() {
+  return render(
+    <OnboardingGate>
+      <div>{CHILD_TEXT}</div>
+    </OnboardingGate>
+  )
+}
+
+function auth(overrides: Partial<ReturnType<typeof defaultAuth>> = {}) {
+  return { ...defaultAuth(), ...overrides }
+}
+
+function defaultAuth() {
+  return {
+    isAuthenticated: true,
+    isLoading: false,
+    accessToken: "token" as string | null,
+    isOwner: true,
+  }
+}
+
+function salonHook(overrides: Partial<ReturnType<typeof defaultSalonHook>> = {}) {
+  return { ...defaultSalonHook(), ...overrides }
+}
+
+function defaultSalonHook() {
+  return {
+    data: undefined as Salon | undefined,
+    isLoading: false,
+    error: null as unknown,
+    refetch: vi.fn(),
+  }
+}
+
+const mockSalon: Salon = {
+  id: "sal_1",
+  name: "Rivoo Salon",
+  slug: "rivoo-salon",
+  ownerUserId: "usr_1",
+  email: "hola@rivoo.test",
+  phone: "930000000",
+  description: "Peluqueria de barrio",
+  logoUrl: null,
+  primaryColor: null,
+  addressStreet: "Carrer Gran 1",
+  addressCity: "Barcelona",
+  addressPostalCode: "08001",
+  timezone: "Europe/Madrid",
+  currency: "EUR",
+  subscriptionPlan: "BASIC",
+  status: "ACTIVE",
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-01T00:00:00Z",
+  onboardingCompletedAt: null,
+}
+
+describe("OnboardingGate", () => {
+  beforeEach(() => {
+    replace.mockClear()
+    listEmployees.mockClear()
+    listServices.mockClear()
+    useAuthMock.mockReset()
+    useSalonMock.mockReset()
+  })
+
+  it("renders the children for an owner whose onboardingCompletedAt is a date", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({ data: { ...mockSalon, onboardingCompletedAt: "2026-01-01T00:00:00Z" } })
+    )
+
+    renderGate()
+
+    expect(screen.getByText(CHILD_TEXT)).toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it("redirects an owner with onboardingCompletedAt null to /welcome", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(salonHook({ data: { ...mockSalon, onboardingCompletedAt: null } }))
+
+    renderGate()
+
+    expect(replace).toHaveBeenCalledWith("/welcome")
+    expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
+  })
+
+  it("redirects to /welcome when GET /salons/me answers 404", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({
+        data: undefined,
+        error: new ApiError({
+          type: "https://rivoo.com/errors/salon-not-found",
+          title: "Salon Not Found",
+          status: 404,
+          detail: "No salon for this owner yet",
+          instance: "/api/v1/salons/me",
+          timestamp: "2026-08-28T10:00:00Z",
+          correlationId: "corr-404",
+        }),
+      })
+    )
+
+    renderGate()
+
+    expect(replace).toHaveBeenCalledWith("/welcome")
+    expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
+  })
+
+  it("does NOT render the children when GET /salons/me answers 500", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({
+        data: undefined,
+        error: new ApiError({
+          type: "https://rivoo.com/errors/internal",
+          title: "Internal Server Error",
+          status: 500,
+          detail: "Something broke upstream",
+          instance: "/api/v1/salons/me",
+          timestamp: "2026-08-28T10:00:00Z",
+          correlationId: "corr-500",
+        }),
+      })
+    )
+
+    renderGate()
+
+    expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
+    // A real failure must not be silently treated as "send to the wizard".
+    expect(replace).not.toHaveBeenCalledWith("/welcome")
+  })
+
+  it("renders the children for an owner with the flag set even with no employees or services", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: true }))
+    useSalonMock.mockReturnValue(
+      salonHook({ data: { ...mockSalon, onboardingCompletedAt: "2026-02-01T00:00:00Z" } })
+    )
+
+    renderGate()
+
+    expect(screen.getByText(CHILD_TEXT)).toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
+    // The gate must decide from the flag alone, never by counting staff.
+    expect(listEmployees).not.toHaveBeenCalled()
+    expect(listServices).not.toHaveBeenCalled()
+  })
+
+  it("renders the children for an EMPLOYEE with onboardingCompletedAt null instead of sending them to the wizard", () => {
+    useAuthMock.mockReturnValue(auth({ isOwner: false }))
+    useSalonMock.mockReturnValue(salonHook({ data: { ...mockSalon, onboardingCompletedAt: null } }))
+
+    renderGate()
+
+    expect(screen.getByText(CHILD_TEXT)).toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it("shows only a spinner, no error and no children, while the session is half-alive (authenticated without an access token yet)", () => {
+    useAuthMock.mockReturnValue(auth({ isAuthenticated: true, accessToken: null }))
+    useSalonMock.mockReturnValue(salonHook({ data: undefined, isLoading: false, error: null }))
+
+    const { container } = renderGate()
+
+    expect(screen.queryByText(CHILD_TEXT)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button")).not.toBeInTheDocument()
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument()
+    expect(replace).not.toHaveBeenCalled()
+  })
+})

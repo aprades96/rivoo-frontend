@@ -2,57 +2,65 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
 import { useSalon } from "@/hooks/use-salon"
 import { useAuth } from "@/hooks/use-auth"
-import { staffApi } from "@/lib/api/staff"
 import { ApiError } from "@/lib/api/client"
+import { EmptyState } from "@/components/shared/empty-state"
+import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import type { ReactNode } from "react"
-import type { Page } from "@/types/api"
-import type { Employee } from "@/types/employee"
-import type { ServiceOffering } from "@/types/service"
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { isAuthenticated, isLoading: authLoading, accessToken } = useAuth()
-  const { data: salon, isLoading: salonLoading, error: salonError } = useSalon()
+  const { isAuthenticated, isLoading: authLoading, accessToken, isOwner } = useAuth()
+  const { data: salon, isLoading: salonLoading, error: salonError, refetch: refetchSalon } = useSalon()
 
-  const { data: employees, isLoading: empLoading } = useQuery<Page<Employee>>({
-    queryKey: ["employees"],
-    queryFn: () => staffApi.listEmployees(accessToken!),
-    enabled: isAuthenticated && !!accessToken && !!salon,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  })
+  // Half-alive session: authenticated but the token is gone while use-auth.ts:22-27
+  // re-authenticates. Without this, needsOnboarding/unavailable could turn true
+  // for an instant on a session that is about to come back.
+  const authReady = isAuthenticated && !!accessToken
+  const isLoading = authLoading || salonLoading
 
-  const { data: services, isLoading: svcLoading } = useQuery<Page<ServiceOffering>>({
-    queryKey: ["services"],
-    queryFn: () => staffApi.listServices(accessToken!),
-    enabled: isAuthenticated && !!accessToken && !!salon,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  })
+  const salonNotFound =
+    !salonLoading && !salon && salonError instanceof ApiError && salonError.problem.status === 404
 
-  const isLoading = authLoading || salonLoading || (!!salon && (empLoading || svcLoading))
+  // Only the owner runs the wizard. The step 3/4 endpoints and the completion
+  // endpoint are hasRole('SALON_OWNER'): sending an EMPLOYEE there would just
+  // hand them a 403 they cannot get out of.
+  //
+  // Known, accepted limitation: auth.ts:55 classifies as ROLE_EMPLOYEE any JWT
+  // without a ROLE_-prefixed role, so a mislabeled owner would never be sent to
+  // the wizard and would land on an empty panel instead. Accepted knowingly.
+  const needsOnboarding =
+    authReady && !isLoading && isOwner && (salonNotFound || (!!salon && !salon.onboardingCompletedAt))
 
-  // Salon not found (404) or no employees/services → needs onboarding
-  const salonNotFound = !salonLoading && !salon && salonError instanceof ApiError && salonError.problem.status === 404
-  const hasEmployees = (employees?.content?.length ?? 0) > 0
-  const hasServices = (services?.content?.length ?? 0) > 0
-  const needsOnboarding = !isLoading && (salonNotFound || (salon && (!hasEmployees || !hasServices)))
+  // A REAL failure (network, 5xx...), not the mere absence of data yet: a
+  // disabled query (use-salon.ts's `enabled: isAuthenticated && !!accessToken`)
+  // leaves isLoading false and data undefined without that being an error.
+  const unavailable = authReady && !isLoading && !!salonError && !salonNotFound
 
   useEffect(() => {
-    if (isLoading) return
     if (needsOnboarding) {
       router.replace("/welcome")
     }
-  }, [isLoading, needsOnboarding, router])
+  }, [needsOnboarding, router])
 
-  if (isLoading || needsOnboarding) {
+  if (!authReady || isLoading || needsOnboarding) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (unavailable) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <EmptyState
+          title="No se ha podido cargar tu salon"
+          description="Comprueba tu conexion e intentalo de nuevo."
+          action={<Button onClick={() => refetchSalon()}>Reintentar</Button>}
+        />
       </div>
     )
   }
