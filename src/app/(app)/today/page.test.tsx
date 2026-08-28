@@ -46,6 +46,7 @@ function defaultServices() {
   return {
     data: { content: [] as ServiceOffering[] },
     isLoading: false,
+    error: null as unknown,
   }
 }
 
@@ -105,5 +106,27 @@ describe("TodayPage", () => {
       "href",
       "/appointments/new"
     )
+  })
+
+  it("no confunde un fallo de red de useServices con un salon sin servicios: mantiene la agenda normal", () => {
+    // Lo que react-query deja tras un 5xx/red: isLoading vuelve a false y
+    // data se queda undefined, exactamente igual que "todavia no hay
+    // catalogo" si no se mira tambien el error.
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [] } }))
+    useServicesMock.mockReturnValue(
+      servicesResult({ data: undefined, isLoading: false, error: new Error("network down") })
+    )
+
+    render(<TodayPage />)
+
+    // La agenda del dia no puede desaparecer por esto: nada de aviso de "sin
+    // servicios" tapando las citas de hoy.
+    expect(screen.queryByText("Aun no tienes servicios")).not.toBeInTheDocument()
+    expect(screen.getByText("No hay citas para hoy")).toBeInTheDocument()
+
+    // El aviso de fallo es aparte, nunca sustituye al cuerpo de la pagina.
+    expect(
+      screen.getByText("No se ha podido comprobar tu catalogo de servicios")
+    ).toBeInTheDocument()
   })
 })

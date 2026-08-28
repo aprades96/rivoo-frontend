@@ -10,6 +10,7 @@ import { AppointmentCard } from "@/components/appointments/appointment-card"
 import { AppointmentDetailSheet } from "@/components/appointments/appointment-detail-sheet"
 import { EmptyState } from "@/components/shared/empty-state"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { useTodayAppointments } from "@/hooks/use-appointments"
 import { useServices } from "@/hooks/use-staff"
 import { useAuth } from "@/hooks/use-auth"
@@ -19,7 +20,11 @@ import type { Appointment } from "@/types/appointment"
 export default function TodayPage() {
   const today = format(new Date(), "yyyy-MM-dd")
   const { data, isLoading, refetch, isRefetching } = useTodayAppointments(today)
-  const { data: servicesData, isLoading: servicesLoading } = useServices()
+  const {
+    data: servicesData,
+    isLoading: servicesLoading,
+    error: servicesError,
+  } = useServices()
   const { user } = useAuth()
 
   // Sin servicios no hay nada que reservar: no tiene sentido mostrar
@@ -27,7 +32,14 @@ export default function TodayPage() {
   // si todo funcionase con normalidad. Se espera a que la carga de servicios
   // resuelva para no mostrar este aviso un instante antes de saber si hay o
   // no catalogo.
-  const hasNoServices = !servicesLoading && (servicesData?.content.length ?? 0) === 0
+  //
+  // `!servicesError` es obligatorio: sin el, un 5xx/red en el GET deja
+  // `isLoading` en false y `data` en undefined, y el `?? 0` de abajo confunde
+  // "no ha podido cargar" con "no tiene ninguno" -- sustituyendo la agenda
+  // entera por este aviso y perdiendo tarjetas, proxima cita y citas de hoy
+  // por un fallo que nada tiene que ver con el catalogo real.
+  const hasNoServices =
+    !servicesLoading && !servicesError && (servicesData?.content.length ?? 0) === 0
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -82,6 +94,19 @@ export default function TodayPage() {
           <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
         </Button>
       </div>
+
+      {/*
+        Un fallo puntual del GET de servicios nunca debe tapar la agenda: la
+        pantalla principal del dia sigue pintandose con normalidad y este
+        aviso se limita a informar aparte (nunca sustituye a `hasNoServices`
+        ni al resto del cuerpo).
+      */}
+      {servicesError && (
+        <UnavailableNotice
+          title="No se ha podido comprobar tu catalogo de servicios"
+          description="La agenda de hoy sigue disponible. Vuelve a intentarlo en unos minutos."
+        />
+      )}
 
       {hasNoServices ? (
         <EmptyState
