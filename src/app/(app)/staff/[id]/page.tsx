@@ -49,6 +49,17 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     enabled: !!accessToken,
   })
 
+  // The outer `isLoading || !employee` guard below only covers the employee
+  // query. The working-hours query can still be undefined after that guard
+  // clears (it resolves separately, possibly later), which would mount
+  // WorkingHoursEditor on its DEFAULT_HOURS with an enabled "Guardar
+  // horarios" button (isSaving only reflects the mutation, not this GET) --
+  // clicking it before the real GET lands would overwrite the employee's
+  // stored schedule. Same class of bug as business-hours/page.tsx
+  // (onboarding); derived from data absence, not from a disabled query's
+  // `isLoading`, which React Query v5 reports as false.
+  const workingHoursNotReady = !accessToken || workingHours === undefined
+
   const { data: employeeServices } = useEmployeeServices(id)
 
   const saveHoursMutation = useMutation({
@@ -148,12 +159,16 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
         </TabsList>
 
         <TabsContent value="hours" className="mt-4">
-          <WorkingHoursEditor
-            key={id}
-            hours={workingHours}
-            onSave={(hours) => saveHoursMutation.mutateAsync(hours)}
-            isSaving={saveHoursMutation.isPending}
-          />
+          {workingHoursNotReady ? (
+            <LoadingSkeleton count={7} />
+          ) : (
+            <WorkingHoursEditor
+              key={id}
+              hours={workingHours}
+              onSave={(hours) => saveHoursMutation.mutateAsync(hours)}
+              isSaving={saveHoursMutation.isPending}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="services" className="mt-4">

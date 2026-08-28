@@ -16,7 +16,7 @@ export default function BusinessHoursSettingsPage() {
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
 
-  const { data: hours, isLoading } = useQuery({
+  const { data: hours } = useQuery({
     queryKey: ["salon-business-hours"],
     queryFn: () => salonsApi.getBusinessHours(accessToken!),
     enabled: !!accessToken,
@@ -32,6 +32,13 @@ export default function BusinessHoursSettingsPage() {
     onError: () => toast.error("Error al guardar horarios"),
   })
 
+  // Derived from the absence of data, not from the query's `isLoading`: a
+  // disabled query (no accessToken yet) reports `isLoading: false` in React
+  // Query v5, so a hard load of this page could mount the editor on its
+  // defaults with the internal "Guardar horarios" button enabled -- see
+  // business-hours/page.tsx (onboarding) for the full writeup of the window.
+  const hoursNotReady = !accessToken || hours === undefined
+
   return (
     <div className="p-4 md:py-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -45,7 +52,7 @@ export default function BusinessHoursSettingsPage() {
         Configura los dias y horas de apertura de tu salon.
       </p>
 
-      {isLoading ? (
+      {hoursNotReady ? (
         <LoadingSkeleton count={7} />
       ) : (
         <WorkingHoursEditor

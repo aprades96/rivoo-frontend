@@ -11,8 +11,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace: vi.fn(), back: vi.fn() }),
 }))
 
+const useAuthMock = vi.fn()
+
 vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ accessToken: "token", isAuthenticated: true }),
+  useAuth: (...args: unknown[]) => useAuthMock(...args),
 }))
 
 const setCurrentStep = vi.fn()
@@ -66,6 +68,8 @@ describe("OnboardingBusinessHoursPage", () => {
     setCurrentStep.mockClear()
     getBusinessHours.mockReset()
     updateBusinessHours.mockReset()
+    useAuthMock.mockReset()
+    useAuthMock.mockReturnValue({ accessToken: "token", isAuthenticated: true })
   })
 
   it("preloads the stored schedule into WorkingHoursEditor instead of always starting from defaults", async () => {
@@ -142,6 +146,22 @@ describe("OnboardingBusinessHoursPage", () => {
 
     expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /continuar/i })).toBeEnabled()
+  })
+
+  it("does not mount the editor nor allow 'Continuar' during a half-alive session (authenticated, accessToken not set yet)", () => {
+    // Hard load of this page: useSession() starts in "loading" per
+    // use-auth.ts:47, so accessToken is null for a stretch even though
+    // isAuthenticated is already true. The query is `enabled: !!accessToken`,
+    // so it never runs and React Query v5 reports `isLoading: false` for it
+    // (a disabled query is never pending+fetching) -- guarding on `isLoading`
+    // alone would mount the editor on its defaults with "Continuar" enabled.
+    useAuthMock.mockReturnValue({ accessToken: null, isAuthenticated: true })
+
+    renderPage()
+
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /continuar/i })).toBeDisabled()
+    expect(getBusinessHours).not.toHaveBeenCalled()
   })
 
   it("does NOT navigate to /add-employee when the save fails, so the user can retry", async () => {

@@ -39,6 +39,17 @@ export default function OnboardingBusinessHoursPage() {
     onError: () => toast.error("Error al guardar horarios"),
   })
 
+  // Derived from the absence of data, not from `isLoading`: a disabled query
+  // (no accessToken yet, half-alive session per use-auth.ts:22-27) reports
+  // `isLoading: false` in React Query v5 (`isLoading = isPending &&
+  // isFetching`, node_modules/@tanstack/query-core/build/modern/
+  // queryObserver.js:310), so `isLoading` alone would let a hard load of this
+  // page slip through the window below with `hoursQuery.data` still
+  // undefined -- mounting the editor on its defaults and leaving "Continuar"
+  // enabled, exactly what the comment two blocks down says this guards
+  // against.
+  const hoursNotReady = !accessToken || hoursQuery.data === undefined
+
   // El editor no tiene boton propio en este paso (showSaveButton={false}):
   // "Continuar" guarda a traves del ref y solo navega si el guardado
   // resuelve. Si mutateAsync rechaza, el toast de error ya lo puso onError
@@ -75,7 +86,7 @@ export default function OnboardingBusinessHoursPage() {
         respuesta en vuelo pisaria lo que el usuario ya hubiese tecleado.
         Mismo patron que settings/business-hours/page.tsx.
       */}
-      {hoursQuery.isLoading ? (
+      {hoursNotReady ? (
         <LoadingSkeleton count={7} />
       ) : (
         <WorkingHoursEditor
@@ -99,7 +110,7 @@ export default function OnboardingBusinessHoursPage() {
       <OnboardingFooter
         ctaLabel="Continuar"
         onCta={handleContinue}
-        ctaDisabled={hoursQuery.isLoading || mutation.isPending}
+        ctaDisabled={hoursNotReady || mutation.isPending}
         ctaLoading={mutation.isPending}
       />
     </>
