@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
@@ -24,23 +24,33 @@ interface WorkingHoursEditorProps {
   isSaving?: boolean
 }
 
-export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEditorProps) {
-  const [localHours, setLocalHours] = useState<WorkingHoursRequest[]>(DEFAULT_HOURS)
+function hoursStateFrom(hours: WorkingHoursResponse[] | undefined): WorkingHoursRequest[] {
+  if (!hours || hours.length === 0) return DEFAULT_HOURS
+  return hours.map((h) => ({
+    dayOfWeek: h.dayOfWeek,
+    isOpen: h.isOpen,
+    openTime: h.openTime,
+    closeTime: h.closeTime,
+    breakStartTime: h.breakStartTime ?? undefined,
+    breakEndTime: h.breakEndTime ?? undefined,
+  }))
+}
 
-  useEffect(() => {
-    if (hours && hours.length > 0) {
-      setLocalHours(
-        hours.map((h) => ({
-          dayOfWeek: h.dayOfWeek,
-          isOpen: h.isOpen,
-          openTime: h.openTime,
-          closeTime: h.closeTime,
-          breakStartTime: h.breakStartTime ?? undefined,
-          breakEndTime: h.breakEndTime ?? undefined,
-        }))
-      )
-    }
-  }, [hours])
+export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEditorProps) {
+  const [localHours, setLocalHours] = useState<WorkingHoursRequest[]>(
+    () => hoursStateFrom(hours)
+  )
+
+  // Adopt the stored schedule once, when it first arrives. Later refetches
+  // return a new array for the same owner and must not discard the times the
+  // user is editing; a different owner gets a fresh editor via `key` at the call
+  // site (the props carry no owner identity of their own).
+  const syncKey = !!hours && hours.length > 0
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setLocalHours(hoursStateFrom(hours))
+  }
 
   const updateDay = (dayOfWeek: number, field: string, value: string | boolean) => {
     setLocalHours((prev) =>

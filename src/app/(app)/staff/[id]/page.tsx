@@ -149,6 +149,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
         <TabsContent value="hours" className="mt-4">
           <WorkingHoursEditor
+            key={id}
             hours={workingHours}
             onSave={(hours) => saveHoursMutation.mutateAsync(hours)}
             isSaving={saveHoursMutation.isPending}
@@ -157,6 +158,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
         <TabsContent value="services" className="mt-4">
           <ServiceAssignment
+            key={id}
             assignedServices={employeeServices}
             onSave={(ids) => saveServicesMutation.mutateAsync(ids)}
             isSaving={saveServicesMutation.isPending}

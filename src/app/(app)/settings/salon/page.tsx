@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -13,6 +13,22 @@ import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { salonsApi } from "@/lib/api/salons"
 import { useSalon } from "@/hooks/use-salon"
 import { useAuth } from "@/hooks/use-auth"
+import type { Salon } from "@/types/salon"
+
+const EMPTY_FORM = {
+  name: "",
+  phone: "",
+  description: "",
+}
+
+function formStateFrom(salon: Salon | undefined) {
+  if (!salon) return EMPTY_FORM
+  return {
+    name: salon.name,
+    phone: salon.phone,
+    description: salon.description ?? "",
+  }
+}
 
 export default function SalonSettingsPage() {
   const router = useRouter()
@@ -20,21 +36,17 @@ export default function SalonSettingsPage() {
   const { accessToken } = useAuth()
   const { data: salon, isLoading } = useSalon()
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    description: "",
-  })
+  const [form, setForm] = useState(() => formStateFrom(salon))
 
-  useEffect(() => {
-    if (salon) {
-      setForm({
-        name: salon.name,
-        phone: salon.phone,
-        description: salon.description ?? "",
-      })
-    }
-  }, [salon])
+  // Re-populate only when the loaded salon changes identity. Keying on the id
+  // instead of the object identity means a background refetch (new object, same
+  // salon) no longer wipes out what the user typed.
+  const syncKey = salon?.id ?? null
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setForm(formStateFrom(salon))
+  }
 
   const mutation = useMutation({
     mutationFn: () =>

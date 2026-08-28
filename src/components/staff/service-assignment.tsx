@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useServices } from "@/hooks/use-staff"
@@ -18,13 +18,20 @@ export function ServiceAssignment({ assignedServices, onSave, isSaving }: Servic
   const { data: servicesData } = useServices()
   const services = servicesData?.content?.filter((s) => s.isActive) ?? []
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(assignedServices?.map((s) => s.serviceId))
+  )
 
-  useEffect(() => {
-    if (assignedServices) {
-      setSelectedIds(new Set(assignedServices.map((s) => s.serviceId)))
-    }
-  }, [assignedServices])
+  // Adopt the server list once, when it first arrives. Later refetches return a
+  // new array for the same employee and must not discard the boxes the user has
+  // just ticked; a different employee gets a fresh editor via `key` at the call
+  // site (the props carry no employee identity of their own).
+  const syncKey = assignedServices !== undefined
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setSelectedIds(new Set(assignedServices?.map((s) => s.serviceId)))
+  }
 
   const toggleService = (id: string) => {
     setSelectedIds((prev) => {

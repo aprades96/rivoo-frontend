@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Loader2, KeyRound } from "lucide-react"
@@ -23,38 +23,47 @@ interface EmployeeFormSheetProps {
   employee: Employee | null // null = create mode
 }
 
+const EMPTY_FORM = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  jobTitle: "",
+  colorHex: "",
+  createAccount: false,
+  password: "",
+}
+
+function formStateFrom(employee: Employee | null) {
+  if (!employee) return EMPTY_FORM
+  return {
+    firstName: employee.firstName,
+    lastName: employee.lastName,
+    email: employee.email,
+    phone: employee.phone ?? "",
+    jobTitle: employee.jobTitle ?? "",
+    colorHex: employee.colorHex ?? "",
+    createAccount: false,
+    password: "",
+  }
+}
+
 export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeFormSheetProps) {
   const isEditing = !!employee
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    jobTitle: "",
-    colorHex: "",
-    createAccount: false,
-    password: "",
-  })
+  const [form, setForm] = useState(() => formStateFrom(employee))
 
-  useEffect(() => {
-    if (employee) {
-      setForm({
-        firstName: employee.firstName,
-        lastName: employee.lastName,
-        email: employee.email,
-        phone: employee.phone ?? "",
-        jobTitle: employee.jobTitle ?? "",
-        colorHex: employee.colorHex ?? "",
-        createAccount: false,
-        password: "",
-      })
-    } else {
-      setForm({ firstName: "", lastName: "", email: "", phone: "", jobTitle: "", colorHex: "", createAccount: false, password: "" })
-    }
-  }, [employee, open])
+  // Re-populate only when the sheet is (re)opened or points at a different
+  // employee. Keying on the id instead of the object identity means a background
+  // refetch (new object, same employee) no longer wipes out what the user typed.
+  const syncKey = `${open}:${employee?.id ?? "new"}`
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setForm(formStateFrom(employee))
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: CreateEmployeeRequest) =>

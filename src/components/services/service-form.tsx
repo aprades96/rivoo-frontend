@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
@@ -24,32 +24,41 @@ interface ServiceFormSheetProps {
   service: ServiceOffering | null
 }
 
+const EMPTY_FORM = {
+  name: "",
+  description: "",
+  durationMinutes: "30",
+  price: "",
+  category: "",
+}
+
+function formStateFrom(service: ServiceOffering | null) {
+  if (!service) return EMPTY_FORM
+  return {
+    name: service.name,
+    description: service.description ?? "",
+    durationMinutes: String(service.durationMinutes),
+    price: String(service.price),
+    category: service.category ?? "",
+  }
+}
+
 export function ServiceFormSheet({ open, onOpenChange, service }: ServiceFormSheetProps) {
   const isEditing = !!service
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    durationMinutes: "30",
-    price: "",
-    category: "",
-  })
+  const [form, setForm] = useState(() => formStateFrom(service))
 
-  useEffect(() => {
-    if (service) {
-      setForm({
-        name: service.name,
-        description: service.description ?? "",
-        durationMinutes: String(service.durationMinutes),
-        price: String(service.price),
-        category: service.category ?? "",
-      })
-    } else {
-      setForm({ name: "", description: "", durationMinutes: "30", price: "", category: "" })
-    }
-  }, [service, open])
+  // Re-populate only when the sheet is (re)opened or points at a different
+  // service. Keying on the id instead of the object identity means a background
+  // refetch (new object, same service) no longer wipes out what the user typed.
+  const syncKey = `${open}:${service?.id ?? "new"}`
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setForm(formStateFrom(service))
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: CreateServiceRequest) =>

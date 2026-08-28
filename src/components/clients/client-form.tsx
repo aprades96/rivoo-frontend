@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
@@ -24,32 +24,41 @@ interface ClientFormSheetProps {
   client: Client | null
 }
 
+const EMPTY_FORM = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  notes: "",
+}
+
+function formStateFrom(client: Client | null) {
+  if (!client) return EMPTY_FORM
+  return {
+    firstName: client.firstName,
+    lastName: client.lastName,
+    email: client.email ?? "",
+    phone: client.phone ?? "",
+    notes: client.notes ?? "",
+  }
+}
+
 export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetProps) {
   const isEditing = !!client
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    notes: "",
-  })
+  const [form, setForm] = useState(() => formStateFrom(client))
 
-  useEffect(() => {
-    if (client) {
-      setForm({
-        firstName: client.firstName,
-        lastName: client.lastName,
-        email: client.email ?? "",
-        phone: client.phone ?? "",
-        notes: client.notes ?? "",
-      })
-    } else {
-      setForm({ firstName: "", lastName: "", email: "", phone: "", notes: "" })
-    }
-  }, [client, open])
+  // Re-populate only when the sheet is (re)opened or points at a different
+  // client. Keying on the id instead of the object identity means a background
+  // refetch (new object, same client) no longer wipes out what the user typed.
+  const syncKey = `${open}:${client?.id ?? "new"}`
+  const [syncedKey, setSyncedKey] = useState(syncKey)
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey)
+    setForm(formStateFrom(client))
+  }
 
   const createMutation = useMutation({
     mutationFn: (data: CreateClientRequest) =>
