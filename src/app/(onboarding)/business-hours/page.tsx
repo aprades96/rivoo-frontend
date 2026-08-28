@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
+import { WorkingHoursEditor, type WorkingHoursEditorHandle } from "@/components/staff/working-hours-editor"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
 import { useOnboardingStore } from "@/lib/stores/onboarding-store"
@@ -15,6 +15,7 @@ export default function OnboardingBusinessHoursPage() {
   const router = useRouter()
   const { accessToken } = useAuth()
   const { setCurrentStep } = useOnboardingStore()
+  const editorRef = useRef<WorkingHoursEditorHandle>(null)
 
   useEffect(() => {
     setCurrentStep(2)
@@ -33,12 +34,23 @@ export default function OnboardingBusinessHoursPage() {
   const mutation = useMutation({
     mutationFn: (hours: BusinessHoursRequest[]) =>
       salonsApi.updateBusinessHours(hours, accessToken!),
-    onSuccess: () => {
-      toast.success("Horarios guardados")
-      router.push("/add-employee")
-    },
+    onSuccess: () => toast.success("Horarios guardados"),
     onError: () => toast.error("Error al guardar horarios"),
   })
+
+  // El editor no tiene boton propio en este paso (showSaveButton={false}):
+  // "Continuar" guarda a traves del ref y solo navega si el guardado
+  // resuelve. Si mutateAsync rechaza, el toast de error ya lo puso onError
+  // de arriba y nos quedamos en el paso para que el usuario reintente -- no
+  // hay `router.push` en la rama de error ni en `onError` de la mutacion.
+  const handleContinue = async () => {
+    try {
+      await editorRef.current?.save()
+      router.push("/add-employee")
+    } catch {
+      // No-op: se queda en el paso, el toast de error ya se disparo.
+    }
+  }
 
   return (
     <>
@@ -57,19 +69,26 @@ export default function OnboardingBusinessHoursPage() {
 
       <div className="overflow-hidden rounded-[12px] border border-border bg-white">
         <WorkingHoursEditor
+          ref={editorRef}
           hours={hoursQuery.data}
           onSave={(hours) => mutation.mutateAsync(hours)}
           isSaving={mutation.isPending}
+          showSaveButton={false}
         />
       </div>
 
       {/*
-        Sin boton "Omitir": el diseno no lo dibuja en este paso, y con el
-        horario ya precargado, "Continuar" es un no-op valido -- solo avanza.
-        Guardar cambios sigue siendo el boton interno de WorkingHoursEditor
-        (fuera de alcance: no se toca ese componente).
+        Sin boton "Omitir": el diseno no lo dibuja en este paso. Sin boton
+        interno tampoco (showSaveButton={false}): el pie ya tiene su propio
+        "Continuar", que guarda a traves de editorRef y solo avanza si el
+        guardado resuelve (handleContinue, arriba).
       */}
-      <OnboardingFooter ctaLabel="Continuar" onCta={() => router.push("/add-employee")} />
+      <OnboardingFooter
+        ctaLabel="Continuar"
+        onCta={handleContinue}
+        ctaDisabled={mutation.isPending}
+        ctaLoading={mutation.isPending}
+      />
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import OnboardingBusinessHoursPage from "./page"
@@ -88,16 +88,36 @@ describe("OnboardingBusinessHoursPage", () => {
     expect(screen.queryByText(/configurar mas tarde/i)).not.toBeInTheDocument()
   })
 
-  it("'Continuar' just advances to /add-employee without saving anything", async () => {
+  it("'Continuar' saves the schedule before advancing to /add-employee", async () => {
     getBusinessHours.mockResolvedValue(STORED_HOURS)
+    updateBusinessHours.mockResolvedValue(undefined)
     const user = userEvent.setup()
     renderPage()
 
     await screen.findByDisplayValue("10:30")
     await user.click(screen.getByRole("button", { name: /continuar/i }))
 
-    expect(push).toHaveBeenCalledWith("/add-employee")
-    expect(updateBusinessHours).not.toHaveBeenCalled()
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/add-employee"))
+    expect(updateBusinessHours).toHaveBeenCalledWith(expect.anything(), "token")
+
+    // Order matters: the schedule must land before the wizard moves on.
+    const saveOrder = updateBusinessHours.mock.invocationCallOrder[0]
+    const pushOrder = push.mock.invocationCallOrder[0]
+    expect(saveOrder).toBeLessThan(pushOrder)
+  })
+
+  it("does NOT navigate to /add-employee when the save fails, so the user can retry", async () => {
+    getBusinessHours.mockResolvedValue(STORED_HOURS)
+    updateBusinessHours.mockRejectedValue(new Error("network down"))
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByDisplayValue("10:30")
+    await user.click(screen.getByRole("button", { name: /continuar/i }))
+
+    await waitFor(() => expect(updateBusinessHours).toHaveBeenCalled())
+
+    expect(push).not.toHaveBeenCalled()
   })
 
   it("marks the wizard at step 2 on mount", () => {
