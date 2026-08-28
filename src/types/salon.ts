@@ -99,10 +99,14 @@ export interface RegisterSalonRequest {
   ownerPassword: string
 }
 
+/**
+ * Deliberately just a message. The endpoint answers identically for an address that is free and
+ * one that already has an account, so it can no longer return an id, a slug or a status: those
+ * exist only when a salon was actually created, and any of them would tell an anonymous caller
+ * which of the two happened. Nothing here is meant to be rendered - the client shows its own copy.
+ */
 export interface RegisterSalonResponse {
-  id: string
-  slug: string
-  status: string
+  message: string
 }
 
 export interface UpdateSalonRequest {
