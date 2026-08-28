@@ -26,11 +26,49 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
     !selectedService || employee.serviceIds.includes(selectedService.id)
 
   // Solo cuando la lista llega vacia: el flag explica un vacio, no tapa
-  // profesionales reales. Con la lista caida hay que bloquear tambien el avance:
-  // "Sin preferencia" no lleva employeeId y el paso de fecha lo resuelve
-  // eligiendo el primer profesional que ofrezca el servicio (public-datetime-step),
-  // asi que sin lista se queda sin huecos para siempre y sin explicacion.
+  // profesionales reales.
   const employeesUnreachable = salon.employeesUnavailable && salon.employees.length === 0
+
+  // Unica condicion que habilita el avance al paso 3. "Sin preferencia" no lleva
+  // employeeId y public-datetime-step lo resuelve con el primero que ofrezca el
+  // servicio; si no hay ninguno esa busqueda falla, la consulta de huecos se
+  // queda desactivada (y una query desactivada reporta isLoading false, asi que
+  // ni siquiera sale el spinner) y el visitante ve 30 dias vacios sin
+  // explicacion. Cubre los tres vacios: lista caida, salon sin profesionales y
+  // profesionales que no hacen el servicio elegido — en los tres el some() es
+  // false. El aviso, en cambio, NO se puede unificar: solo el primero es un
+  // fallo de carga, los otros dos son informacion cierta sobre el salon.
+  const someoneOffersService = salon.employees.some(offersSelectedService)
+
+  const employeeCards = salon.employees.map((employee) => {
+    const isSelected = !anyEmployee && selectedEmployeeId === employee.id
+    const offersService = offersSelectedService(employee)
+    const fullName = `${employee.firstName} ${employee.lastName}`.trim()
+
+    return (
+      <Card
+        key={employee.id}
+        className={`flex items-center gap-3 rounded-xl border-border bg-card p-3.5 transition-colors ${
+          offersService ? "cursor-pointer hover:bg-muted/50" : "pointer-events-none opacity-50"
+        } ${isSelected ? "border-primary bg-primary/5" : ""}`}
+        onClick={() => offersService && handleSelect(employee.id, false)}
+      >
+        <Avatar className="size-11">
+          <AvatarFallback className="text-sm font-semibold">
+            {initials(employee.firstName, employee.lastName)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-1 flex-col gap-0.5">
+          <p className="text-sm font-semibold">{fullName}</p>
+          <p className="text-xs text-muted-foreground">
+            {offersService
+              ? employee.jobTitle
+              : `No ofrece ${selectedService?.name ?? "este servicio"}`}
+          </p>
+        </div>
+      </Card>
+    )
+  })
 
   return (
     <div className="space-y-4">
@@ -51,6 +89,32 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
           title="No hemos podido cargar los profesionales"
           description="Vuelve a intentarlo en unos minutos."
         />
+      ) : salon.employees.length === 0 ? (
+        // El salon no tiene a nadie. Mandarle a cambiar de servicio seria
+        // pasearle por la lista entera para encontrar el mismo vacio, asi que
+        // aqui no se ofrece salida: no la hay.
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Este salon no tiene profesionales disponibles para reserva online.
+          </p>
+        </div>
+      ) : !someoneOffersService ? (
+        // Hay profesionales, pero ninguno tiene asignado este servicio. Aqui si
+        // hay salida y es concreta: la flecha de atras del paso. Se siguen
+        // enseñando las tarjetas, apagadas y con su "No ofrece X": son el
+        // referente de "estos profesionales" y ademas prueban que el salon si
+        // tiene equipo.
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Ninguno de estos profesionales ofrece {selectedService?.name ?? "este servicio"}.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Toca la flecha de arriba para elegir otro servicio.
+            </p>
+          </div>
+          <div className="space-y-2.5">{employeeCards}</div>
+        </div>
       ) : (
         <>
           <div className="space-y-2.5">
@@ -73,35 +137,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
               O elige profesional
             </p>
 
-            {salon.employees.map((employee) => {
-              const isSelected = !anyEmployee && selectedEmployeeId === employee.id
-              const offersService = offersSelectedService(employee)
-              const fullName = `${employee.firstName} ${employee.lastName}`.trim()
-
-              return (
-                <Card
-                  key={employee.id}
-                  className={`flex items-center gap-3 rounded-xl border-border bg-card p-3.5 transition-colors ${
-                    offersService ? "cursor-pointer hover:bg-muted/50" : "pointer-events-none opacity-50"
-                  } ${isSelected ? "border-primary bg-primary/5" : ""}`}
-                  onClick={() => offersService && handleSelect(employee.id, false)}
-                >
-                  <Avatar className="size-11">
-                    <AvatarFallback className="text-sm font-semibold">
-                      {initials(employee.firstName, employee.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-1 flex-col gap-0.5">
-                    <p className="text-sm font-semibold">{fullName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {offersService
-                        ? employee.jobTitle
-                        : `No ofrece ${selectedService?.name ?? "este servicio"}`}
-                    </p>
-                  </div>
-                </Card>
-              )
-            })}
+            {employeeCards}
           </div>
 
           <p className="text-center text-xs text-muted-foreground">

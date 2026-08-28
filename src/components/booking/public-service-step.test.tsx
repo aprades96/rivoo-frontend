@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { PublicServiceStep } from "./public-service-step"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import type { SalonPublic, ServicePublic } from "@/types/salon"
@@ -65,10 +65,25 @@ describe("PublicServiceStep", () => {
     expect(screen.queryByText("No hemos podido cargar los servicios")).not.toBeInTheDocument()
   })
 
-  it("sin servicios no hay nada que pulsar, asi que no se puede avanzar", () => {
-    render(<PublicServiceStep salon={{ ...baseSalon, servicesUnavailable: true }} />)
+  it("sin servicios no hay tarjeta que pulsar, asi que no se puede avanzar", () => {
+    // Los dos vacios (lista caida y salon sin servicios) tienen que ser igual
+    // de inertes. La comprobacion es la ausencia del recurso: ninguna tarjeta
+    // de servicio dibujada y, pulsando lo que haya, el paso no se mueve.
+    for (const servicesUnavailable of [true, false]) {
+      usePublicBookingStore.getState().reset()
+      const { container, unmount } = render(
+        <PublicServiceStep salon={{ ...baseSalon, servicesUnavailable }} />
+      )
 
-    expect(usePublicBookingStore.getState().step).toBe(1)
-    expect(usePublicBookingStore.getState().selectedService).toBeNull()
+      expect(screen.queryByText(service.name)).not.toBeInTheDocument()
+
+      container.querySelectorAll('[data-slot="card"]').forEach((card) => {
+        fireEvent.click(card)
+      })
+
+      expect(usePublicBookingStore.getState().step).toBe(1)
+      expect(usePublicBookingStore.getState().selectedService).toBeNull()
+      unmount()
+    }
   })
 })
