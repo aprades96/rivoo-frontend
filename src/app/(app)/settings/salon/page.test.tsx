@@ -38,6 +38,7 @@ const mockSalon: Salon = {
   status: "ACTIVE" as Salon["status"],
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
+  onboardingCompletedAt: "2026-01-01T00:00:00Z",
 }
 
 // The key useSalon() reads; seeding it is what a resolved fetch does.

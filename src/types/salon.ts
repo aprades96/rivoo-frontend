@@ -19,6 +19,14 @@ export interface Salon {
   status: SalonStatus
   createdAt: string
   updatedAt: string
+  /**
+   * Instante en que el dueño terminó el alta, o null si no la ha terminado.
+   * Nombre de cable exacto del componente del record SalonResponse (Jackson 3,
+   * sin PropertyNamingStrategy en salon-service). No renombrar: `apiFetch` es un
+   * cast sin validación y un nombre erróneo se leería como `undefined` —falsy—
+   * en silencio, que aquí significa mandar al asistente a todo el mundo.
+   */
+  onboardingCompletedAt: string | null
 }
 
 export interface EmployeePublic {
