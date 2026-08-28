@@ -19,15 +19,20 @@
     .navitem-on { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B4522F; background: #F6E7E0; }
     .subnav { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; color: #6B5C53; }
     .subnav-on { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #2A2320; background: #F0E7DC; }
-    .time { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
-    .timeoff { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px dashed #E0D3C4; border-radius: 8px; background: #FAF6F0; font-size: 14px; color: #C4B5A6; font-variant-numeric: tabular-nums; }
+    .lbl { font-size: 12px; font-weight: 600; color: #7A6A5F; }
+    .secl { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #9A8A7E; }
+    .nrow { display: flex; align-items: center; gap: 20px; height: 58px; }
+    .ntl { width: 250px; flex-shrink: 0; font-size: 14px; font-weight: 600; }
+    .nsub { flex-grow: 1; min-width: 0; font-size: 13px; color: #7A6A5F; }
+    .sep { height: 1px; background: #EFE6DA; }
     .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
     .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
+    .offd { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #EFE6DA; justify-content: flex-start; flex-shrink: 0; }
     .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
-    .rowh { display: flex; align-items: center; gap: 14px; height: 62px; padding: 0 18px; }
-    .day { width: 96px; flex-shrink: 0; font-size: 14px; font-weight: 600; }
-    .a { font-size: 12px; color: #9A8A7E; }
-    .sep { height: 1px; background: #EFE6DA; }
+    .knobd { width: 18px; height: 18px; border-radius: 999px; background: #FBF7F2; }
+    .pill { padding: 3px 8px; border-radius: 999px; background: #FAEFE9; border: 1px solid #EBD3C8; color: #8F3F24; font-size: 10px; font-weight: 600; white-space: nowrap; }
+    .btno { display: flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .fix { font-size: 13px; color: #9A8A7E; white-space: nowrap; }
   </style>
 </helmet>
 
@@ -89,7 +94,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Perfil del salon
         </div>
-        <div class="subnav-on">
+        <div class="subnav">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Horario de apertura
         </div>
@@ -101,7 +106,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           Plan y facturacion
         </div>
-        <div class="subnav">
+        <div class="subnav-on">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           Notificaciones
         </div>
@@ -111,119 +116,76 @@
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1; min-width: 0; max-width: 860px; padding: 24px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF;">
+      <div style="display: flex; flex-direction: column; gap: 22px; flex-grow: 1; min-width: 0; max-width: 860px; padding: 24px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF;">
 
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #EFE6DA;">
           <div style="display: flex; flex-direction: column; gap: 2px;">
-            <span class="display" style="font-size: 19px;">Horario de apertura</span>
-            <span style="font-size: 12px; color: #9A8A7E;">La reserva online solo ofrece huecos dentro de este horario.</span>
+            <span class="display" style="font-size: 19px;">Notificaciones</span>
+            <span style="font-size: 12px; color: #9A8A7E;">Rivoo envia los avisos por ti. Los recordatorios salen <span class="num">24 h</span> y <span class="num">1 h</span> antes de la cita; esa antelacion no se puede cambiar.</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copiar lunes al resto
-            </div>
-            <div style="display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 18px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600;">Guardar cambios</div>
-          </div>
+          <div style="display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 18px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600; white-space: nowrap;">Guardar cambios</div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px;">
-          <div style="width: 42px; flex-shrink: 0;"></div>
-          <div class="day" style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Dia</div>
-          <span style="width: 192px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Apertura y cierre</span>
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Descanso</span>
-        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="secl">Email a tus clientes</span>
 
-        <div style="display: flex; flex-direction: column; border: 1px solid #E7DCCF; border-radius: 10px; overflow: hidden;">
-
-          <div class="rowh">
+          <div class="nrow">
+            <span class="ntl">Confirmacion de reserva</span>
+            <span class="nsub">Al crear la cita, con hora, servicio y direccion del salon.</span>
             <div class="on"><div class="knob"></div></div>
-            <span class="day">Lunes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
           </div>
           <div class="sep"></div>
 
-          <div class="rowh">
+          <div class="nrow">
+            <span class="ntl">Recordatorio <span class="num">24 h</span> antes</span>
+            <span class="nsub">El dia anterior a la cita.</span>
             <div class="on"><div class="knob"></div></div>
-            <span class="day">Martes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
           </div>
           <div class="sep"></div>
 
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Miercoles</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Jueves</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Viernes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">21:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Sabado</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">14:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh" style="background: #FAF6F0;">
+          <div class="nrow">
+            <span class="ntl">Recordatorio <span class="num">1 h</span> antes</span>
+            <span class="nsub">Ultimo aviso justo antes de la cita.</span>
             <div class="off"><div class="knob"></div></div>
-            <span class="day" style="color: #9A8A7E;">Domingo</span>
-            <span style="font-size: 13px; color: #B8A99C;">Cerrado todo el dia</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="nrow">
+            <span class="ntl">Aviso de cancelacion</span>
+            <span class="nsub">Cuando anulas una cita desde la agenda.</span>
+            <div class="on"><div class="knob"></div></div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 9px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span style="font-size: 12px; color: #9A8A7E;">El descanso bloquea la agenda de todo el salon. Para ausencias de una sola persona, usa los horarios del empleado.</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="secl">SMS a tus clientes</span>
+
+          <div class="nrow">
+            <span class="ntl" style="display: flex; align-items: center; gap: 8px;">Recordatorio por SMS <span class="pill">Premium</span></span>
+            <span class="nsub">Un mensaje corto al movil del cliente, <span class="num">24 h</span> antes de la cita.</span>
+            <div class="btno">Ver planes</div>
+            <div class="on"><div class="knob"></div></div>
+          </div>
+          <span style="font-size: 12px; color: #9A8A7E; padding-top: 8px;">Los SMS no se incluyen en el plan Basic.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="secl">Avisos para el salon</span>
+
+          <div class="nrow">
+            <span class="ntl">Pago rechazado</span>
+            <span class="nsub">Si falla el cobro de la suscripcion, con enlace para actualizar la tarjeta.</span>
+            <span class="fix">Siempre</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="nrow">
+            <span class="ntl">Suscripcion cancelada</span>
+            <span class="nsub">Si la cuenta queda suspendida.</span>
+            <span class="fix">Siempre</span>
+          </div>
+
+          <span style="font-size: 12px; color: #9A8A7E; padding-top: 8px;">Se envian a hola@bellavista.com. Puedes cambiar esa direccion en Perfil del salon.</span>
         </div>
       </div>
     </div>

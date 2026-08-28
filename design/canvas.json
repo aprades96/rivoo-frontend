@@ -11,6 +11,18 @@
     {
       "id": "page-3",
       "name": "Flujo reserva publica"
+    },
+    {
+      "id": "page-4",
+      "name": "Alta de negocio"
+    },
+    {
+      "id": "page-5",
+      "name": "Equipo y clientes"
+    },
+    {
+      "id": "page-6",
+      "name": "Ajustes"
     }
   ],
   "artboards": [
@@ -329,6 +341,348 @@
       "w": 1440,
       "h": 900,
       "title": "Detalle de cita - escritorio"
+    },
+    {
+      "file": "Registro.dc.html",
+      "page": "page-4",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Registro"
+    },
+    {
+      "file": "Onboarding1.dc.html",
+      "page": "page-4",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "1. Bienvenida"
+    },
+    {
+      "file": "Onboarding2.dc.html",
+      "page": "page-4",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "2. Horarios"
+    },
+    {
+      "file": "Onboarding3.dc.html",
+      "page": "page-4",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "3. Empleado"
+    },
+    {
+      "file": "Onboarding4.dc.html",
+      "page": "page-4",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "4. Servicio"
+    },
+    {
+      "file": "Onboarding5.dc.html",
+      "page": "page-4",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "5. Listo"
+    },
+    {
+      "file": "RegistroDesktop.dc.html",
+      "page": "page-4",
+      "x": 0,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "Registro - escritorio"
+    },
+    {
+      "file": "Onboarding1Desktop.dc.html",
+      "page": "page-4",
+      "x": 1560,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "1. Bienvenida - escritorio"
+    },
+    {
+      "file": "Onboarding2Desktop.dc.html",
+      "page": "page-4",
+      "x": 3120,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "2. Horarios - escritorio"
+    },
+    {
+      "file": "Onboarding3Desktop.dc.html",
+      "page": "page-4",
+      "x": 4680,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "3. Empleado - escritorio"
+    },
+    {
+      "file": "Onboarding4Desktop.dc.html",
+      "page": "page-4",
+      "x": 6240,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "4. Servicio - escritorio"
+    },
+    {
+      "file": "Onboarding5Desktop.dc.html",
+      "page": "page-4",
+      "x": 7800,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "5. Listo - escritorio"
+    },
+    {
+      "file": "Equipo.dc.html",
+      "page": "page-1",
+      "x": 2820,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Equipo"
+    },
+    {
+      "file": "EquipoDesktop.dc.html",
+      "page": "page-1",
+      "x": 3120,
+      "y": 3040,
+      "w": 1440,
+      "h": 900,
+      "title": "Equipo - escritorio"
+    },
+    {
+      "file": "ReservaError.dc.html",
+      "page": "page-3",
+      "x": 2820,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Reserva - hueco ocupado"
+    },
+    {
+      "file": "ReservaErrorDesktop.dc.html",
+      "page": "page-3",
+      "x": 9360,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Reserva - hueco ocupado (escritorio)"
+    },
+    {
+      "file": "Login.dc.html",
+      "page": "page-4",
+      "x": 2820,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Iniciar sesion"
+    },
+    {
+      "file": "LoginDesktop.dc.html",
+      "page": "page-4",
+      "x": 9360,
+      "y": 1220,
+      "w": 1440,
+      "h": 900,
+      "title": "Iniciar sesion - escritorio"
+    },
+    {
+      "file": "DetalleEmpleado.dc.html",
+      "page": "page-5",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Detalle de empleado"
+    },
+    {
+      "file": "FormularioEmpleado.dc.html",
+      "page": "page-5",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Alta / edicion de empleado"
+    },
+    {
+      "file": "DetalleCliente.dc.html",
+      "page": "page-5",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Detalle de cliente"
+    },
+    {
+      "file": "FormularioCliente.dc.html",
+      "page": "page-5",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Alta / edicion de cliente"
+    },
+    {
+      "file": "DetalleEmpleadoDesktop.dc.html",
+      "page": "page-5",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Detalle de empleado - escritorio"
+    },
+    {
+      "file": "FormularioEmpleadoDesktop.dc.html",
+      "page": "page-5",
+      "x": 1560,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Alta / edicion de empleado - escritorio"
+    },
+    {
+      "file": "DetalleClienteDesktop.dc.html",
+      "page": "page-5",
+      "x": 3120,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Detalle de cliente - escritorio"
+    },
+    {
+      "file": "FormularioClienteDesktop.dc.html",
+      "page": "page-5",
+      "x": 4680,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Alta / edicion de cliente - escritorio"
+    },
+    {
+      "file": "AjustesSalon.dc.html",
+      "page": "page-6",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Perfil del salon"
+    },
+    {
+      "file": "AjustesReserva.dc.html",
+      "page": "page-6",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Reservas online"
+    },
+    {
+      "file": "AjustesFacturacion.dc.html",
+      "page": "page-6",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Plan y facturacion"
+    },
+    {
+      "file": "AjustesCuenta.dc.html",
+      "page": "page-6",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Mi cuenta"
+    },
+    {
+      "file": "AjustesNotificaciones.dc.html",
+      "page": "page-6",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Notificaciones"
+    },
+    {
+      "file": "AjustesSalonDesktop.dc.html",
+      "page": "page-6",
+      "x": 0,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Perfil del salon - escritorio"
+    },
+    {
+      "file": "AjustesReservaDesktop.dc.html",
+      "page": "page-6",
+      "x": 1560,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Reservas online - escritorio"
+    },
+    {
+      "file": "AjustesFacturacionDesktop.dc.html",
+      "page": "page-6",
+      "x": 3120,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Plan y facturacion - escritorio"
+    },
+    {
+      "file": "AjustesCuentaDesktop.dc.html",
+      "page": "page-6",
+      "x": 4680,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Mi cuenta - escritorio"
+    },
+    {
+      "file": "AjustesNotificacionesDesktop.dc.html",
+      "page": "page-6",
+      "x": 6240,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Notificaciones - escritorio"
+    },
+    {
+      "file": "CambiarPlan.dc.html",
+      "page": "page-6",
+      "x": 2350,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Cambiar de plan"
+    },
+    {
+      "file": "CambiarPlanDesktop.dc.html",
+      "page": "page-6",
+      "x": 7800,
+      "y": 1000,
+      "w": 1440,
+      "h": 900,
+      "title": "Cambiar de plan - escritorio"
     }
   ],
   "annotations": [
@@ -395,6 +749,14 @@
       "y": 1930,
       "w": 900,
       "text": "En escritorio el detalle NO es una pantalla aparte: es un panel de 360px sobre el calendario, con la cita marcada detras en la rejilla. En movil si es pantalla completa (hoja inferior sobre Hoy).\nLas acciones dependen del estado: aqui la cita esta pendiente, asi que manda Confirmar. Si ya esta confirmada, ese boton pasa a Completar; una vez pasada la hora, aparece No asistio.\nEn el codigo appointments/[id] es un placeholder de 10 lineas: esto es la especificacion."
+    },
+    {
+      "id": "alta",
+      "page": "page-4",
+      "x": 0,
+      "y": -230,
+      "w": 1000,
+      "text": "Alta de negocio: registro publico + onboarding de 5 pasos.\nArriba movil (390), abajo escritorio (1440).\nEl registro NO lleva barra de progreso: todavia no hay cuenta. Dispara POST /api/v1/salons, que es una saga de 8 pasos con compensacion (salon ONBOARDING -> horarios por defecto -> alta en Keycloak -> activacion -> suscripcion FREE_TRIAL -> email). Si Keycloak o billing fallan, deshace.\nEl onboarding SI lleva barra: el store marca 5 pasos y las pantallas se numeran 1..5. Ojo: existe una sexta pantalla, salon-setup, que se numera a si misma como paso 2 y esta HUERFANA (welcome navega directo a business-hours). O se reengancha o se borra.\nEscritorio: tarjeta centrada sobre crema, sin sidebar. No estas dentro de la app todavia."
     }
   ],
   "launch": {

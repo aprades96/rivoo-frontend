@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .lbl { font-size: 12px; font-weight: 500; color: #5F534B; }
+    .fld { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #B8A99C; }
+    .fldv { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #2A2320; }
+    .grp { display: flex; flex-direction: column; gap: 5px; }
+    .cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; filter: blur(1.5px); opacity: 0.5;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span class="display" style="font-size: 24px;">Clientes</span>
+      <div style="width: 92px; height: 38px; border-radius: 8px; background: #B4522F;"></div>
+    </div>
+    <div style="height: 44px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+    <div style="height: 64px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+    <div style="height: 64px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+    <div style="height: 64px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+    <div style="height: 64px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+    <div style="height: 64px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;"></div>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: rgba(42, 35, 32, 0.42);"></div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 16px; padding: 10px 16px 20px 16px; border-radius: 16px 16px 0 0; background: #FBF7F2; box-shadow: 0 -8px 30px rgba(42, 35, 32, 0.2);">
+
+    <div style="display: flex; justify-content: center;">
+      <div style="width: 36px; height: 4px; border-radius: 999px; background: #D8C9B8;"></div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <span class="display" style="font-size: 23px; line-height: 1.1;">Nuevo cliente</span>
+      <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+        <div class="grp">
+          <span class="lbl">Nombre *</span>
+          <div class="fldv">Marc</div>
+        </div>
+        <div class="grp">
+          <span class="lbl">Apellidos *</span>
+          <div class="fldv">Puig</div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <span class="lbl">Email</span>
+        <div class="fld">email@ejemplo.com</div>
+      </div>
+
+      <div class="grp">
+        <span class="lbl">Telefono</span>
+        <div class="fld num">612 345 678</div>
+      </div>
+
+      <div class="grp">
+        <span class="lbl">Notas</span>
+        <div style="display: flex; height: 64px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #B8A99C; line-height: 1.45;">Notas internas sobre el cliente</div>
+      </div>
+    </div>
+
+    <div class="cta">Crear cliente</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

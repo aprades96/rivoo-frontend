@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .lbl { font-size: 12px; font-weight: 500; color: #5F534B; }
+    .fld { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #B8A99C; }
+    .fldv { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #2A2320; }
+    .grp { display: flex; flex-direction: column; gap: 5px; }
+    .sect { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9A8A7E; }
+    .cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600; }
+    .ghost { display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 15px; font-weight: 600; color: #2A2320; }
+    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
+    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
+    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
+    .sw { width: 30px; height: 30px; border-radius: 999px; }
+    .time { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 10px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .card { border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; align-items: center; width: 1440px; height: 900px; padding: 44px 40px; overflow: hidden; background: #FBF7F2;">
+<div style="display: flex; align-items: center; gap: 11px; margin-bottom: 26px;"><svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg><span class="display" style="font-size: 22px;">Rivoo</span></div>
+<div class="card" style="display: flex; flex-direction: column; gap: 22px; width: 760px; padding: 32px;">
+<div style="display: flex; flex-direction: column; gap: 6px;"><span class="display" style="font-size: 32px; line-height: 1.08;">Crea tu cuenta</span><span style="font-size: 14px; color: #7A6A5F; line-height: 1.5;">Tu salon y tu usuario, en un solo paso. Despues configuraras horarios, equipo y servicios.</span></div>
+<div style="display: flex; flex-direction: column; gap: 16px;"><div style="display: flex; flex-direction: column; gap: 11px;"><span class="sect">Tus datos</span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;"><div class="grp"><span class="lbl">Nombre *</span><div class="fld">Carlos</div></div><div class="grp"><span class="lbl">Apellido *</span><div class="fld">Garcia</div></div></div><div style="display: flex; flex-direction: column; gap: 12px;"><div class="grp"><span class="lbl">Email *</span><div class="fld">tu@email.com</div></div></div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;"><div class="grp"><span class="lbl">Contrase&ntilde;a *</span><div class="fld">Min. 8 caracteres</div></div><div class="grp"><span class="lbl">Confirmar *</span><div class="fld">Repetir contrase&ntilde;a</div></div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 11px;"><span class="sect">Datos del salon</span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;"><div class="grp"><span class="lbl">Nombre del salon *</span><div class="fld">Mi Peluqueria</div></div><div class="grp"><span class="lbl">Telefono *</span><div class="fld">+34 612 345 678</div></div></div><div style="display: flex; flex-direction: column; gap: 12px;"><div class="grp"><span class="lbl">Direccion *</span><div class="fld">Calle Gran Via 123</div></div></div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;"><div class="grp"><span class="lbl">Ciudad *</span><div class="fld">Barcelona</div></div><div class="grp"><span class="lbl">Codigo postal *</span><div class="fld">08001</div></div></div></div></div>
+<div style="display: flex; justify-content: flex-end; gap: 10px;"><div class="cta" style="padding: 0 28px;">Crear cuenta<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div></div>
+</div>
+<span style="margin-top: 18px; font-size: 12px; color: #9A8A7E;">¿Ya tienes cuenta? Inicia sesion</span>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

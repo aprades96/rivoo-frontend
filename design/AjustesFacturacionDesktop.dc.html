@@ -15,18 +15,16 @@
     a:hover { color: #8F3F24; }
     .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
     .num { font-variant-numeric: tabular-nums; }
+    .sec { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
     .navitem { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; color: #6B5C53; }
     .navitem-on { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B4522F; background: #F6E7E0; }
     .subnav { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; color: #6B5C53; }
     .subnav-on { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #2A2320; background: #F0E7DC; }
-    .time { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
-    .timeoff { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px dashed #E0D3C4; border-radius: 8px; background: #FAF6F0; font-size: 14px; color: #C4B5A6; font-variant-numeric: tabular-nums; }
-    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
-    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
-    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
-    .rowh { display: flex; align-items: center; gap: 14px; height: 62px; padding: 0 18px; }
-    .day { width: 96px; flex-shrink: 0; font-size: 14px; font-weight: 600; }
-    .a { font-size: 12px; color: #9A8A7E; }
+    .card { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .btn2 { display: flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 16px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; white-space: nowrap; }
+    .bar { height: 6px; border-radius: 999px; background: #EFE6DA; overflow: hidden; }
+    .fill { height: 6px; border-radius: 999px; background: #B4522F; }
     .sep { height: 1px; background: #EFE6DA; }
   </style>
 </helmet>
@@ -89,7 +87,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Perfil del salon
         </div>
-        <div class="subnav-on">
+        <div class="subnav">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Horario de apertura
         </div>
@@ -97,7 +95,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           Reservas online
         </div>
-        <div class="subnav">
+        <div class="subnav-on">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           Plan y facturacion
         </div>
@@ -111,119 +109,89 @@
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1; min-width: 0; max-width: 860px; padding: 24px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF;">
+      <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1; min-width: 0; max-width: 554px;">
 
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #EFE6DA;">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <span class="display" style="font-size: 19px;">Horario de apertura</span>
-            <span style="font-size: 12px; color: #9A8A7E;">La reserva online solo ofrece huecos dentro de este horario.</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copiar lunes al resto
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 11px; color: #9A8A7E;">Plan actual</span>
+              <span class="display" style="font-size: 26px;">Premium</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 18px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600;">Guardar cambios</div>
+            <span class="badge" style="background: #E4EDE1; color: #3F6B4F;">Activo</span>
+          </div>
+          <div class="sep"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <span style="font-size: 12px; color: #7A6A5F;">Siguiente facturacion: <span class="num">01/04/2026</span></span>
+            <div class="btn2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Gestionar suscripcion
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px;">
-          <div style="width: 42px; flex-shrink: 0;"></div>
-          <div class="day" style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Dia</div>
-          <span style="width: 192px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Apertura y cierre</span>
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Descanso</span>
+        <div class="card" style="gap: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 14px; font-weight: 600;">Otros planes</span>
+              <span style="font-size: 12px; color: #7A6A5F;">Compara los limites de Basic, Premium y Enterprise.</span>
+            </div>
+            <div class="btn2">
+              Cambiar de plan
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div style="display: flex; flex-direction: column; border: 1px solid #E7DCCF; border-radius: 10px; overflow: hidden;">
+      <div style="display: flex; flex-direction: column; gap: 16px; width: 320px; flex-shrink: 0;">
 
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Lunes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
+        <div class="card" style="gap: 14px;">
+          <span class="sec">Uso del plan</span>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 13px;">Empleados</span>
+              <span class="num" style="font-size: 13px; font-weight: 600;">5 / 10</span>
+            </div>
+            <div class="bar"><div class="fill" style="width: 50%;"></div></div>
           </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 13px;">Citas este mes</span>
+              <span class="num" style="font-size: 13px; font-weight: 600;">214</span>
+            </div>
+            <span style="font-size: 11px; color: #9A8A7E;">Ilimitadas en Premium</span>
+          </div>
+
           <div class="sep"></div>
 
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Martes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px;">Recordatorios por email</span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Miercoles</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Jueves</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Viernes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">21:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Sabado</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">14:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh" style="background: #FAF6F0;">
-            <div class="off"><div class="knob"></div></div>
-            <span class="day" style="color: #9A8A7E;">Domingo</span>
-            <span style="font-size: 13px; color: #B8A99C;">Cerrado todo el dia</span>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px;">Recordatorios por SMS</span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 9px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span style="font-size: 12px; color: #9A8A7E;">El descanso bloquea la agenda de todo el salon. Para ausencias de una sola persona, usa los horarios del empleado.</span>
+        <div class="card" style="gap: 10px;">
+          <span class="sec">Portal de facturacion</span>
+          <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5;">&laquo;Gestionar suscripcion&raquo; abre el portal de Stripe: metodo de pago, facturas y cancelacion. Solo aparece cuando hay una suscripcion de pago.</span>
+        </div>
+
+        <div class="card" style="gap: 10px; background: #FAF6F0;">
+          <span class="sec">Variante &mdash; en prueba</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 11px; color: #9A8A7E;">Plan actual</span>
+              <span style="font-size: 17px; font-weight: 600;">Prueba gratuita</span>
+            </div>
+            <span class="badge" style="background: #FAEFD6; color: #8A5B12;">En prueba</span>
+          </div>
+          <span style="font-size: 12px; color: #7A6A5F;">Prueba termina: <span class="num">12/09/2026</span></span>
+          <span style="font-size: 11px; color: #B8A99C; line-height: 1.45;">Sin suscripcion en Stripe todavia: el boton del portal no se muestra.</span>
         </div>
       </div>
     </div>

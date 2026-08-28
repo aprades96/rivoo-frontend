@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .sec { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
+    .navitem { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; color: #6B5C53; }
+    .navitem-on { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B4522F; background: #F6E7E0; }
+    .subnav { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; color: #6B5C53; }
+    .subnav-on { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #2A2320; background: #F0E7DC; }
+    .card { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+    .plan { display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .btnp { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .btnd { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: 8px; background: #F5EEE6; color: #B8A99C; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .btncur { display: flex; align-items: center; justify-content: center; gap: 6px; height: 38px; border-radius: 8px; background: #F6E7E0; color: #B4522F; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .feat { display: flex; align-items: center; gap: 9px; font-size: 13px; line-height: 1.3; color: #7A6A5F; }
+    .feat-on { display: flex; align-items: center; gap: 9px; font-size: 13px; line-height: 1.3; color: #2A2320; font-weight: 600; }
+    .feat-off { display: flex; align-items: center; gap: 9px; font-size: 13px; line-height: 1.3; color: #B8A99C; }
+    .sep { height: 1px; background: #EFE6DA; }
+  </style>
+</helmet>
+
+<div style="display: flex; width: 1440px; height: 900px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; flex-direction: column; justify-content: space-between; width: 248px; flex-shrink: 0; padding: 20px 14px; border-right: 1px solid #E7DCCF; background: #F8F2EA;">
+    <div style="display: flex; flex-direction: column; gap: 22px;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px;">
+        <svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg>
+        <span class="display" style="font-size: 23px;">Bella Vista</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+          Hoy
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Citas
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Clientes
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          Equipo
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+          Servicios
+        </div>
+        <div class="navitem-on">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Ajustes
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 12px; font-weight: 700;">MG</div>
+      <div style="display: flex; flex-direction: column; min-width: 0;">
+        <span style="font-size: 13px; font-weight: 600;">Maria Gil</span>
+        <span style="font-size: 11px; color: #9A8A7E;">Propietaria</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+
+    <div style="display: flex; align-items: center; height: 72px; padding: 0 28px 0 18px; border-bottom: 1px solid #E7DCCF;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <span class="display" style="font-size: 24px; padding-left: 8px;">Cambiar de plan</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 28px; padding: 24px 28px;">
+
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 210px; flex-shrink: 0;">
+        <div class="subnav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Perfil del salon
+        </div>
+        <div class="subnav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Horario de apertura
+        </div>
+        <div class="subnav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Reservas online
+        </div>
+        <div class="subnav-on">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Plan y facturacion
+        </div>
+        <div class="subnav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Notificaciones
+        </div>
+        <div class="subnav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Mi cuenta
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1; min-width: 0;">
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid #EBD3C8; border-radius: 10px; background: #FAEFE9;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8F3F24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span style="font-size: 12px; color: #8F3F24; line-height: 1.45;">Al cambiar de plan saldras de Rivoo: el cambio se completa en la pagina de pago de Stripe.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch;">
+
+          <div class="plan">
+            <span style="font-size: 15px; font-weight: 600;">Basic</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span class="display num" style="font-size: 26px;">29,00 &euro;</span>
+              <span style="font-size: 11px; color: #9A8A7E;">/mes</span>
+            </div>
+            <div class="sep"></div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg><span><span class="num">3</span> empleados</span></span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg><span><span class="num">200</span> citas al mes</span></span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Recordatorios por email</span>
+              <span class="feat-off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><line x1="5" y1="12" x2="19" y2="12"/></svg>Sin recordatorios por SMS</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: auto; padding: 10px; border: 1px solid #E8D3A6; border-radius: 8px; background: #FFFCF5;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A5B12" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span style="font-size: 11px; color: #8A5B12; line-height: 1.45;">Tienes <span class="num">5</span> empleados y Basic admite <span class="num">3</span>. Desactiva <span class="num">2</span> antes de bajar de plan.</span>
+            </div>
+            <div class="btnd">Cambiar a Basic</div>
+          </div>
+
+          <div class="plan" style="border-color: #B4522F;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 15px; font-weight: 600;">Premium</span>
+              <span class="badge" style="background: #F6E7E0; color: #B4522F; font-size: 10px; padding: 3px 9px;">Actual</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span class="display num" style="font-size: 26px;">59,00 &euro;</span>
+              <span style="font-size: 11px; color: #9A8A7E;">/mes</span>
+            </div>
+            <div class="sep"></div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg><span><span class="num">10</span> empleados</span></span>
+              <span class="feat-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Citas ilimitadas</span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Recordatorios por email</span>
+              <span class="feat-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Recordatorios por SMS</span>
+            </div>
+            <span style="font-size: 11px; color: #9A8A7E; margin-top: auto;">Tu plan desde marzo de 2026.</span>
+            <div class="btncur">Tu plan actual</div>
+          </div>
+
+          <div class="plan">
+            <span style="font-size: 15px; font-weight: 600;">Enterprise</span>
+            <div style="display: flex; align-items: baseline; gap: 5px;">
+              <span class="display num" style="font-size: 26px;">99,00 &euro;</span>
+              <span style="font-size: 11px; color: #9A8A7E;">/mes</span>
+            </div>
+            <div class="sep"></div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <span class="feat-on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Empleados ilimitados</span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Citas ilimitadas</span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Recordatorios por email</span>
+              <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>Recordatorios por SMS</span>
+            </div>
+            <span style="font-size: 11px; color: #9A8A7E; margin-top: auto;">Todo lo de Premium, sin limite de equipo.</span>
+            <div class="btnp">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              Cambiar a Enterprise
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="gap: 10px; background: #FAF6F0;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 14px; font-weight: 600;">Prueba gratuita</span>
+            <span class="badge" style="background: #F0EAE3; color: #7A6A5F;">No seleccionable</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 18px;">
+            <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span><span class="num">1</span> empleado</span></span>
+            <span class="feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span><span class="num">50</span> citas al mes</span></span>
+            <span class="feat-off"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><line x1="5" y1="12" x2="19" y2="12"/></svg>Sin recordatorios</span>
+          </div>
+          <span style="font-size: 11px; color: #B8A99C; line-height: 1.45;">Toda cuenta nueva empieza con <span class="num">14</span> dias de prueba. Al contratar un plan la prueba termina y no se puede volver a ella.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

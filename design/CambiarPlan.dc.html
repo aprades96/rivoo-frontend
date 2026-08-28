@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .sec { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
+    .plan { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .btnp { display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 13px; font-weight: 600; }
+    .btnd { display: flex; align-items: center; justify-content: center; gap: 7px; height: 40px; border-radius: 8px; background: #F5EEE6; color: #B8A99C; font-size: 13px; font-weight: 600; }
+    .fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 8px; }
+    .feat { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.3; color: #7A6A5F; }
+    .feat-on { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.3; color: #2A2320; font-weight: 600; }
+    .feat-off { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.3; color: #B8A99C; }
+    .sep { height: 1px; background: #EFE6DA; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; height: 56px; padding: 0 14px 0 8px; border-bottom: 1px solid #E7DCCF;">
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2A2320" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <span style="font-size: 15px; font-weight: 600;">Cambiar de plan</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 80px 16px;">
+
+    <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #EBD3C8; border-radius: 10px; background: #FAEFE9;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8F3F24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      <span style="font-size: 11px; color: #8F3F24; line-height: 1.45;">Al cambiar de plan saldras de Rivoo: el cambio se completa en la pagina de pago de Stripe.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="sec">Elige tu plan</span>
+
+      <div class="plan">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 15px; font-weight: 600;">Basic</span>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span class="display num" style="font-size: 20px;">29,00 &euro;</span>
+            <span style="font-size: 10px; color: #9A8A7E;">/mes</span>
+          </div>
+        </div>
+        <div class="fgrid">
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span><span class="num">3</span> empleados</span></span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span><span class="num">200</span> citas/mes</span></span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>Recordatorios email</span>
+          <span class="feat-off"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Sin SMS</span>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid #E8D3A6; border-radius: 8px; background: #FFFCF5;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A5B12" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style="font-size: 11px; color: #8A5B12; line-height: 1.4;">Tienes <span class="num">5</span> empleados y Basic admite <span class="num">3</span>. Desactiva <span class="num">2</span> antes de bajar de plan.</span>
+        </div>
+        <div class="btnd">Cambiar a Basic</div>
+      </div>
+
+      <div class="plan" style="border-color: #B4522F;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+            <span style="font-size: 15px; font-weight: 600;">Premium</span>
+            <span class="badge" style="background: #F6E7E0; color: #B4522F; font-size: 10px; padding: 3px 9px;">Actual</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span class="display num" style="font-size: 20px;">59,00 &euro;</span>
+            <span style="font-size: 10px; color: #9A8A7E;">/mes</span>
+          </div>
+        </div>
+        <div class="fgrid">
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span><span class="num">10</span> empleados</span></span>
+          <span class="feat-on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Citas ilimitadas</span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>Recordatorios email</span>
+          <span class="feat-on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Recordatorios SMS</span>
+        </div>
+        <span style="font-size: 11px; color: #9A8A7E;">Tu plan desde marzo de 2026.</span>
+      </div>
+
+      <div class="plan">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 15px; font-weight: 600;">Enterprise</span>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span class="display num" style="font-size: 20px;">99,00 &euro;</span>
+            <span style="font-size: 10px; color: #9A8A7E;">/mes</span>
+          </div>
+        </div>
+        <div class="fgrid">
+          <span class="feat-on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Empleados ilimitados</span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Citas ilimitadas</span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>Recordatorios email</span>
+          <span class="feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Recordatorios SMS</span>
+        </div>
+        <div class="btnp">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Cambiar a Enterprise
+        </div>
+      </div>
+    </div>
+
+    <span style="font-size: 11px; color: #B8A99C; line-height: 1.45;">La prueba gratuita de <span class="num">14</span> dias es el punto de partida de las cuentas nuevas: no es un plan al que se pueda volver.</span>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-around; height: 64px; border-top: 1px solid #E7DCCF; background: #FBF7F2;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+      <span style="font-size: 11px;">Hoy</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span style="font-size: 11px;">Citas</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #7A6A5F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      <span style="font-size: 11px;">Equipo</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 12px; color: #B4522F;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span style="font-size: 11px; font-weight: 600;">Mas</span>
+      <div style="width: 4px; height: 4px; border-radius: 999px; background: #B4522F;"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

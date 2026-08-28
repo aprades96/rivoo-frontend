@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .sec { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
+    .grp { display: flex; flex-direction: column; border: 1px solid #E7DCCF; border-radius: 10px; background: #FFFFFF; overflow: hidden; }
+    .item { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 14px; }
+    .sep { height: 1px; background: #EFE6DA; margin-left: 44px; }
+    .ico { display: flex; align-items: center; justify-content: center; width: 20px; flex-shrink: 0; color: #9A8A7E; }
+    .val { font-size: 12px; color: #9A8A7E; white-space: nowrap; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; }
+    .av { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .segwrap { display: inline-grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 3px; border: 1px solid #E7DCCF; border-radius: 999px; background: #F0E7DC; }
+    .seg { display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 18px; border-radius: 999px; font-size: 13px; font-weight: 500; color: #7A6A5F; }
+    .seg-on { display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 18px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(42,35,32,0.07); font-size: 13px; font-weight: 600; color: #2A2320; }
+    .fld { display: flex; flex-direction: column; gap: 6px; }
+    .lbl { font-size: 12px; font-weight: 600; color: #7A6A5F; }
+    .in { display: flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; }
+    .ph { color: #9A8A7E; }
+    .help { font-size: 11px; color: #9A8A7E; line-height: 1.45; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; align-items: center; height: 56px; padding: 0 16px; border-bottom: 1px solid #E7DCCF;">
+    <span class="display" style="font-size: 21px;">Equipo</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 80px 16px;">
+
+    <div style="display: flex;">
+      <div class="segwrap">
+        <div class="seg-on">Empleados</div>
+        <div class="seg">Servicios</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span class="num" style="font-size: 13px; color: #7A6A5F;">5 empleados</span>
+      <div style="display: flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 13px; font-weight: 600;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Anadir
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="row">
+        <div class="av" style="background: #F6E7E0; color: #B4522F;">LM</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Laura Martinez</span>
+          <span style="font-size: 12px; color: #7A6A5F;">Estilista</span>
+        </div>
+        <span class="badge" style="background: #F0EAE3; color: #7A6A5F;">Activo</span>
+      </div>
+      <div class="row">
+        <div class="av" style="background: #E8EEE7; color: #5C7A5E;">SP</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Sofia Prat</span>
+          <span style="font-size: 12px; color: #7A6A5F;">Colorista</span>
+        </div>
+        <span class="badge" style="background: #F0EAE3; color: #7A6A5F;">Activo</span>
+      </div>
+      <div class="row">
+        <div class="av" style="background: #E4EAEE; color: #4A6274;">MO</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 600;">Marc Oliva</span>
+          <span style="font-size: 12px; color: #7A6A5F;">Barbero</span>
+        </div>
+        <span class="badge" style="background: #F0EAE3; color: #7A6A5F;">Activo</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; inset: 0; background: rgba(42, 35, 32, 0.42);"></div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 12px; padding: 10px 16px 20px 16px; border-radius: 16px 16px 0 0; background: #FBF7F2; box-shadow: 0 -8px 30px rgba(42, 35, 32, 0.2);">
+
+    <div style="display: flex; justify-content: center;">
+      <div style="width: 36px; height: 4px; border-radius: 999px; background: #D8C9B8;"></div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <span class="display" style="font-size: 23px; line-height: 1.1;">Nuevo empleado</span>
+      <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+      <div class="fld">
+        <span class="lbl">Nombre *</span>
+        <div class="in">Laia</div>
+      </div>
+      <div class="fld">
+        <span class="lbl">Apellidos *</span>
+        <div class="in">Serra</div>
+      </div>
+    </div>
+
+    <div class="fld">
+      <span class="lbl">Email *</span>
+      <div class="in">laia@bellavista.com</div>
+    </div>
+
+    <div class="fld">
+      <span class="lbl">Telefono</span>
+      <div class="in ph num">612 345 678</div>
+    </div>
+
+    <div class="fld">
+      <span class="lbl">Puesto</span>
+      <div class="in">Estilista junior</div>
+    </div>
+
+    <div class="fld">
+      <span class="lbl">Color identificativo</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: #A8762F; border: 1px solid rgba(42,35,32,0.12); flex-shrink: 0;"></div>
+        <span class="num" style="font-size: 12px; color: #7A6A5F;">#A8762F</span>
+      </div>
+    </div>
+
+    <div style="height: 1px; background: #E7DCCF;"></div>
+
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; background: #B4522F; flex-shrink: 0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r="0.5"/></svg>
+        <span style="font-size: 14px;">Crear cuenta de acceso</span>
+      </div>
+      <span class="help" style="padding-left: 27px;">Permite al empleado iniciar sesion y gestionar sus citas</span>
+    </div>
+
+    <div class="fld">
+      <span class="lbl">Contrase&ntilde;a temporal *</span>
+      <div class="in" style="letter-spacing: 0.18em;">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
+      <span class="help">El empleado podra cambiarla despues</span>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600;">Crear empleado</div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

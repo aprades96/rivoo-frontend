@@ -19,15 +19,14 @@
     .navitem-on { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B4522F; background: #F6E7E0; }
     .subnav { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; color: #6B5C53; }
     .subnav-on { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #2A2320; background: #F0E7DC; }
-    .time { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
-    .timeoff { display: flex; align-items: center; justify-content: center; width: 88px; height: 38px; border: 1px dashed #E0D3C4; border-radius: 8px; background: #FAF6F0; font-size: 14px; color: #C4B5A6; font-variant-numeric: tabular-nums; }
-    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
-    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
-    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
-    .rowh { display: flex; align-items: center; gap: 14px; height: 62px; padding: 0 18px; }
-    .day { width: 96px; flex-shrink: 0; font-size: 14px; font-weight: 600; }
-    .a { font-size: 12px; color: #9A8A7E; }
-    .sep { height: 1px; background: #EFE6DA; }
+    .lbl { font-size: 12px; font-weight: 600; color: #7A6A5F; }
+    .in { display: flex; align-items: center; height: 40px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; }
+    .ro { display: flex; align-items: center; height: 40px; padding: 0 12px; border: 1px solid #EFE6DA; border-radius: 8px; background: #FBF7F2; font-size: 14px; color: #6B5C53; }
+    .ph { color: #9A8A7E; }
+    .fld { display: flex; flex-direction: column; gap: 6px; }
+    .sel { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; }
+    .btno { display: flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .btnd { display: flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid #EDD6D0; border-radius: 8px; background: #FFFFFF; color: #A34434; font-size: 13px; font-weight: 600; white-space: nowrap; }
   </style>
 </helmet>
 
@@ -89,7 +88,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Perfil del salon
         </div>
-        <div class="subnav-on">
+        <div class="subnav">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Horario de apertura
         </div>
@@ -105,125 +104,92 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           Notificaciones
         </div>
-        <div class="subnav">
+        <div class="subnav-on">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Mi cuenta
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 18px; flex-grow: 1; min-width: 0; max-width: 860px; padding: 24px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF;">
+      <div style="display: flex; flex-direction: column; gap: 20px; flex-grow: 1; min-width: 0; max-width: 860px;">
 
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #EFE6DA;">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <span class="display" style="font-size: 19px;">Horario de apertura</span>
-            <span style="font-size: 12px; color: #9A8A7E;">La reserva online solo ofrece huecos dentro de este horario.</span>
+        <div style="display: flex; flex-direction: column; gap: 20px; padding: 24px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF;">
+
+          <div style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 18px; border-bottom: 1px solid #EFE6DA;">
+            <span class="display" style="font-size: 19px;">Mi cuenta</span>
+            <span style="font-size: 12px; color: #9A8A7E;">Tus datos de acceso. El salon se configura en Perfil del salon.</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copiar lunes al resto
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 17px; font-weight: 700; flex-shrink: 0;">MG</div>
+            <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 17px; font-weight: 600;">Maria Gil</span>
+              <span style="font-size: 13px; color: #9A8A7E;">maria@bellavista.com</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: center; height: 38px; padding: 0 18px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600;">Guardar cambios</div>
+            <span style="padding: 5px 12px; border-radius: 999px; background: #FAEFE9; border: 1px solid #EBD3C8; color: #8F3F24; font-size: 12px; font-weight: 600;">Propietaria</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+            <div class="fld">
+              <span class="lbl">Email</span>
+              <div class="ro">maria@bellavista.com</div>
+            </div>
+            <div class="fld">
+              <span class="lbl">Rol</span>
+              <div class="ro">Propietaria</div>
+            </div>
+            <div class="fld">
+              <span class="lbl">Plan</span>
+              <div class="ro">Premium</div>
+            </div>
+          </div>
+          <span style="font-size: 11px; color: #9A8A7E; margin-top: -8px;">Estos datos vienen de tu sesion y no se editan aqui.</span>
+
+          <div style="height: 1px; background: #EFE6DA;"></div>
+
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: #F5EEE6; color: #9A8A7E; flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2"/><path d="m18 5 3 3"/><path d="m15 8 3 3"/></svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 600;">Contrasena</span>
+              <span style="font-size: 12px; color: #9A8A7E;">La gestiona Keycloak, no Rivoo. Se abre en una pestana nueva.</span>
+            </div>
+            <div class="btno">
+              Cambiar contrasena
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </div>
+          </div>
+
+          <div style="height: 1px; background: #EFE6DA;"></div>
+
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: #F5EEE6; color: #9A8A7E; flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 600;">Sesion</span>
+              <span style="font-size: 12px; color: #9A8A7E;">Iniciada en este navegador. Salir no afecta al resto del equipo.</span>
+            </div>
+            <div class="btnd">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Cerrar sesion
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 14px; padding: 0 18px;">
-          <div style="width: 42px; flex-shrink: 0;"></div>
-          <div class="day" style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Dia</div>
-          <span style="width: 192px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Apertura y cierre</span>
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #9A8A7E;">Descanso</span>
-        </div>
-
-        <div style="display: flex; flex-direction: column; border: 1px solid #E7DCCF; border-radius: 10px; overflow: hidden;">
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Lunes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid #EDD6D0; border-radius: 12px; background: #FFFFFF;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #A34434;">Zona de peligro</span>
+              <span class="display" style="font-size: 17px; color: #A34434;">Desactivar el salon</span>
+              <span style="font-size: 12px; color: #7A6A5F; line-height: 1.5; max-width: 520px;">Se cierra rivoo.app/bella-vista y nadie podra reservar online. Tu equipo pierde el acceso y las citas futuras quedan canceladas. Guardamos tus datos 30 dias por si quieres volver.</span>
+            </div>
+            <div class="btnd">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              Desactivar el salon
+            </div>
           </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Martes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Miercoles</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Jueves</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">20:00</div>
-            <div style="width: 24px;"></div>
-            <div class="time">14:00</div>
-            <span class="a">a</span>
-            <div class="time">16:00</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Viernes</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">21:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh">
-            <div class="on"><div class="knob"></div></div>
-            <span class="day">Sabado</span>
-            <div class="time">09:00</div>
-            <span class="a">a</span>
-            <div class="time">14:00</div>
-            <div style="width: 24px;"></div>
-            <div class="timeoff">--:--</div>
-            <span class="a" style="color: #C4B5A6;">a</span>
-            <div class="timeoff">--:--</div>
-          </div>
-          <div class="sep"></div>
-
-          <div class="rowh" style="background: #FAF6F0;">
-            <div class="off"><div class="knob"></div></div>
-            <span class="day" style="color: #9A8A7E;">Domingo</span>
-            <span style="font-size: 13px; color: #B8A99C;">Cerrado todo el dia</span>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 9px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span style="font-size: 12px; color: #9A8A7E;">El descanso bloquea la agenda de todo el salon. Para ausencias de una sola persona, usa los horarios del empleado.</span>
+          <span style="font-size: 11px; color: #9A8A7E;">Solo la propietaria puede hacerlo. Te pediremos que escribas Bella Vista para confirmar.</span>
         </div>
       </div>
     </div>

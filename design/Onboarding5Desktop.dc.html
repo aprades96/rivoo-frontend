@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .lbl { font-size: 12px; font-weight: 500; color: #5F534B; }
+    .fld { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #B8A99C; }
+    .fldv { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #2A2320; }
+    .grp { display: flex; flex-direction: column; gap: 5px; }
+    .sect { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9A8A7E; }
+    .cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600; }
+    .ghost { display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 15px; font-weight: 600; color: #2A2320; }
+    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
+    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
+    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
+    .sw { width: 30px; height: 30px; border-radius: 999px; }
+    .time { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 10px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .card { border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; align-items: center; width: 1440px; height: 900px; padding: 44px 40px; overflow: hidden; background: #FBF7F2;">
+<div style="display: flex; align-items: center; gap: 11px; margin-bottom: 26px;"><svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg><span class="display" style="font-size: 22px;">Rivoo</span></div>
+<div class="card" style="display: flex; flex-direction: column; gap: 22px; width: 640px; padding: 32px;">
+<div style="display: flex; flex-direction: column; gap: 8px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span class="num" style="font-size: 12px; color: #7A6A5F;">Paso 5 de 5</span><div style="display: flex; align-items: center; gap: 10px;"><div style="display: flex; align-items: center; gap: 5px; color: #9A8A7E;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span style="font-size: 12px;">Salir</span></div></div></div><div style="height: 6px; border-radius: 999px; background: #EFE6DA;"><div style="width: 100%; height: 6px; border-radius: 999px; background: #B4522F;"></div></div></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center;"><div style="display: flex; align-items: center; justify-content: center; width: 88px; height: 88px; border-radius: 999px; background: #E4EDE1;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3F6B4F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H16"/><path d="M11 2 9.65 3.35a2 2 0 0 0 0 2.83l1.17 1.17a2 2 0 0 1 0 2.83L9.5 11.5"/></svg></div><div style="display: flex; flex-direction: column; gap: 7px;"><span class="display" style="font-size: 32px; line-height: 1.1;">Tu salon esta listo</span><span style="font-size: 14px; color: #7A6A5F; line-height: 1.5; max-width: 340px;">Ya puedes empezar a gestionar tus citas y atender a tus clientes.</span></div><div class="card" style="display: flex; flex-direction: column; gap: 7px; width: 100%; max-width: 420px; padding: 16px; text-align: left;"><div style="display: flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span style="font-size: 12px; font-weight: 600;">Tu pagina de reservas</span></div><span style="font-size: 13px; color: #B4522F; word-break: break-all;">rivoo.app/book/bella-vista</span><span style="font-size: 11px; color: #9A8A7E; line-height: 1.45;">Comparte este enlace con tus clientes para que reserven online.</span></div></div>
+<div style="display: flex; justify-content: flex-end; gap: 10px;"><div class="cta" style="padding: 0 28px;">Ir al dashboard<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div></div>
+</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .lbl { font-size: 12px; font-weight: 500; color: #5F534B; }
+    .fld { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #B8A99C; }
+    .fldv { display: flex; align-items: center; height: 42px; padding: 0 12px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 14px; color: #2A2320; }
+    .grp { display: flex; flex-direction: column; gap: 5px; }
+    .sect { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9A8A7E; }
+    .cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 15px; font-weight: 600; }
+    .ghost { display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; border: 1px solid #E7DCCF; background: #FFFFFF; font-size: 15px; font-weight: 600; color: #2A2320; }
+    .on { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #B4522F; justify-content: flex-end; flex-shrink: 0; }
+    .off { display: flex; align-items: center; width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #E0D3C4; justify-content: flex-start; flex-shrink: 0; }
+    .knob { width: 18px; height: 18px; border-radius: 999px; background: #FFFFFF; }
+    .sw { width: 30px; height: 30px; border-radius: 999px; }
+    .time { display: flex; align-items: center; justify-content: center; height: 36px; padding: 0 10px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .card { border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 18px; width: 390px; height: 844px; padding: 18px 16px; overflow: hidden; background: #FBF7F2;">
+<div style="display: flex; flex-direction: column; gap: 8px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span class="num" style="font-size: 12px; color: #7A6A5F;">Paso 2 de 5</span><div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 12px; font-weight: 600; color: #B4522F;">Rivoo</span><div style="width: 1px; height: 12px; background: #E0D3C4;"></div><div style="display: flex; align-items: center; gap: 5px; color: #9A8A7E;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span style="font-size: 12px;">Salir</span></div></div></div><div style="height: 6px; border-radius: 999px; background: #EFE6DA;"><div style="width: 40%; height: 6px; border-radius: 999px; background: #B4522F;"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 5px;"><span class="display" style="font-size: 26px; line-height: 1.12;">Horarios de apertura</span><span style="font-size: 13px; color: #7A6A5F; line-height: 1.5;">La reserva online solo ofrecera huecos dentro de este horario.</span></div>
+<div class="card" style="display: flex; flex-direction: column; overflow: hidden;"><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Lunes</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">20:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Martes</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">20:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Miercoles</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">20:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Jueves</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">20:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Viernes</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">21:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; flex-direction: column; gap: 9px; padding: 12px 14px;"><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14px; font-weight: 600;">Sabado</span><div class="on"><div class="knob"></div></div></div><div style="display: flex; align-items: center; gap: 8px;"><div class="time" style="flex-grow: 1;">09:00</div><span style="font-size: 12px; color: #9A8A7E;">a</span><div class="time" style="flex-grow: 1;">14:00</div></div></div><div style="height: 1px; background: #EFE6DA;"></div><div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: #FAF6F0;"><div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 14px; font-weight: 600; color: #9A8A7E;">Domingo</span><span style="font-size: 12px; color: #B8A99C;">Cerrado</span></div><div class="off"><div class="knob"></div></div></div></div>
+<div style="display: flex; gap: 10px; margin-top: auto;"><div class="cta" style="flex-grow: 2;">Continuar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div></div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>
