@@ -41,11 +41,16 @@ export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEdit
     () => hoursStateFrom(hours)
   )
 
-  // Adopt the stored schedule once, when it first arrives. Later refetches
-  // return a new array for the same owner and must not discard the times the
-  // user is editing; a different owner gets a fresh editor via `key` at the call
-  // site (the props carry no owner identity of their own).
-  const syncKey = !!hours && hours.length > 0
+  // Adopt the stored schedule the first time it arrives, where "arrives" means
+  // the prop stops being undefined -- not the array stops being empty. An empty
+  // payload is itself an answer (this owner has no stored schedule) and maps to
+  // DEFAULT_HOURS. Keying on non-emptiness would flip late instead: a fresh
+  // salon answers [], and the post-save refetch that finally returns rows would
+  // discard whatever the user had typed in between. Later refetches keep the
+  // prop defined, so they never touch local state; a different owner gets a
+  // fresh editor via `key` at the call site (the props carry no owner identity
+  // of their own).
+  const syncKey = hours !== undefined
   const [syncedKey, setSyncedKey] = useState(syncKey)
   if (syncKey !== syncedKey) {
     setSyncedKey(syncKey)
@@ -69,7 +74,8 @@ export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEdit
               type="checkbox"
               checked={day.isOpen}
               onChange={(e) => updateDay(day.dayOfWeek, "isOpen", e.target.checked)}
-              className="h-4 w-4 rounded border-border"
+              disabled={isSaving}
+              className="h-4 w-4 rounded border-border disabled:cursor-not-allowed disabled:opacity-50"
             />
             <span className={`text-xs font-medium ${day.isOpen ? "" : "text-muted-foreground"}`}>
               {DAY_NAMES[day.dayOfWeek - 1]}
@@ -82,6 +88,7 @@ export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEdit
                 type="time"
                 value={day.openTime}
                 onChange={(e) => updateDay(day.dayOfWeek, "openTime", e.target.value)}
+                disabled={isSaving}
                 className="h-8 text-xs"
               />
               <span className="text-xs text-muted-foreground">-</span>
@@ -89,6 +96,7 @@ export function WorkingHoursEditor({ hours, onSave, isSaving }: WorkingHoursEdit
                 type="time"
                 value={day.closeTime}
                 onChange={(e) => updateDay(day.dayOfWeek, "closeTime", e.target.value)}
+                disabled={isSaving}
                 className="h-8 text-xs"
               />
             </div>
