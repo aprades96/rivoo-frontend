@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #FBF7F2; color: #2A2320; -webkit-font-smoothing: antialiased; }
+    * { box-sizing: border-box; }
+    a { color: #B4522F; text-decoration: none; }
+    a:hover { color: #8F3F24; }
+    .display { font-family: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+    .num { font-variant-numeric: tabular-nums; }
+    .navitem { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; color: #6B5C53; }
+    .navitem-on { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B4522F; background: #F6E7E0; }
+    .av { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 999px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .th { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9A8A7E; }
+    .tr { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) 150px 96px 20px; align-items: center; gap: 16px; padding: 0 18px; }
+  </style>
+</helmet>
+
+<div style="display: flex; width: 1440px; height: 900px; overflow: hidden; background: #FBF7F2;">
+
+  <div style="display: flex; flex-direction: column; justify-content: space-between; width: 248px; flex-shrink: 0; padding: 20px 14px; border-right: 1px solid #E7DCCF; background: #F8F2EA;">
+    <div style="display: flex; flex-direction: column; gap: 22px;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px;">
+        <svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="#B4522F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="29"/><circle cx="24" cy="42" r="6"/><circle cx="40" cy="42" r="6"/><line x1="28.2" y1="37.5" x2="35" y2="22"/><line x1="35.8" y1="37.5" x2="29" y2="22"/><circle cx="32" cy="30" r="1.5" fill="#B4522F" stroke="none"/></svg>
+        <span class="display" style="font-size: 23px;">Bella Vista</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+          Hoy
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Citas
+        </div>
+        <div class="navitem-on">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Clientes
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          Equipo
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+          Servicios
+        </div>
+        <div class="navitem">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Ajustes
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid #E7DCCF; background: #FFFFFF;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #F6E7E0; color: #B4522F; font-size: 12px; font-weight: 700;">MG</div>
+      <div style="display: flex; flex-direction: column; min-width: 0;">
+        <span style="font-size: 13px; font-weight: 600;">Maria Gil</span>
+        <span style="font-size: 11px; color: #9A8A7E;">Propietaria</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 28px; border-bottom: 1px solid #E7DCCF;">
+      <span class="display" style="font-size: 24px;">Clientes</span>
+      <div style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px; border-radius: 8px; background: #B4522F; color: #FFFFFF; font-size: 14px; font-weight: 600;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Anadir cliente
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 18px; padding: 24px 28px;">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; max-width: 1084px;">
+        <div style="position: relative; display: flex; align-items: center; width: 340px; height: 40px; padding: 0 14px 0 38px; border: 1px solid #E7DCCF; border-radius: 8px; background: #FFFFFF;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A8A7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-size: 14px; color: #9A8A7E;">Buscar clientes...</span>
+        </div>
+        <span class="num" style="font-size: 13px; color: #7A6A5F;">248 clientes</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; max-width: 1084px; border: 1px solid #E7DCCF; border-radius: 12px; background: #FFFFFF; overflow: hidden;">
+
+        <div class="tr" style="height: 44px; background: #F8F2EA; border-bottom: 1px solid #E7DCCF;">
+          <span class="th">Cliente</span>
+          <span class="th">Contacto</span>
+          <span class="th">Ultima visita</span>
+          <span class="th" style="justify-self: end;">Visitas</span>
+          <span></span>
+        </div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #F6E7E0; color: #B4522F;">AG</div>
+            <span style="font-size: 14px; font-weight: 600;">Ana Garcia</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-size: 13px;">ana@mail.com</span>
+            <span class="num" style="font-size: 12px; color: #9A8A7E;">612 345 678</span>
+          </div>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">12 ago 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">14</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #E8EEE7; color: #5C7A5E;">CR</div>
+            <span style="font-size: 14px; font-weight: 600;">Carla Ruiz</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-size: 13px;">carla@mail.com</span>
+            <span class="num" style="font-size: 12px; color: #9A8A7E;">655 908 221</span>
+          </div>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">3 ago 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">7</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #E4EAEE; color: #4A6274;">PS</div>
+            <span style="font-size: 14px; font-weight: 600;">Pedro Sanchez</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span class="num" style="font-size: 13px;">633 112 004</span>
+            <span style="font-size: 12px; color: #9A8A7E;">Sin correo</span>
+          </div>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">28 jul 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">23</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #F5EDDD; color: #A8762F;">NC</div>
+            <span style="font-size: 14px; font-weight: 600;">Nuria Camps</span>
+          </div>
+          <span style="font-size: 13px; color: #9A8A7E;">Sin contacto</span>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">14 jul 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">2</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #F6E7E0; color: #B4522F;">JM</div>
+            <span style="font-size: 14px; font-weight: 600;">Jordi Mas</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-size: 13px;">jordi@mail.com</span>
+            <span class="num" style="font-size: 12px; color: #9A8A7E;">699 774 120</span>
+          </div>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">21 ago 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">31</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #EFE6DA;"></div>
+
+        <div class="tr" style="height: 68px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div class="av" style="background: #E8EEE7; color: #5C7A5E;">LR</div>
+            <span style="font-size: 14px; font-weight: 600;">Laia Roca</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span class="num" style="font-size: 13px;">644 300 918</span>
+            <span style="font-size: 12px; color: #9A8A7E;">Sin correo</span>
+          </div>
+          <span class="num" style="font-size: 13px; color: #7A6A5F;">9 jul 2026</span>
+          <span class="display num" style="font-size: 18px; justify-self: end;">5</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B8A99C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <span style="font-size: 12px; color: #9A8A7E;">Mostrando 6 de 248 &middot; la lista pide 50 por pagina</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>
