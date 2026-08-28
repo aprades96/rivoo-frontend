@@ -23,7 +23,6 @@ const mockSalon: Salon = {
   id: "sal_1",
   name: "Rivoo Salon",
   slug: "rivoo-salon",
-  ownerUserId: "usr_1",
   email: "hola@rivoo.test",
   phone: "930000000",
   description: "Peluqueria de barrio",

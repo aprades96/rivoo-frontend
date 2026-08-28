@@ -4,7 +4,6 @@ export interface Salon {
   id: string
   name: string
   slug: string
-  ownerUserId: string
   email: string
   phone: string
   description: string | null

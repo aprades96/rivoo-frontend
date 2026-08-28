@@ -59,7 +59,6 @@ const UPDATED_SALON = {
   id: "sal_1",
   name: "Rivoo Salon",
   slug: "bella-vista",
-  ownerUserId: "usr_1",
   email: "hola@rivoo.test",
   phone: "930000000",
   description: null,
