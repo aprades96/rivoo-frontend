@@ -6,6 +6,8 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { WorkingHoursEditor, type WorkingHoursEditorHandle } from "@/components/staff/working-hours-editor"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { EmptyState } from "@/components/shared/empty-state"
+import { Button } from "@/components/ui/button"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
 import { useOnboardingStore } from "@/lib/stores/onboarding-store"
@@ -50,6 +52,15 @@ export default function OnboardingBusinessHoursPage() {
   // against.
   const hoursNotReady = !accessToken || hoursQuery.data === undefined
 
+  // `hoursNotReady` alone stays true forever after a failed GET (`retry:
+  // failureCount < 1` in query-provider.tsx caps it at one retry, then
+  // `data` never stops being undefined): the skeleton above would render
+  // forever with no way to recover. `hoursFailed` singles out that terminal
+  // case so it gets its own screen with a retry action instead of an
+  // infinite skeleton. Requires accessToken: a disabled query (half-alive
+  // session) is not an error, just not-yet-run.
+  const hoursFailed = !!accessToken && hoursQuery.isError
+
   // El editor no tiene boton propio en este paso (showSaveButton={false}):
   // "Continuar" guarda a traves del ref y solo navega si el guardado
   // resuelve. Si mutateAsync rechaza, el toast de error ya lo puso onError
@@ -86,7 +97,13 @@ export default function OnboardingBusinessHoursPage() {
         respuesta en vuelo pisaria lo que el usuario ya hubiese tecleado.
         Mismo patron que settings/business-hours/page.tsx.
       */}
-      {hoursNotReady ? (
+      {hoursFailed ? (
+        <EmptyState
+          title="No se ha podido cargar tu horario"
+          description="Comprueba tu conexion e intentalo de nuevo."
+          action={<Button onClick={() => hoursQuery.refetch()}>Reintentar</Button>}
+        />
+      ) : hoursNotReady ? (
         <LoadingSkeleton count={7} />
       ) : (
         <WorkingHoursEditor
@@ -103,9 +120,13 @@ export default function OnboardingBusinessHoursPage() {
         interno tampoco (showSaveButton={false}): el pie ya tiene su propio
         "Continuar", que guarda a traves de editorRef y solo avanza si el
         guardado resuelve (handleContinue, arriba). Deshabilitado tambien
-        mientras el horario todavia esta cargando: sin esto, pulsar antes de
-        que el GET resuelva enviaria los valores por defecto del editor y
-        pisaria el horario ya guardado.
+        mientras el horario todavia esta cargando o si la carga fallo
+        (`hoursNotReady` cubre ambos: `data` sigue undefined en los dos
+        casos): el editor no esta montado, asi que editorRef.current seria
+        null y handleContinue avanzaria de paso sin guardar nada. La salida
+        de esta pantalla cuando la carga falla no es "Continuar a ciegas",
+        es "Reintentar" (arriba) o el "Salir" que el layout del asistente ya
+        pinta siempre, fuera de este componente (src/app/(onboarding)/layout.tsx).
       */}
       <OnboardingFooter
         ctaLabel="Continuar"

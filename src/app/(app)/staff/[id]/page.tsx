@@ -22,6 +22,7 @@ import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { ServiceAssignment } from "@/components/staff/service-assignment"
 import { EmployeeFormSheet } from "@/components/staff/employee-form"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { EmptyState } from "@/components/shared/empty-state"
 import { staffApi } from "@/lib/api/staff"
 import { useAuth } from "@/hooks/use-auth"
 import { useEmployeeServices } from "@/hooks/use-staff"
@@ -43,7 +44,11 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     enabled: !!accessToken,
   })
 
-  const { data: workingHours } = useQuery({
+  const {
+    data: workingHours,
+    isError: workingHoursFetchFailed,
+    refetch: refetchWorkingHours,
+  } = useQuery({
     queryKey: ["employee-working-hours", id],
     queryFn: () => staffApi.getWorkingHours(id, accessToken!),
     enabled: !!accessToken,
@@ -59,6 +64,14 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
   // (onboarding); derived from data absence, not from a disabled query's
   // `isLoading`, which React Query v5 reports as false.
   const workingHoursNotReady = !accessToken || workingHours === undefined
+
+  // Same terminal case as business-hours/page.tsx (onboarding): `retry:
+  // failureCount < 1` caps retries at one, so after that `workingHours`
+  // stays undefined forever and `workingHoursNotReady` alone would leave the
+  // skeleton inside this tab forever. The back arrow in the header above and
+  // the "Servicios" tab stay usable regardless, so the owner is never
+  // trapped on this page -- they just need a way to retry the failed GET.
+  const workingHoursFailed = !!accessToken && workingHoursFetchFailed
 
   const { data: employeeServices } = useEmployeeServices(id)
 
@@ -159,7 +172,13 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
         </TabsList>
 
         <TabsContent value="hours" className="mt-4">
-          {workingHoursNotReady ? (
+          {workingHoursFailed ? (
+            <EmptyState
+              title="No se ha podido cargar el horario"
+              description="Comprueba tu conexion e intentalo de nuevo."
+              action={<Button onClick={() => refetchWorkingHours()}>Reintentar</Button>}
+            />
+          ) : workingHoursNotReady ? (
             <LoadingSkeleton count={7} />
           ) : (
             <WorkingHoursEditor
