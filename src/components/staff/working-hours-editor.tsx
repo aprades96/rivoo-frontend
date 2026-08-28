@@ -100,7 +100,7 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
 
     return (
       <div>
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-[12px] border border-border bg-white">
           {localHours.map((day, index) => {
             const dayLabel = DAY_NAMES[day.dayOfWeek - 1]
             return (
