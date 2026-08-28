@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import AddServicePage from "./page"
@@ -83,12 +83,14 @@ describe("AddServicePage", () => {
     await user.type(screen.getByPlaceholderText("0,00"), "15")
     await user.click(screen.getByRole("button", { name: /continuar/i }))
 
-    expect(await screen.findByRole("button", { name: /^omitir$/i })).toBeInTheDocument()
+    // "Omitir" ya esta presente desde el primer render (no depende de la
+    // mutacion), asi que esperar por el no demuestra que createService haya
+    // aterrizado -- solo la navegacion (efecto de onSuccess) lo hace.
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/complete"))
     expect(createService).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Corte", price: 15 }),
       "token"
     )
-    expect(push).toHaveBeenCalledWith("/complete")
   })
 
   it("'Omitir' navigates to /complete without creating a service", async () => {
