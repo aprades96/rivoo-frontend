@@ -91,9 +91,15 @@ describe("TodayPage", () => {
     useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ isLoading: true }))
     useServicesMock.mockReturnValue(servicesResult({ data: undefined, isLoading: true }))
 
-    render(<TodayPage />)
+    const { container } = render(<TodayPage />)
 
     expect(screen.queryByText("Aun no tienes servicios")).not.toBeInTheDocument()
+
+    // Positive assertion, not just absence: without it, a page that returns
+    // `null` while loading (blank screen) would still make the line above
+    // pass. The appointments timeline is `isLoading`, so its skeleton is
+    // what proves the normal agenda actually rendered.
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
   })
 
   it("muestra el flujo normal de citas cuando el salon ya tiene al menos un servicio", () => {
