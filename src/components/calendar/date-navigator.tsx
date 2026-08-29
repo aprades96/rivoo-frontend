@@ -108,24 +108,3 @@ export function DateNavigatorCluster({
     </div>
   )
 }
-
-/**
- * @deprecated Puente temporal para `src/app/(app)/calendar/page.tsx`, que
- * todavia importa el navegador anterior a esta calibracion. La tarea que
- * reescribe esa pagina consume `DateNavigatorRow` y `DateNavigatorCluster`
- * directamente y borra este export.
- */
-export function DateNavigator(props: {
-  date: Date
-  onPrev: () => void
-  onNext: () => void
-  onToday: () => void
-}) {
-  return (
-    <DateNavigatorCluster
-      onPrev={props.onPrev}
-      onNext={props.onNext}
-      onToday={props.onToday}
-    />
-  )
-}
