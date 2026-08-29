@@ -76,6 +76,14 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       })
     },
     onSuccess: () => {
+      // La guarda no es defensiva de mas: los callbacks de `useMutation` viven
+      // en la instancia `Mutation`, no en el observer, asi que se ejecutan
+      // aunque este componente se haya desmontado. Si el visitante pulsa
+      // "Volver" con la peticion en vuelo, `nextStep()` corre sobre el paso 4 y
+      // lo deja en el 5 -- "Confirma tu reserva", con el CTA vivo y ninguna
+      // senal de que su cita YA existe. La vuelve a pulsar y el salon se come
+      // una segunda cita real. Solo se avanza si seguimos donde se pulso.
+      if (usePublicBookingStore.getState().step !== 5) return
       nextStep() // → step 6 (success)
     },
     // -----------------------------------------------------------------
@@ -94,6 +102,13 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
     // `public-datetime-step.tsx` already uses). If the slot is still there,
     // it is a different business failure -- fall through to the banner.
     onError: async (err) => {
+      // Mismo motivo que en `onSuccess`: si el visitante se ha ido del paso 5
+      // mientras la peticion volaba, ni el banner ni el conflicto son suyos ya.
+      // `page.tsx` comprueba `conflict` ANTES que `step`, asi que sin esto un
+      // `setConflict` disparado desde el paso 4 le arranca del formulario de
+      // sus datos y le planta la pantalla de hueco ocupado.
+      if (usePublicBookingStore.getState().step !== 5) return
+
       const conflictSlot = selectedSlot
       const conflictDate = selectedDate
 

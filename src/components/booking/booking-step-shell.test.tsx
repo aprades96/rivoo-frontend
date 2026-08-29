@@ -50,7 +50,18 @@ describe("BookingStepShell", () => {
     expect(screen.queryByRole("button", { name: "Volver" })).not.toBeInTheDocument()
   })
 
-  it("pinta el boton atras cuando se pasa onBack", () => {
+  /**
+   * Son DOS controles, uno por breakpoint, y los dos tienen que existir. El de
+   * movil vive en la cabecera de 60px y se apaga en `md:`; el de escritorio va
+   * sobre el titulo y solo aparece desde `md:`. Hubo un momento en que solo
+   * existia el primero, y eso dejaba al visitante de un portatil sin ninguna
+   * forma de rectificar -- en la rama "ningun profesional ofrece este
+   * servicio", donde no hay tarjetas pulsables ni CTA, la pantalla quedaba
+   * muerta del todo. La visibilidad la decide CSS, que jsdom no aplica, asi que
+   * aqui se cuenta cuantos hay: si alguien vuelve a dejar uno solo, esto se
+   * pone rojo.
+   */
+  it("pinta los dos botones atras -- movil y escritorio -- cuando se pasa onBack", () => {
     mockMatchMedia(false)
     render(
       <BookingStepShell salon={salon} step={2} title="Con quien la quieres" onBack={() => {}}>
@@ -58,7 +69,7 @@ describe("BookingStepShell", () => {
       </BookingStepShell>
     )
 
-    expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: /volver/i })).toHaveLength(2)
   })
 
   it("el stepper marca como completados los pasos anteriores al actual", () => {

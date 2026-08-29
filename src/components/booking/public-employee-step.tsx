@@ -1,7 +1,6 @@
 "use client"
 
 import { ChevronRight, Users } from "lucide-react"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
 import { BookingSummaryAside, type BookingSummaryRow } from "@/components/booking/booking-summary-aside"
@@ -68,13 +67,21 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
     const fullName = `${employee.firstName} ${employee.lastName}`.trim()
 
     return (
-      <Card
+      // `button`, no `Card`: `Card` pinta un `div`, y con el `onClick` encima
+      // la pantalla se quedaba sin ningun elemento enfocable -- ni teclado ni
+      // lector de pantalla podian elegir profesional. `disabled` en vez de
+      // `pointer-events-none` para que quien no ofrece el servicio tambien
+      // quede fuera del orden de tabulacion, no solo del raton.
+      <button
         key={employee.id}
+        type="button"
+        aria-pressed={isSelected}
+        disabled={!offersService}
         className={cn(
-          "flex-row items-center gap-3 rounded-[10px] border border-border p-3.5 transition-colors lg:gap-[14px] lg:p-4",
+          "flex w-full flex-row items-center gap-3 rounded-[10px] border border-border p-3.5 text-left transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:gap-[14px] lg:p-4",
           offersService
             ? "cursor-pointer hover:bg-muted/50"
-            : "pointer-events-none opacity-[0.55] lg:opacity-50",
+            : "opacity-[0.55] lg:opacity-50",
           isSelected && "border-primary bg-primary/5"
         )}
         onClick={() => offersService && handleSelect(employee.id, false)}
@@ -105,7 +112,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
           scope for this task. Left for whichever task wires real
           availability into this step.
         */}
-      </Card>
+      </button>
     )
   })
 
@@ -202,9 +209,11 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-[14px]">
-          <Card
+          <button
+            type="button"
+            aria-pressed={anyEmployee}
             className={cn(
-              "flex-row items-center gap-3 rounded-[10px] border border-dashed border-[#D8C9B8] bg-muted p-3.5 transition-colors hover:bg-muted/50 lg:gap-[14px] lg:p-4",
+              "flex w-full flex-row items-center gap-3 rounded-[10px] border border-dashed border-[#D8C9B8] bg-muted p-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:gap-[14px] lg:p-4",
               anyEmployee && "border-primary bg-primary/5"
             )}
             onClick={() => handleSelect(null, true)}
@@ -217,7 +226,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
               <p className="text-xs text-muted-foreground">El primero disponible &middot; mas horas libres</p>
             </div>
             <ChevronRight className="size-[18px] shrink-0 text-text-subtle lg:hidden" />
-          </Card>
+          </button>
 
           <p className="text-[11px] font-semibold tracking-wider text-muted-foreground-2 uppercase lg:hidden">
             O elige profesional

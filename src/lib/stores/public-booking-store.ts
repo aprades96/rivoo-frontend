@@ -40,6 +40,8 @@ export interface PublicBookingState {
   setHoneypot: (value: string) => void
   setConflict: (conflict: { slot: string; date: string }) => void
   clearConflict: () => void
+  /** Descarta la fecha y hora elegidas sin tocar el resto de la reserva. */
+  clearDateTime: () => void
   reset: () => void
 }
 
@@ -80,6 +82,15 @@ export const usePublicBookingStore = create<PublicBookingState>((set) => ({
   setHoneypot: (value) => set({ honeypot: value }),
 
   setConflict: (conflict) => set({ conflict }),
+  clearDateTime: () => set({ selectedDate: null, selectedSlot: null }),
+
+  /**
+   * Limpia SOLO el conflicto. Que hacer con el hueco muerto lo decide quien
+   * sale de la pantalla, porque las dos salidas quieren cosas contrarias:
+   * elegir una hora alternativa ya fija una valida y borrarsela despues seria
+   * un error de orden; "elegir otro dia" tiene que descartarla con
+   * `clearDateTime` (ver `public-booking-error.tsx`).
+   */
   clearConflict: () => set({ conflict: null }),
 
   reset: () => set(INITIAL_STATE),

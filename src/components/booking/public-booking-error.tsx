@@ -47,6 +47,7 @@ export function PublicBookingError({ salon }: PublicBookingErrorProps) {
     conflict,
     selectDateTime,
     clearConflict,
+    clearDateTime,
     setStep,
   } = usePublicBookingStore()
 
@@ -101,6 +102,16 @@ export function PublicBookingError({ salon }: PublicBookingErrorProps) {
   }
 
   const handlePickAnotherDay = () => {
+    // Descartar el hueco es la parte que importa, no volver al paso 3. El
+    // backend acaba de rechazarlo: esta muerto. Dejandolo puesto, y cuando el
+    // conflicto es sobre una cita de HOY -- el caso mas frecuente --,
+    // `selectedDate` coincide con el dia que el paso 3 muestra por defecto, asi
+    // que su CTA sale habilitado con el hueco muerto aunque ninguna tecla
+    // aparezca resaltada. Continuar -> confirmar -> 422 -> aqui otra vez: un
+    // bucle cerrado del que el visitante no sale.
+    // Los datos del cliente NO se tocan: el artboard promete por escrito
+    // "Guardamos tus datos: solo tienes que elegir hora."
+    clearDateTime()
     clearConflict()
     setStep(3)
   }

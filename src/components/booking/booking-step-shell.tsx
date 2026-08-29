@@ -78,13 +78,45 @@ export function BookingStepShell({
       */}
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[390px] flex-1 flex-col gap-[18px] px-5 pt-5 md:max-w-2xl md:gap-[26px] md:px-10 md:py-8 lg:flex-row lg:items-start lg:gap-10 xl:max-w-[1120px]",
+          // `lg:max-w-[1120px]`, no `xl:`: el aside se monta en `lg:` (1024), y
+          // dejando el tope en `max-w-2xl` (672px) hasta 1280 la columna
+          // principal caia a ~232px -- 21px por celda de dia, 27px por hueco.
+          // Peor que la maqueta movil estirada que este bloque venia a
+          // arreglar. El tope solo muerde de 1120 en adelante; por debajo manda
+          // el viewport, que es lo que da aire a las dos columnas desde que
+          // aparecen. Lo encontro el revisor por aritmetica y Playwright por su
+          // cuenta: a 1024 el nombre del servicio se estrujaba a ancho cero y
+          // el navegador lo daba por oculto.
+          "mx-auto flex w-full max-w-[390px] flex-1 flex-col gap-[18px] px-5 pt-5 md:max-w-2xl md:gap-[26px] md:px-10 md:py-8 lg:max-w-[1120px] lg:flex-row lg:items-start lg:gap-10",
           showFooter && "pb-28"
         )}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-[18px] md:gap-[26px]">
           <MobileProgress step={step} />
           <BookingStepper step={step} />
+
+          {/*
+            Los artboards de escritorio no dibujan boton de volver: confian en
+            el stepper, que no es pulsable. Pero el de movil si lo lleva y en
+            `master` era incondicional, asi que suprimirlo desde `md:` dejaba al
+            visitante sin ninguna forma de rectificar en un portatil — y en la
+            rama "ningun profesional ofrece este servicio" del paso 2, donde no
+            hay tarjetas pulsables ni CTA, la pantalla quedaba muerta del todo.
+            Se pinta discreto, sobre el titulo, en vez de no pintarlo: perder la
+            navegacion hacia atras es peor que anadir un control que el artboard
+            no previo.
+          */}
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="-ml-2 hidden self-start text-muted-foreground md:inline-flex"
+            >
+              <ChevronLeft className="size-4" />
+              Volver
+            </Button>
+          )}
 
           <div className="flex flex-col gap-1">
             <h1 className="font-heading text-[28px] leading-[1.1] font-semibold tracking-display md:text-[34px] md:leading-[1.05]">

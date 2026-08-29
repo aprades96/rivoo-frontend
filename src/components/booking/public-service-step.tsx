@@ -1,6 +1,5 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
 import { SalonInfoAside } from "@/components/booking/salon-info-aside"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
@@ -54,9 +53,16 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
         {services.map((service) => {
           const isSelected = selectedService?.id === service.id
           return (
-            <Card
+            // `button`, no `Card`: `Card` pinta un `div`, y con el `onClick`
+            // encima la pantalla se quedaba sin UN SOLO elemento enfocable --
+            // ni teclado ni lector de pantalla podian elegir servicio en una
+            // pagina publica y anonima. `aria-pressed` porque el estado
+            // elegido se comunicaba solo con color.
+            <button
               key={service.id}
-              className={`flex-row items-center justify-between gap-3 rounded-[10px] border border-border bg-card p-3.5 transition-colors hover:bg-muted/50 lg:gap-[14px] lg:p-4 cursor-pointer ${
+              type="button"
+              aria-pressed={isSelected}
+              className={`flex w-full flex-row items-center justify-between gap-3 rounded-[10px] border border-border bg-card p-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:gap-[14px] lg:p-4 cursor-pointer ${
                 isSelected ? "border-primary bg-primary/5" : ""
               }`}
               onClick={() => handleSelect(service)}
@@ -70,7 +76,7 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
               <span className="whitespace-nowrap text-[22px] font-semibold tabular-nums lg:text-xl">
                 {formatCurrency(service.price, service.currency)}
               </span>
-            </Card>
+            </button>
           )
         })}
       </div>

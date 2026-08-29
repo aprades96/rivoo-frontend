@@ -145,6 +145,17 @@ describe("PublicBookingError", () => {
     expect(usePublicBookingStore.getState().conflict).toBeNull()
     expect(usePublicBookingStore.getState().step).toBe(3)
     expect(usePublicBookingStore.getState().clientForm.firstName).toBe("Ana")
+
+    /**
+     * Y el hueco muerto se descarta. Es la asercion que cierra el bucle: el
+     * backend acaba de rechazar ese hueco, asi que dejarlo puesto hace que el
+     * paso 3 —cuando el conflicto es sobre una cita de HOY, el caso mas
+     * frecuente— habilite su "Continuar" con el hueco muerto, aunque ninguna
+     * tecla aparezca resaltada. Continuar, confirmar, 422, y de vuelta aqui,
+     * sin salida. Lo encontro el revisor de regresion; sin esto, verde.
+     */
+    expect(usePublicBookingStore.getState().selectedSlot).toBeNull()
+    expect(usePublicBookingStore.getState().selectedDate).toBeNull()
   })
 
   it("en escritorio pinta la columna de horas como principal y el hueco perdido en la barra lateral de 320px", async () => {
