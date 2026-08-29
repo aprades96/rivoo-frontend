@@ -25,6 +25,16 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => useAuthMock(),
 }))
 
+// TodayPage now mounts PageShell (T7a), which calls `useRouter()`
+// unconditionally for its back-navigation defaults even though this page
+// passes neither `back` nor `desktopBack`. Same mock shape already used by
+// every other page that renders PageShell/router.back(), e.g.
+// src/app/(app)/settings/salon/page.test.tsx and
+// src/app/(app)/staff/[id]/page.test.tsx.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn() }),
+}))
+
 function appointmentsResult(overrides: Partial<ReturnType<typeof defaultAppointments>> = {}) {
   return { ...defaultAppointments(), ...overrides }
 }
