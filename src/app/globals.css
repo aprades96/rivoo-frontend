@@ -36,6 +36,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-nav-foreground: var(--nav-foreground);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -135,6 +136,7 @@
   --sidebar-accent-foreground: #b4522f;
   --sidebar-border: #e7dccf;
   --sidebar-ring: #b4522f;
+  --nav-foreground: #6b5c53; /* EquipoDesktop.dc.html:18 — destino inactivo de la barra lateral */
 
   --hairline: #efe6da;
   --switch-off: #e0d3c4;
