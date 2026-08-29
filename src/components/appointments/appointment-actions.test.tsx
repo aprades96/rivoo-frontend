@@ -4,6 +4,11 @@ import userEvent from "@testing-library/user-event"
 import { AppointmentActions } from "./appointment-actions"
 import type { AppointmentStatus } from "@/types/appointment"
 
+/** Icono lucide renderiza `stroke-width` como atributo SVG en minusculas y con guion. */
+function strokeWidthOf(button: HTMLElement): string | null {
+  return button.querySelector("svg")?.getAttribute("stroke-width") ?? null
+}
+
 const TERMINAL_STATUSES: AppointmentStatus[] = ["COMPLETED", "CANCELLED", "NO_SHOW"]
 const VARIANTS = ["sheet", "panel"] as const
 
@@ -136,31 +141,35 @@ describe("AppointmentActions", () => {
       await user.click(screen.getByTestId("appointment-cta"))
       expect(onStatusChange).toHaveBeenCalledWith("IN_PROGRESS")
     })
+
+    it.each(VARIANTS)(
+      "variant=%s: los iconos secundarios llevan stroke-width 1.75 (DetalleCita.dc.html:104,108 / DetalleCitaDesktop.dc.html:321,325)",
+      (variant) => {
+        renderActions("CONFIRMED", variant)
+
+        const secondaryButtons = screen.getAllByTestId("appointment-secondary-action")
+        for (const button of secondaryButtons) {
+          expect(strokeWidthOf(button)).toBe("1.75")
+        }
+      }
+    )
   })
 
   describe("IN_PROGRESS", () => {
-    it("variant=sheet: CTA Completar + una sola secundaria (Cancelar) a ancho completo", () => {
-      renderActions("IN_PROGRESS", "sheet")
+    /**
+     * El dominio solo permite `IN_PROGRESS -> COMPLETED`
+     * (`appointment-service/.../domain/model/AppointmentStatus.java:25`).
+     * Ningun artboard dibuja este estado, asi que aqui manda el servidor:
+     * no se ofrece "Cancelar" en ninguna variante (antes producia un 4xx
+     * silencioso).
+     */
+    it.each(VARIANTS)("variant=%s: CTA Completar, sin ninguna accion secundaria", (variant) => {
+      renderActions("IN_PROGRESS", variant)
 
       expect(screen.getByTestId("appointment-cta")).toHaveTextContent("Completar")
-
-      const secondaryRow = screen.getByTestId("appointment-actions-secondary")
-      const secondaryButtons = within(secondaryRow).getAllByTestId("appointment-secondary-action")
-      expect(secondaryButtons).toHaveLength(1)
-      expect(secondaryButtons[0]).toHaveTextContent("Cancelar")
-      expect(secondaryButtons[0].className).toContain("flex-1")
-    })
-
-    it("variant=panel: CTA Completar + una sola secundaria (Cancelar) en una celda, no dos", () => {
-      renderActions("IN_PROGRESS", "panel")
-
-      expect(screen.getByTestId("appointment-cta")).toHaveTextContent("Completar")
-
-      const secondaryRow = screen.getByTestId("appointment-actions-secondary")
-      expect(secondaryRow.className).toContain("grid-cols-2")
-      const secondaryButtons = within(secondaryRow).getAllByTestId("appointment-secondary-action")
-      expect(secondaryButtons).toHaveLength(1)
-      expect(secondaryButtons[0]).toHaveTextContent("Cancelar")
+      expect(screen.queryByText("Cancelar")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("appointment-secondary-action")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("appointment-actions-secondary")).not.toBeInTheDocument()
     })
 
     it("dispara onStatusChange(COMPLETED) al pulsar el CTA", async () => {
@@ -185,6 +194,40 @@ describe("AppointmentActions", () => {
 
       const spinners = document.querySelectorAll(".animate-spin")
       expect(spinners.length).toBeGreaterThan(0)
+    })
+
+    it("al pulsar 'No asistio' y pasar isPending a true, el spinner sale solo en ese boton -- no en Confirmar ni en Cancelar", async () => {
+      const user = userEvent.setup()
+      const onStatusChange = vi.fn()
+      const onCancelRequest = vi.fn()
+      const { rerender } = renderActions("CONFIRMED", "sheet", { onStatusChange, onCancelRequest })
+
+      const ctaButton = screen.getByTestId("appointment-cta")
+      const secondaryButtons = screen.getAllByTestId("appointment-secondary-action")
+      const noShowButton = secondaryButtons.find((button) => button.textContent?.includes("No asistio"))
+      const cancelButton = secondaryButtons.find((button) => button.textContent?.includes("Cancelar"))
+      if (!noShowButton || !cancelButton) throw new Error("botones esperados no encontrados")
+
+      await user.click(noShowButton)
+      expect(onStatusChange).toHaveBeenCalledWith("NO_SHOW")
+
+      rerender(
+        <AppointmentActions
+          status="CONFIRMED"
+          variant="sheet"
+          onStatusChange={onStatusChange}
+          onCancelRequest={onCancelRequest}
+          isPending={true}
+        />
+      )
+
+      expect(noShowButton.querySelector(".animate-spin")).not.toBeNull()
+      expect(cancelButton.querySelector(".animate-spin")).toBeNull()
+      expect(ctaButton.querySelector(".animate-spin")).toBeNull()
+
+      expect(noShowButton).toBeDisabled()
+      expect(cancelButton).toBeDisabled()
+      expect(ctaButton).toBeDisabled()
     })
   })
 })

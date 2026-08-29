@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Check, Play, CircleCheck, X, UserX, Calendar, Loader2, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { AppointmentStatus } from "@/types/appointment"
@@ -80,7 +81,17 @@ function actionsFor(status: AppointmentStatus, variant: AppointmentActionsVarian
     case "IN_PROGRESS":
       return {
         cta: { label: "Completar", icon: CircleCheck, intent: { kind: "status", target: "COMPLETED" } },
-        secondary: [CANCEL_ACTION],
+        /**
+         * Sin "Cancelar": ningun artboard dibuja `IN_PROGRESS`, asi que
+         * aqui manda la maquina de estados del servidor, no el diseno. El
+         * dominio solo permite `IN_PROGRESS -> COMPLETED`
+         * (`appointment-service/.../domain/model/AppointmentStatus.java:25`,
+         * `case IN_PROGRESS -> target == COMPLETED`) y `AppointmentService`
+         * valida `canTransitionTo(CANCELLED)` antes de cancelar, devolviendo
+         * 4xx. Ofrecer el boton producia un fallo silencioso: la cita
+         * parpadeaba a "Cancelada" y volvia sin ningun mensaje.
+         */
+        secondary: [],
       }
     // COMPLETED, CANCELLED, NO_SHOW — estados terminales, ninguna accion (D4).
     default:
@@ -96,15 +107,31 @@ export function AppointmentActions({
   onReschedule,
   isPending,
 }: AppointmentActionsProps) {
+  /**
+   * `isPending` es un solo booleano compartido por la hoja y el panel
+   * (props publicas, no se tocan). Para saber EN CUAL boton pintar el
+   * spinner -- y no en todos -- el componente recuerda internamente la
+   * ultima accion que el propio usuario pulso. Si `isPending` se enciende
+   * sin que haya habido un clic previo, el CTA es el valor por defecto: es
+   * la unica accion que siempre existe en cualquier estado no terminal.
+   */
+  const [firedLabel, setFiredLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isPending) setFiredLabel(null)
+  }, [isPending])
+
   const spec = actionsFor(status, variant)
   if (!spec) return null
 
   const isSheet = variant === "sheet"
+  const spinningLabel = firedLabel ?? spec.cta.label
 
-  const run = (intent: ActionIntent) => {
-    switch (intent.kind) {
+  const run = (action: ActionDef) => {
+    setFiredLabel(action.label)
+    switch (action.intent.kind) {
       case "status":
-        onStatusChange(intent.target)
+        onStatusChange(action.intent.target)
         break
       case "cancel":
         onCancelRequest()
@@ -124,22 +151,26 @@ export function AppointmentActions({
         variant={variant}
         action={spec.cta}
         isPending={isPending}
-        onClick={() => run(spec.cta.intent)}
+        isSpinning={isPending && spinningLabel === spec.cta.label}
+        onClick={() => run(spec.cta)}
       />
-      <div
-        data-testid="appointment-actions-secondary"
-        className={cn(isSheet ? "flex gap-2" : "grid grid-cols-2 gap-[9px]")}
-      >
-        {spec.secondary.map((action) => (
-          <SecondaryButton
-            key={action.label}
-            variant={variant}
-            action={action}
-            isPending={isPending}
-            onClick={() => run(action.intent)}
-          />
-        ))}
-      </div>
+      {spec.secondary.length > 0 && (
+        <div
+          data-testid="appointment-actions-secondary"
+          className={cn(isSheet ? "flex gap-2" : "grid grid-cols-2 gap-[9px]")}
+        >
+          {spec.secondary.map((action) => (
+            <SecondaryButton
+              key={action.label}
+              variant={variant}
+              action={action}
+              isPending={isPending}
+              isSpinning={isPending && spinningLabel === action.label}
+              onClick={() => run(action)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -152,11 +183,13 @@ function CtaButton({
   variant,
   action,
   isPending,
+  isSpinning,
   onClick,
 }: {
   variant: AppointmentActionsVariant
   action: ActionDef
   isPending: boolean
+  isSpinning: boolean
   onClick: () => void
 }) {
   const Icon = action.icon
@@ -173,7 +206,7 @@ function CtaButton({
         variant === "sheet" ? "h-12" : "h-[46px]"
       )}
     >
-      {isPending ? (
+      {isSpinning ? (
         <Loader2 className={cn(iconSize, "animate-spin")} />
       ) : (
         <Icon className={iconSize} strokeWidth={2.25} />
@@ -196,11 +229,13 @@ function SecondaryButton({
   variant,
   action,
   isPending,
+  isSpinning,
   onClick,
 }: {
   variant: AppointmentActionsVariant
   action: ActionDef
   isPending: boolean
+  isSpinning: boolean
   onClick: () => void
 }) {
   const Icon = action.icon
@@ -221,10 +256,13 @@ function SecondaryButton({
           : cn("border-border", !isSheet && "text-foreground")
       )}
     >
-      {isPending ? (
+      {isSpinning ? (
         <Loader2 className={cn(iconSize, "animate-spin")} />
       ) : (
-        <Icon className={cn(iconSize, !action.destructive && "text-muted-foreground")} />
+        <Icon
+          className={cn(iconSize, !action.destructive && "text-muted-foreground")}
+          strokeWidth={1.75}
+        />
       )}
       {action.label}
     </button>
