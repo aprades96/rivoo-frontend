@@ -101,6 +101,22 @@ const LAURA: Employee = {
   createdAt: DAY,
 }
 
+/** Empleado INACTIVO que precede a `emp_1` en la lista CRUDA (hallazgo 2). */
+const INACTIVE_BEFORE: Employee = {
+  id: "emp_0",
+  firstName: "Marc",
+  lastName: "Soler",
+  email: "marc@mail.com",
+  phone: null,
+  jobTitle: "Estilista",
+  colorHex: null,
+  isActive: false,
+  createdAt: DAY,
+}
+
+/** Igual que `LAURA` pero sin `colorHex`, para forzar el color de reserva. */
+const LAURA_NO_COLOR: Employee = { ...LAURA, colorHex: null }
+
 describe("AppointmentDetailSheet", () => {
   beforeEach(() => {
     updateStatusMutateMock.mockReset()
@@ -171,7 +187,17 @@ describe("AppointmentDetailSheet", () => {
     expect(screen.getByText("Laura Martinez")).toBeInTheDocument()
   })
 
-  it("el velo del artboard viaja por overlayClassName, NO tine la hoja", () => {
+  it("hallazgo 2: el indice de la paleta se calcula sobre empleados ACTIVOS, no la lista cruda", () => {
+    // emp_1 es el SEGUNDO de la lista cruda (indice 1) pero el PRIMERO entre
+    // los activos (indice 0): con el indice crudo saldria `--chart-2`.
+    useEmployeesMock.mockReturnValue({ data: { content: [INACTIVE_BEFORE, LAURA_NO_COLOR] } })
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const dot = screen.getByTestId("employee-color-dot")
+    expect(dot.style.backgroundColor).toBe("var(--chart-1)")
+  })
+
+  it("el velo del artboard viaja por overlayClassName, NO tine la hoja (hallazgo 3: token, no rgba a pelo)", () => {
     const { baseElement } = render(
       <AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />
     )
@@ -179,8 +205,20 @@ describe("AppointmentDetailSheet", () => {
     const overlay = baseElement.querySelector('[data-slot="sheet-overlay"]')
     const content = baseElement.querySelector('[data-slot="sheet-content"]')
 
-    expect(overlay).toHaveClass("bg-[rgba(42,35,32,0.42)]")
-    expect(content).not.toHaveClass("bg-[rgba(42,35,32,0.42)]")
+    // `--foreground` es `#2A2320` (`globals.css:114`); `/42` es el mismo 0,42
+    // de opacidad que `rgba(42,35,32,0.42)`.
+    expect(overlay).toHaveClass("bg-foreground/42")
+    expect(content).not.toHaveClass("bg-foreground/42")
+  })
+
+  it("hallazgo 3: el radio de la hoja es 16px exactos, no los 14,4px de rounded-t-2xl", () => {
+    const { baseElement } = render(
+      <AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />
+    )
+
+    const content = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(content).toHaveClass("rounded-t-[16px]")
+    expect(content).not.toHaveClass("rounded-t-2xl")
   })
 
   it("conserva max-h-[85vh] overflow-y-auto (D20: unica proteccion ante una nota larga)", () => {
@@ -264,5 +302,184 @@ describe("AppointmentDetailSheet", () => {
     )
 
     expect(screen.queryByText(/Alergia/)).not.toBeInTheDocument()
+  })
+
+/**
+ * ---------------------------------------------------------------------------
+ * Hallazgo 1 (HIGH): el interlineado heredado
+ * ---------------------------------------------------------------------------
+ * El artboard no declara `line-height` en estas lineas (`:52,53,60,61,77,78,86,114`),
+ * asi que valen `normal` (~1,25); sin `leading-tight` heredan el 1,5 de la
+ * preflight de Tailwind (mismo diagnostico que `appointment-block.tsx:116-126`).
+ */
+describe("AppointmentDetailSheet · el leading que el artboard no declara (hallazgo 1)", () => {
+  it("hora, fecha+duracion, cliente, contacto, servicio, resumen, empleado y meta llevan leading-tight", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    expect(screen.getByText("10:00 - 11:30")).toHaveClass("leading-tight")
+    expect(screen.getByText("Jueves, 27 de agosto · 1h 30min")).toHaveClass("leading-tight")
+    expect(screen.getByText("Ana Garcia")).toHaveClass("leading-tight")
+    // La fila de contacto (telefono+email) lleva el leading en su contenedor.
+    expect(screen.getByText("612 345 678").closest(".text-xs")).toHaveClass("leading-tight")
+    expect(screen.getByText("Corte + Tinte")).toHaveClass("leading-tight")
+    expect(screen.getByText(exact("1h 30min · 65,00 €"))).toHaveClass("leading-tight")
+    expect(screen.getByText("Laura Martinez")).toHaveClass("leading-tight")
+    expect(screen.getByText("Fuente: Reserva online · Recordatorio enviado")).toHaveClass("leading-tight")
+  })
+
+  it("la nota conserva el 1.45 declarado por el artboard (`:91`), no leading-tight", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const note = screen.getByText("Alergia al amoniaco. Usar tinte sin amoniaco.")
+    expect(note).toHaveClass("leading-[1.45]")
+    expect(note).not.toHaveClass("leading-tight")
+  })
+})
+
+/**
+ * ---------------------------------------------------------------------------
+ * Hallazgo 4 (HIGH, de pruebas): la capa de MEDIDAS fijada
+ * ---------------------------------------------------------------------------
+ * Modelo: `appointment-block.test.tsx`. Sin estas aserciones, romper el
+ * chasis (padding, radio, sombra, asa, gap, tipografia) deja los 694 tests
+ * en verde igual.
+ */
+describe("AppointmentDetailSheet · el chasis y la tipografia fijados (hallazgo 4)", () => {
+  it("la hoja: padding 10/16/20, radio 16, gap 16 y la sombra del artboard", () => {
+    const { baseElement } = render(
+      <AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />
+    )
+
+    const content = baseElement.querySelector('[data-slot="sheet-content"]')
+    expect(content).toHaveClass("pt-[10px]", "px-4", "pb-5", "rounded-t-[16px]", "gap-4")
+    expect(content).toHaveClass("shadow-[0_-8px_30px_rgba(42,35,32,0.2)]")
+  })
+
+  it("el asa: 36x4, pildora y el color del token --grabber", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const grabber = screen.getByTestId("detail-sheet-grabber")
+    expect(grabber).toHaveClass("h-1", "w-9", "rounded-full", "bg-grabber")
+  })
+
+  it("el titulo: 23px/1.1 y semibold", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const title = screen.getByText("Detalle de cita")
+    expect(title).toHaveClass("text-[23px]", "leading-[1.1]", "font-semibold")
+  })
+
+  it("el badge: padding 4/10, radio 999 y 11px/600", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const badge = screen.getByText("Pendiente")
+    expect(badge).toHaveClass("rounded-full", "px-[10px]", "py-1", "text-[11px]", "font-semibold")
+  })
+
+  it("la lista de hechos: gap 14 entre filas", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    expect(screen.getByTestId("detail-sheet-facts")).toHaveClass("gap-3.5")
+  })
+
+  it("las filas: iconos de 18px y textos 15/12", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    const timeRow = screen.getByText("10:00 - 11:30").closest(".items-start")
+    expect(timeRow?.querySelector("svg")).toHaveClass("size-[18px]")
+    expect(screen.getByText("10:00 - 11:30")).toHaveClass("text-[15px]")
+    expect(screen.getByText("Jueves, 27 de agosto · 1h 30min")).toHaveClass("text-xs")
+
+    const serviceRow = screen.getByText("Corte + Tinte").closest(".items-start")
+    expect(serviceRow?.querySelector("svg")).toHaveClass("size-[18px]")
+    expect(screen.getByText("Corte + Tinte")).toHaveClass("text-[15px]")
+    expect(screen.getByText(exact("1h 30min · 65,00 €"))).toHaveClass("text-xs")
+  })
+
+  it("el separador esta presente entre la lista y las acciones", () => {
+    const { baseElement } = render(
+      <AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />
+    )
+
+    expect(baseElement.querySelector('[data-slot="separator"]')).toHaveClass("bg-border")
+  })
+
+  it("el CTA mide 48px y los secundarios 46px", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    expect(screen.getByTestId("appointment-cta")).toHaveClass("h-12")
+    for (const secondary of screen.getAllByTestId("appointment-secondary-action")) {
+      expect(secondary).toHaveClass("h-[46px]")
+    }
+  })
+
+  it("la meta: 11px", () => {
+    render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
+
+    expect(screen.getByText("Fuente: Reserva online · Recordatorio enviado")).toHaveClass("text-[11px]")
+  })
+})
+
+/**
+ * ---------------------------------------------------------------------------
+ * Hallazgo 5 (LOW): la hoja no animaba al cerrarse
+ * ---------------------------------------------------------------------------
+ * `calendar/page.tsx:428-429` limpia `selectedAppointment` Y baja `open` en
+ * el MISMO render; sin conservar la ultima cita, `if (!appointment) return
+ * null` desmontaba el `<Sheet>` entero de golpe.
+ *
+ * Estas pruebas mantienen `open` en `true` a proposito: jsdom no implementa
+ * `Element.getAnimations`, asi que en cuanto `open` pasa a `false` el propio
+ * `@base-ui/react/dialog` resuelve la transicion de salida de forma SINCRONA
+ * (`useAnimationsFinished.js:42-43`) y el popup desaparece del DOM en el
+ * mismo `act()`, con o sin el arreglo -- no hay ventana observable para
+ * distinguir los dos comportamientos por ese lado en este entorno. Lo que SI
+ * es observable, y es la causa raiz del hallazgo, es que `appointment` pase a
+ * `null` NO debe colapsar el arbol por si solo: sin el `useRef`, cualquier
+ * render con `appointment=null` devuelve `null` inmediatamente, `open` sea
+ * cual sea. Fijar `open` en `true` aisla justo esa mecanica.
+ */
+describe("AppointmentDetailSheet · no se desmonta de golpe al cerrar (hallazgo 5)", () => {
+  it("retiene el contenido si appointment pasa a null: no colapsa el arbol por si solo", () => {
+    const appointment = makeAppointment()
+    const { rerender } = render(
+      <AppointmentDetailSheet appointment={appointment} open onOpenChange={vi.fn()} />
+    )
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+
+    rerender(<AppointmentDetailSheet appointment={null} open onOpenChange={vi.fn()} />)
+
+    // Sin el useRef, `if (!appointment) return null` desmontaria el <Sheet>
+    // entero aqui mismo -- justo el fallo de hallazgo 5.
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+  })
+
+  it("una cita nueva sustituye a la conservada, no se queda pegada a la anterior", () => {
+    const first = makeAppointment({ clientName: "Ana Garcia" })
+    const { rerender } = render(
+      <AppointmentDetailSheet appointment={first} open onOpenChange={vi.fn()} />
+    )
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+
+    rerender(<AppointmentDetailSheet appointment={null} open onOpenChange={vi.fn()} />)
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+
+    const second = makeAppointment({ id: "apt_2", clientName: "Marc Soler" })
+    rerender(<AppointmentDetailSheet appointment={second} open onOpenChange={vi.fn()} />)
+
+    expect(screen.getByText("Marc Soler")).toBeInTheDocument()
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
+  })
+
+  it("no revienta cuando appointment y open cambian a la vez, como hace calendar/page.tsx", () => {
+    const appointment = makeAppointment()
+    const { rerender } = render(
+      <AppointmentDetailSheet appointment={appointment} open onOpenChange={vi.fn()} />
+    )
+
+    expect(() =>
+      rerender(<AppointmentDetailSheet appointment={null} open={false} onOpenChange={vi.fn()} />)
+    ).not.toThrow()
+  })
   })
 })
