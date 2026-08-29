@@ -145,6 +145,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
       back={backToStaff}
       desktopBack={{ variant: "bordered", onBack: backToStaff }}
       actions={headerActions}
+      mobileActions={null}
     >
       {/* Profile */}
       <div className="flex items-center gap-3">
@@ -157,9 +158,14 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          {/* El nombre ya lo lleva el titulo de PageShell (ver la desviacion
-              deliberada arriba): repetirlo aqui tal cual duplicaria el texto
-              exacto del <h1> y volveria ambiguas las consultas por texto. */}
+          {/* `DetalleEmpleado.dc.html:52` SI lleva el nombre aqui (17px/600),
+              pero esa pantalla movil tambien lleva "Detalle empleado" en su
+              propia cabecera -- dos textos distintos. Al unificar el titulo
+              de PageShell con el nombre del empleado (decision del usuario,
+              ver arriba), dejar esta linea lo duplicaria literalmente en
+              movil (mismo texto en <h1> y aqui) y volveria ambiguas las
+              consultas por texto; se quita como consecuencia de esa
+              decision, no como atajo para callar un test. */}
           {employee.jobTitle && (
             <p className="text-sm text-muted-foreground">{employee.jobTitle}</p>
           )}
@@ -167,6 +173,33 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
             {employee.isActive ? "Activo" : "Inactivo"}
           </Badge>
         </div>
+        {/* `mobileActions={null}` vacia la cabecera movil (igual que en
+            /staff): en movil, Editar/Desactivar viven aqui como
+            botones-icono 36x36 (`DetalleEmpleado.dc.html:57,60`), con
+            `lg:hidden` porque en escritorio esos mismos destinos ya estan en
+            la barra superior con etiqueta (`headerActions` arriba). */}
+        {isOwner && (
+          <div className="flex gap-1.5 lg:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9"
+              aria-label="Editar"
+              onClick={() => setEditSheetOpen(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9 border-destructive-border"
+              aria-label="Desactivar"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Contact info */}
