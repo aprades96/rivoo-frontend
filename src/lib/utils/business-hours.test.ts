@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { dayName, groupBusinessHours } from "./business-hours"
+import { dayName, groupBusinessHours, getTodayBusinessHours } from "./business-hours"
 import type { BusinessHoursResponse } from "@/types/salon"
 
 function hours(dayOfWeek: number, isOpen: boolean, openTime = "09:00", closeTime = "20:00"): BusinessHoursResponse {
@@ -82,5 +82,38 @@ describe("groupBusinessHours", () => {
     expect(groupBusinessHours(week)).toEqual([
       { label: "Lun - Dom", isOpen: false, openTime: "09:00", closeTime: "20:00" },
     ])
+  })
+})
+
+describe("getTodayBusinessHours", () => {
+  const week: BusinessHoursResponse[] = [
+    hours(1, true, "09:00", "20:00"),
+    hours(2, true, "09:00", "20:00"),
+    hours(3, true, "09:00", "20:00"),
+    hours(4, true, "09:00", "20:00"),
+    hours(5, true, "09:00", "21:00"),
+    hours(6, true, "09:00", "14:00"),
+    hours(7, false, "09:00", "14:00"),
+  ]
+
+  it("resolves Wednesday (JS getDay 3) to dayOfWeek 3", () => {
+    // 2026-08-26 es miercoles.
+    const wednesday = new Date(2026, 7, 26)
+    expect(getTodayBusinessHours(week, wednesday)).toEqual(
+      hours(3, true, "09:00", "20:00")
+    )
+  })
+
+  it("wraps Sunday (JS getDay 0) to dayOfWeek 7", () => {
+    // 2026-08-30 es domingo.
+    const sunday = new Date(2026, 7, 30)
+    expect(getTodayBusinessHours(week, sunday)).toEqual(
+      hours(7, false, "09:00", "14:00")
+    )
+  })
+
+  it("returns undefined when the salon has no row for today", () => {
+    const wednesday = new Date(2026, 7, 26)
+    expect(getTodayBusinessHours([], wednesday)).toBeUndefined()
   })
 })

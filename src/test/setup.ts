@@ -10,3 +10,26 @@ import { configure } from "@testing-library/react"
  * resuelve en un microtask, lo que tarda es montar jsdom bajo contencion.
  */
 configure({ asyncUtilTimeout: 5000 })
+
+/**
+ * jsdom no implementa `window.matchMedia` (lanza "not implemented"). Lo
+ * necesita `useMediaQuery` (`src/hooks/use-media-query.ts`), que consumen
+ * `BookingStepShell` y cualquier prueba que lo renderice, directamente o a
+ * traves de `book/[slug]/page.tsx`. Por defecto no coincide con ninguna query
+ * (`matches: false`), igual que el snapshot de servidor del hook -- las
+ * pruebas que necesiten simular escritorio sobrescriben `window.matchMedia`
+ * ellas mismas.
+ */
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList
+}

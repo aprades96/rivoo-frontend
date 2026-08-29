@@ -69,3 +69,21 @@ export function groupBusinessHours(hours: BusinessHoursResponse[]): BusinessHour
     closeTime,
   }))
 }
+
+/**
+ * Today's row from `businessHours`, resolved from the caller's local clock.
+ * `SalonPublic` (unlike the private `Salon` type) carries no `timezone`
+ * field, so the visitor's own local day is the only day we can resolve here
+ * -- accepted trade-off for the public booking page, not a bug.
+ *
+ * `dayOfWeek` follows `BusinessHoursResponse`'s convention (Monday = 1 ...
+ * Sunday = 7), while `Date#getDay()` returns Sunday = 0, hence the wrap.
+ */
+export function getTodayBusinessHours(
+  hours: BusinessHoursResponse[],
+  now: Date = new Date()
+): BusinessHoursResponse | undefined {
+  const jsDay = now.getDay()
+  const dayOfWeek = jsDay === 0 ? 7 : jsDay
+  return hours.find((h) => h.dayOfWeek === dayOfWeek)
+}

@@ -110,7 +110,11 @@ describe("PublicBookingPage", () => {
   it("sigue el flujo normal del asistente cuando el salon si tiene servicios", () => {
     renderPage("salon-demo", { ...baseSalon, services: [service] })
 
-    expect(screen.getByText("Elige un servicio")).toBeInTheDocument()
+    // Aparece dos veces a proposito: BookingStepShell pinta su propio
+    // titulo (T2) y PublicServiceStep todavia pinta el suyo (se retira en
+    // una tarea posterior, ver STEP_META en page.tsx). getAllByText tolera
+    // el duplicado transitorio sin ser fragil ante ese futuro cambio.
+    expect(screen.getAllByText("Elige un servicio").length).toBeGreaterThan(0)
     expect(screen.getByText("Corte hombre")).toBeInTheDocument()
     expect(
       screen.queryByText("Este salon aun no acepta reservas online")
