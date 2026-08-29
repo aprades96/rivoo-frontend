@@ -50,9 +50,14 @@ export function useServices() {
  * `combine` va MEMORIZADO. `useQueries` cachea su resultado por
  * `[results, combine]`, asi que con una flecha inline -- nueva en cada
  * render -- ese memo fallaba SIEMPRE y `data` era un `Record` nuevo cada vez.
- * Aguas abajo eso anulaba los `useMemo` del calendario: cada tecla del
- * buscador rehacia el reparto en carriles del dia entero y volvia a montar las
- * 26 franjas pulsables de cada columna. `employeeIds` esta en las dependencias
+ * Aguas abajo eso rehacia en cada render los `useMemo` de la pantalla que
+ * dependen de este mapa: `breaks` y `freeSlot`.
+ *
+ * Lo que NO arregla, y conviene no atribuirselo: el reparto en carriles al
+ * teclear en el buscador. Teclear cambia `appointments`, y de ahi `columns`,
+ * asi que `assignLanes` se rehacia igual con `combine` memorizado o sin el.
+ * Eso lo corta el `useMemo` de `ColumnBody` (`day-view.tsx`), no este.
+ * `employeeIds` esta en las dependencias
  * porque el mapa se indexa POR POSICION (`results[index]`): con una lista
  * distinta y el `combine` viejo, cada empleado recibiria el horario de otro y
  * el descanso se pintaria en la columna equivocada.
