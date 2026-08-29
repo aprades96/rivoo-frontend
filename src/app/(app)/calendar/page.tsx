@@ -19,6 +19,7 @@ import {
   filterAppointmentsBySearch,
 } from "@/components/calendar/calendar-search"
 import { AppointmentDetailSheet } from "@/components/appointments/appointment-detail-sheet"
+import { AppointmentDetailPanel } from "@/components/appointments/appointment-detail-panel"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { useAppointments } from "@/hooks/use-appointments"
 import { useEmployees, useEmployeesWorkingHours } from "@/hooks/use-staff"
@@ -75,8 +76,16 @@ export default function CalendarPage() {
    */
   const [employeeChoice, setEmployeeChoice] = useState<{ id: string | null } | null>(null)
   const [search, setSearch] = useState("")
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  /**
+   * D16: se guarda el ID, no el objeto. La mutacion optimista de
+   * `use-appointments.ts:103-111` no reescribe el objeto capturado -- crea
+   * otros nuevos dentro de la cache -- y el panel se queda ABIERTO tras mutar
+   * (D9), asi que un objeto capturado se congelaria en el estado previo
+   * (ej.: seguir anunciando "Pendiente de confirmar" tras confirmar). Es el
+   * MISMO id que D10 ya necesita para el anillo de la rejilla, no uno nuevo:
+   * la cita se deriva de `dayAppointments` mas abajo, en cada render.
+   */
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
 
   const dateStr = format(currentDate, "yyyy-MM-dd")
@@ -154,6 +163,17 @@ export default function CalendarPage() {
    */
   const dayAppointments = useMemo(() => appointmentsData?.content ?? [], [appointmentsData])
 
+  /**
+   * La cita que muestra el panel/hoja, DERIVADA por id (D16) -- nunca
+   * capturada. Si `selectedAppointmentId` ya no esta en `dayAppointments`
+   * (se cambia de dia, se filtra tras cancelar) el detalle se cierra solo, sin
+   * un `useEffect` que lo persiga: no hay nada que renderizar.
+   */
+  const selectedAppointment = useMemo(
+    () => dayAppointments.find((appointment) => appointment.id === selectedAppointmentId) ?? null,
+    [dayAppointments, selectedAppointmentId]
+  )
+
   /** Lo que se PINTA: el dia menos lo que descarte el buscador. */
   const appointments = useMemo(
     () => filterAppointmentsBySearch(dayAppointments, search),
@@ -227,9 +247,10 @@ export default function CalendarPage() {
   )
 
   const handleAppointmentTap = (appointment: Appointment) => {
-    setSelectedAppointment(appointment)
-    setSheetOpen(true)
+    setSelectedAppointmentId(appointment.id)
   }
+
+  const closeAppointmentDetail = () => setSelectedAppointmentId(null)
 
   const goToPreviousDay = () => setCurrentDate((d) => subDays(d, 1))
   const goToNextDay = () => setCurrentDate((d) => addDays(d, 1))
@@ -258,6 +279,49 @@ export default function CalendarPage() {
       variant={isDesktop ? "desktop" : "mobile"}
     />
   )
+
+  /**
+   * La rejilla o su esqueleto de carga -- MISMA rama para los dos anchos, solo
+   * cambia lo que la envuelve mas abajo (D2). `min-w-0` en las dos ramas es lo
+   * que deja que la fila de escritorio encoja este lado sin que el contenido
+   * empuje al panel fuera de sus 360px; en la columna de movil no molesta.
+   */
+  const dayContent =
+    aptsLoading || waitingForFilter ? (
+      /*
+        La rama de carga tiene que sostener la MISMA cadena de alturas que la
+        rama cargada: `flex-1 min-h-0 overflow-y-auto`. `LoadingSkeleton` es
+        compartido y no las trae (es un `div` con `space-y-3 p-4`), asi que
+        como hijo flex directo no crecia ni hacia scroll -- y con el
+        `h-dvh overflow-hidden` del chasis, en un movil de 560dvh las
+        franjas fijas (56 + 62 + 58) mas el esqueleto (332) pasaban de los
+        480px utiles y la ultima fila quedaba recortada e inalcanzable. El
+        envoltorio va aqui, no en el componente compartido.
+      */
+      <div data-testid="calendar-loading" className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+        <LoadingSkeleton count={6} />
+      </div>
+    ) : (
+      <DayView
+        variant={isDesktop ? "desktop" : "mobile"}
+        columns={columns}
+        summaryColumns={summaryColumns}
+        breaks={breaks}
+        freeSlot={freeSlot}
+        onAppointmentTap={handleAppointmentTap}
+        onSlotTap={(employeeId, time) => openNewAppointment(time, employeeId)}
+        // `startTime` es ISO LOCAL ("2026-08-27T12:00:00"), tal y como lo
+        // escribe `nextFreeSlot`: los caracteres 11-16 son la hora.
+        onFreeSlotTap={(slot) =>
+          openNewAppointment(slot.startTime.slice(11, 16), selectedEmployeeId)
+        }
+        // D17: solo tiene efecto en `variant="desktop"`, asi que en movil da
+        // igual que `selectedAppointment` exista -- alli nunca hay panel.
+        narrow={isDesktop && !!selectedAppointment}
+        selectedAppointmentId={selectedAppointmentId}
+        className="min-w-0"
+      />
+    )
 
   return (
     <PageShell
@@ -327,47 +391,47 @@ export default function CalendarPage() {
         </>
       )}
 
-      {aptsLoading || waitingForFilter ? (
-        /*
-          La rama de carga tiene que sostener la MISMA cadena de alturas que la
-          rama cargada: `flex-1 min-h-0 overflow-y-auto`. `LoadingSkeleton` es
-          compartido y no las trae (es un `div` con `space-y-3 p-4`), asi que
-          como hijo flex directo no crecia ni hacia scroll -- y con el
-          `h-dvh overflow-hidden` del chasis, en un movil de 560dvh las
-          franjas fijas (56 + 62 + 58) mas el esqueleto (332) pasaban de los
-          480px utiles y la ultima fila quedaba recortada e inalcanzable. El
-          envoltorio va aqui, no en el componente compartido.
-        */
-        <div data-testid="calendar-loading" className="min-h-0 flex-1 overflow-y-auto">
-          <LoadingSkeleton count={6} />
+      {/*
+        La FILA de D2 -- SOLO en escritorio: es hermana de la rejilla dentro
+        de una fila `flex min-h-0 flex-1`, por DEBAJO de la barra superior,
+        que sigue a ancho completo (`design/DetalleCitaDesktop.dc.html:108`).
+        La capa interna de `PageShell` en `fill` es una COLUMNA que da
+        servicio a doce pantallas (`page-shell.tsx:129`): la fila la monta
+        esta pagina, no `PageShell`.
+
+        Envuelve el TERNARIO COMPLETO (`dayContent`), no solo `DayView`: la
+        otra rama es el esqueleto de carga, y si la fila envolviera solo la
+        rama cargada el panel desapareceria y volveria en cada recarga -- que
+        es justo lo que pasa tras cada mutacion, porque `onSettled` invalida
+        `["appointments"]` (`use-appointments.ts:128-130`).
+
+        En movil el arbol se queda EXACTAMENTE como esta: `dayContent` se
+        pinta suelto, sin fila ni panel.
+      */}
+      {isDesktop ? (
+        <div className="flex min-h-0 flex-1">
+          {dayContent}
+          <AppointmentDetailPanel appointment={selectedAppointment} onClose={closeAppointmentDetail} />
         </div>
       ) : (
-        <DayView
-          variant={isDesktop ? "desktop" : "mobile"}
-          columns={columns}
-          summaryColumns={summaryColumns}
-          breaks={breaks}
-          freeSlot={freeSlot}
-          onAppointmentTap={handleAppointmentTap}
-          onSlotTap={(employeeId, time) => openNewAppointment(time, employeeId)}
-          // `startTime` es ISO LOCAL ("2026-08-27T12:00:00"), tal y como lo
-          // escribe `nextFreeSlot`: los caracteres 11-16 son la hora.
-          onFreeSlotTap={(slot) =>
-            openNewAppointment(slot.startTime.slice(11, 16), selectedEmployeeId)
-          }
-        />
+        dayContent
       )}
 
       {/*
-        El detalle sigue abriendose en hoja lateral. El bloque siguiente lo
-        sustituye por un panel acoplado de 360px; aqui solo se conserva el
-        cableado.
+        Escritorio monta el PANEL (fila de arriba); movil monta la HOJA.
+        Nunca los dos a la vez: montar ambos y esconder uno con CSS dejaria
+        dos arboles en jsdom y rompe `getByRole` por ambiguedad (el mismo
+        motivo que documenta `page-shell.tsx:101-103`).
       */}
-      <AppointmentDetailSheet
-        appointment={selectedAppointment}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-      />
+      {!isDesktop && (
+        <AppointmentDetailSheet
+          appointment={selectedAppointment}
+          open={selectedAppointment !== null}
+          onOpenChange={(open) => {
+            if (!open) closeAppointmentDetail()
+          }}
+        />
+      )}
     </PageShell>
   )
 }

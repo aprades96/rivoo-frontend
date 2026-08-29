@@ -278,14 +278,23 @@ describe("CalendarPage", () => {
    * que habia antes, por ejemplo) corta la cadena, `DayView` se pinta a sus
    * 1248px y el scroll se lo queda una pagina que ademas es `overflow-hidden`.
    */
-  it("la rejilla cuelga directamente del contenedor de PageShell, sin envoltorio", () => {
+  /**
+   * REGRESION actualizada por T10 (D2): con el panel de detalle, la rejilla ya
+   * no cuelga DIRECTAMENTE del contenedor de `PageShell` en escritorio -- ahi
+   * cuelga la FILA `flex min-h-0 flex-1` que `/calendar` monta para acoplar
+   * rejilla y panel (`DetalleCitaDesktop.dc.html:108`), y `DayView` vive un
+   * nivel dentro de ella, junto al panel. Antes de T10 la fila no existia.
+   */
+  it("en escritorio la FILA del panel cuelga directamente de PageShell; DayView vive dentro de ella", () => {
     mockMatchMedia(true)
 
     const { container } = render(<CalendarPage />)
 
     const content = container.querySelector('[data-slot="page-shell-content"]')
     expect(content).not.toBeNull()
-    expect(screen.getByTestId("day-view").parentElement).toBe(content)
+    const dayView = screen.getByTestId("day-view")
+    expect(dayView.parentElement).toHaveClass("flex", "min-h-0", "flex-1")
+    expect(dayView.parentElement?.parentElement).toBe(content)
   })
 
   /**
@@ -912,14 +921,99 @@ describe("CalendarPage", () => {
 
   // --- Detalle -------------------------------------------------------------
 
-  it("pulsar un bloque abre el detalle de esa cita", () => {
+  /**
+   * RESIGNIFICADO por T10 (D1, D2): antes del panel acoplado, este caso abria
+   * la HOJA -- el unico detalle que existia, en cualquier ancho. Ahora, en
+   * escritorio, es el PANEL quien monta ese mismo rotulo ("Detalle de cita",
+   * §1.2): el caso podia seguir en verde por COINCIDENCIA sin probar nada
+   * nuevo. Se revisa a proposito, afirmando sobre `appointment-detail-panel`
+   * en vez de sobre el texto suelto, y sobre la AUSENCIA de la hoja (D9): los
+   * dos NUNCA se montan a la vez.
+   */
+  it("en escritorio pulsar un bloque abre el PANEL de detalle, no la hoja", () => {
     mockMatchMedia(true)
 
     render(<CalendarPage />)
     fireEvent.click(screen.getByText("Ana Garcia"))
 
-    expect(screen.getByText("Detalle de cita")).toBeInTheDocument()
-    // El bloque de la rejilla y la hoja: dos apariciones del mismo nombre.
+    const panel = screen.getByTestId("appointment-detail-panel")
+    expect(within(panel).getByText("Detalle de cita")).toBeInTheDocument()
+    // El bloque de la rejilla y el panel: dos apariciones del mismo nombre.
     expect(screen.getAllByText("Ana Garcia")).toHaveLength(2)
+    expect(screen.queryByTestId("detail-sheet-grabber")).not.toBeInTheDocument()
+  })
+
+  it("en movil pulsar un bloque abre la HOJA de detalle, no el panel", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+    // Carla Ruiz es de Laura (`emp_1`), el empleado en el que arranca el
+    // filtro de pildoras: visible sin tocar nada.
+    fireEvent.click(screen.getByText("Carla Ruiz"))
+
+    expect(screen.getByTestId("detail-sheet-grabber")).toBeInTheDocument()
+    expect(screen.getByText("Detalle de cita")).toBeInTheDocument()
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+  })
+
+  /**
+   * El MODO ESTRECHO (§1.3): abrir el panel no solo pinta un anillo, redibuja
+   * la rejilla entera para caber en menos ancho. Se comprueba con el marco de
+   * `DayView` (`FRAME_PADDING_CLASSNAME`, `day-view.tsx:34-38`): `px-6` normal,
+   * `px-5` con el panel abierto. Cerrar el panel lo devuelve.
+   */
+  it("en escritorio abrir el panel estrecha la rejilla; cerrarlo la devuelve", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    expect(screen.getByTestId("day-view")).toHaveClass("px-6")
+    expect(screen.getByTestId("day-view")).not.toHaveClass("px-5")
+
+    fireEvent.click(screen.getByText("Ana Garcia"))
+
+    expect(screen.getByTestId("day-view")).toHaveClass("px-5")
+    expect(screen.getByTestId("day-view")).not.toHaveClass("px-6")
+
+    fireEvent.click(screen.getByTestId("appointment-panel-close"))
+
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+    expect(screen.getByTestId("day-view")).toHaveClass("px-6")
+    expect(screen.getByTestId("day-view")).not.toHaveClass("px-5")
+  })
+
+  /**
+   * D16, EL TEST QUE SEPARA DERIVAR DE CAPTURAR. Si la pagina capturase el
+   * OBJETO al pulsar (el codigo de antes de T10), este caso se queda en ROJO:
+   * el objeto capturado no cambia aunque `useAppointments` devuelva datos
+   * nuevos. Derivando por id (D16) el panel refleja el estado que trae la
+   * consulta en cada render -- exactamente lo que hace `onSettled` al
+   * invalidar `["appointments"]` tras una mutacion real
+   * (`use-appointments.ts:128-130`).
+   */
+  it("D16: confirmar la cita deriva el nuevo estado en el panel sin cerrarlo", () => {
+    mockMatchMedia(true)
+
+    const pending = makeAppointment({ status: "PENDING" })
+    useAppointmentsMock.mockReturnValue({ data: { content: [pending] }, isLoading: false })
+
+    const { rerender } = render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Carla Ruiz"))
+
+    expect(
+      within(screen.getByTestId("appointment-detail-panel")).getByTestId("appointment-panel-status")
+    ).toHaveTextContent("Pendiente de confirmar")
+
+    // Lo que hace una mutacion real al asentarse: `["appointments"]` se
+    // invalida y el refetch trae la MISMA cita con el estado nuevo -- un
+    // objeto NUEVO, no el mismo mutado in place (`use-appointments.ts:103-111`).
+    useAppointmentsMock.mockReturnValue({
+      data: { content: [{ ...pending, status: "CONFIRMED" as const }] },
+      isLoading: false,
+    })
+    rerender(<CalendarPage />)
+
+    const panel = screen.getByTestId("appointment-detail-panel")
+    expect(within(panel).getByTestId("appointment-panel-status")).toHaveTextContent("Confirmada")
+    expect(within(panel).getByText("Carla Ruiz")).toBeInTheDocument()
   })
 })
