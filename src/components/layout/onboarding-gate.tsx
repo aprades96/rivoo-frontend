@@ -67,10 +67,10 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     )
   }
 
-  // Both error screens below render before AppHeader (app/(app)/layout.tsx
-  // mounts it only inside this gate's `children`), so without this the owner
-  // has no way to leave the screen at all -- not even to log out and come
-  // back with a different account.
+  // Both error screens below render INSTEAD of the app shell: this gate wraps
+  // it, so neither the sidebar nor the screen's own header exists here. Without
+  // this the owner has no way to leave the screen at all -- not even to log out
+  // and come back with a different account.
   const logoutAction = (
     <Button variant="ghost" onClick={() => logout()}>
       <LogOut className="h-4 w-4" />
