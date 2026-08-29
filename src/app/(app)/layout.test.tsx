@@ -194,4 +194,89 @@ describe("AppLayout", () => {
     expect(screen.getByLabelText("probe")).toHaveValue("hola")
     expect(screen.getByTestId("app-sidebar")).toBeInTheDocument()
   })
+
+  /**
+   * `FILL_ROUTES`: la otra mitad de la invariante de `PageShell layout="fill"`.
+   * `fill` baja una cadena de `flex-1 min-h-0`, y esa cadena solo ACOTA si algun
+   * ancestro tiene altura DEFINIDA -- `min-h-dvh` es un suelo con alto
+   * automatico, asi que la rejilla creceria a su alto natural y el scroll se lo
+   * quedaria la pagina, justo lo contrario del marco con `overflow: hidden` que
+   * dibujan `CalendarioDesktop.dc.html:130` y `Calendario.dc.html:66`.
+   */
+  it("en una ruta de rejilla el contenedor tiene altura definida y no hace scroll de pagina, en movil", () => {
+    mockMatchMedia(false)
+    const { container } = renderLayout("/calendar")
+    const shell = container.querySelector('[data-testid="onboarding-gate"]')?.firstElementChild
+
+    expect(shell).toHaveClass("h-dvh")
+    expect(shell).toHaveClass("overflow-hidden")
+    expect(shell).not.toHaveClass("min-h-dvh")
+    // La columna de movil se conserva: cuerpo arriba, `BottomNav` fija fuera del flujo.
+    expect(shell).toHaveClass("flex-col")
+  })
+
+  it("en una ruta de rejilla el contenedor tiene altura definida tambien en escritorio", () => {
+    mockMatchMedia(true)
+    const { container } = renderLayout("/calendar")
+    const shell = container.querySelector('[data-testid="onboarding-gate"]')?.firstElementChild
+
+    expect(shell).toHaveClass("h-dvh")
+    expect(shell).toHaveClass("overflow-hidden")
+    expect(shell).not.toHaveClass("min-h-dvh")
+    // En escritorio el chasis es una FILA (barra lateral + main), no una columna.
+    expect(shell).not.toHaveClass("flex-col")
+  })
+
+  it("una subruta de una ruta de rejilla tambien cuenta (`startsWith`, igual que FAB_ROUTES)", () => {
+    mockMatchMedia(false)
+    const { container } = renderLayout("/calendar/2026-08-27")
+    const shell = container.querySelector('[data-testid="onboarding-gate"]')?.firstElementChild
+
+    expect(shell).toHaveClass("h-dvh")
+    expect(shell).toHaveClass("overflow-hidden")
+  })
+
+  /**
+   * Las once pantallas que NO son de rejilla no se mueven. Sin esta prueba,
+   * colar `overflow-hidden` en todas dejaria inalcanzable cualquier contenido
+   * que pase de 100dvh (p.ej. `/clients` con cincuenta filas).
+   */
+  it.each(["/clients", "/settings/billing"])(
+    "fuera de las rutas de rejilla (%s) el contenedor sigue creciendo con el contenido y la pagina hace scroll",
+    (route) => {
+      mockMatchMedia(false)
+      const { container } = renderLayout(route)
+      const shell = container.querySelector('[data-testid="onboarding-gate"]')?.firstElementChild
+
+      expect(shell).toHaveClass("min-h-dvh")
+      expect(shell).not.toHaveClass("h-dvh")
+      expect(shell).not.toHaveClass("overflow-hidden")
+    }
+  )
+
+  it("fuera de las rutas de rejilla tampoco cambia el escritorio", () => {
+    mockMatchMedia(true)
+    const { container } = renderLayout("/clients")
+    const shell = container.querySelector('[data-testid="onboarding-gate"]')?.firstElementChild
+
+    expect(shell).toHaveClass("min-h-dvh")
+    expect(shell).not.toHaveClass("h-dvh")
+    expect(shell).not.toHaveClass("overflow-hidden")
+  })
+
+  /**
+   * `<main>` es quien transmite los 100dvh hacia abajo: columna flex que puede
+   * encogerse (`min-h-0`), con el `pb-20` que despeja la `BottomNav` fija.
+   */
+  it("en movil `<main>` deja pasar la altura y conserva el hueco de la barra inferior", () => {
+    mockMatchMedia(false)
+    const { container } = renderLayout("/calendar")
+    const main = container.querySelector("main")
+
+    expect(main).toHaveClass("flex")
+    expect(main).toHaveClass("flex-col")
+    expect(main).toHaveClass("flex-1")
+    expect(main).toHaveClass("min-h-0")
+    expect(main).toHaveClass("pb-20")
+  })
 })

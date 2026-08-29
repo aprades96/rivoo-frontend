@@ -12,10 +12,31 @@ import type { ReactNode } from "react"
 
 const FAB_ROUTES = ["/today", "/calendar"]
 
+/**
+ * Rutas de rejilla: las que piden a `PageShell` `layout="fill"` (cuerpo sin
+ * padding exterior, a alto completo y con scroll DENTRO de si mismo).
+ *
+ * INVARIANTE: una ruta de `FILL_ROUTES` pasa `layout="fill"` a su `PageShell`,
+ * y al reves. Las dos mitades son necesarias y ninguna sirve sola:
+ *  - la ruta aqui y sin `fill` en la pantalla = la pagina deja de hacer scroll
+ *    (`overflow-hidden` de abajo) y el contenido que pase de 100dvh es
+ *    inalcanzable;
+ *  - `fill` en la pantalla y la ruta no aqui = el contenedor sigue siendo
+ *    `min-h-dvh`, o sea alto AUTOMATICO, y una altura no definida no acota
+ *    nada: la cadena `flex-1 min-h-0` de `PageShell` se estira con el
+ *    contenido en vez de acotarlo, y quien hace scroll vuelve a ser la pagina.
+ * Quien anada la siguiente pantalla de rejilla tiene que tocar los dos sitios.
+ */
+const FILL_ROUTES = ["/calendar"]
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const showFab = !isDesktop && FAB_ROUTES.some((r) => pathname.startsWith(r))
+  // Sin `!isDesktop`, a diferencia de `showFab`: la altura definida hace falta
+  // en los DOS anchos (`CalendarioDesktop.dc.html:130` y `Calendario.dc.html:66`
+  // dibujan los dos su marco con `overflow: hidden`).
+  const isFill = FILL_ROUTES.some((r) => pathname.startsWith(r))
   const { onTouchStart, onTouchEnd } = useSwipeNavigation()
 
   // Desktop chassis: `design/EquipoDesktop.dc.html` -- fixed sidebar plus a
@@ -38,7 +59,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <OnboardingGate>
       <div
-        className={cn("flex min-h-dvh", !isDesktop && "flex-col")}
+        className={cn(
+          "flex",
+          // `h-dvh` (definida), no `min-h-dvh` (un suelo, alto automatico): sin
+          // una altura DEFINIDA arriba, el `flex-1 min-h-0` de `PageShell` no
+          // acota nada -- el tamano intrinseco del contenedor sigue incluyendo
+          // la aportacion del contenido, asi que la rejilla crece a su alto
+          // natural y el scroll se lo queda la pagina. Con `h-dvh`:
+          //  - escritorio: contenedor flex en FILA, asi que `<main>` se estira
+          //    a esos 100dvh y la cadena de alturas ya baja desde ahi;
+          //  - movil: contenedor en columna, y `BottomNav` es `fixed` (no
+          //    consume espacio de flex), asi que `<main>` recibe los 100dvh
+          //    enteros y su `pb-20` deja el contenido justo encima de la barra.
+          // `overflow-hidden` es lo que dibujan los dos artboards a nivel de
+          // marco: en una ruta de rejilla la pagina NO hace scroll, lo hace la
+          // rejilla por dentro.
+          isFill ? "h-dvh overflow-hidden" : "min-h-dvh",
+          !isDesktop && "flex-col"
+        )}
         onTouchStart={isDesktop ? undefined : onTouchStart}
         onTouchEnd={isDesktop ? undefined : onTouchEnd}
       >
