@@ -78,7 +78,10 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
         aria-pressed={isSelected}
         disabled={!offersService}
         className={cn(
-          "flex w-full flex-row items-center gap-3 rounded-[10px] border border-border p-3.5 text-left transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:gap-[14px] lg:p-4",
+          // `bg-card` explicito: al dejar de usar `Card` se perdio, y las tarjetas
+          // salian del color del fondo de pagina en vez de blancas
+          // (`design/ReservaPaso2.dc.html:18`, `ReservaDesktopPaso2.dc.html:20`).
+          "flex w-full flex-row items-center gap-3 rounded-[10px] border border-border bg-card p-3.5 text-left text-sm transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:gap-[14px] lg:p-4",
           offersService
             ? "cursor-pointer hover:bg-muted/50"
             : "opacity-[0.55] lg:opacity-50",
@@ -200,7 +203,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
               Ninguno de estos profesionales ofrece {selectedService?.name ?? "este servicio"}.
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Toca la flecha de arriba para elegir otro servicio.
+              Vuelve atras para elegir otro servicio.
             </p>
           </div>
           <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-[14px]">

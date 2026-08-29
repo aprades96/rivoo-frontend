@@ -39,7 +39,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
     selectedSlot,
     clientForm,
     honeypot,
-    nextStep,
+    setStep,
     prevStep,
     setConflict,
   } = usePublicBookingStore()
@@ -76,15 +76,18 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       })
     },
     onSuccess: () => {
-      // La guarda no es defensiva de mas: los callbacks de `useMutation` viven
-      // en la instancia `Mutation`, no en el observer, asi que se ejecutan
-      // aunque este componente se haya desmontado. Si el visitante pulsa
-      // "Volver" con la peticion en vuelo, `nextStep()` corre sobre el paso 4 y
-      // lo deja en el 5 -- "Confirma tu reserva", con el CTA vivo y ninguna
-      // senal de que su cita YA existe. La vuelve a pulsar y el salon se come
-      // una segunda cita real. Solo se avanza si seguimos donde se pulso.
-      if (usePublicBookingStore.getState().step !== 5) return
-      nextStep() // → step 6 (success)
+      // `setStep(6)`, no `nextStep()`, y sin guarda de paso. La cita EXISTE: lo
+      // unico inaceptable es que el visitante no lo sepa. Los callbacks de
+      // `useMutation` viven en la instancia, no en el observer, asi que corren
+      // aunque el componente se haya desmontado; con `nextStep()` un visitante
+      // que hubiera vuelto al paso 4 acababa en el 5 —el CTA otra vez vivo,
+      // ninguna senal de que ya tiene cita— y con una guarda que se limitara a
+      // no hacer nada se quedaba en el 4, que reserva igual un clic despues y
+      // ademas le oculta la confirmacion. La pantalla de exito lee todo del
+      // store (`public-success-step.tsx`), no de la respuesta, asi que ir al 6
+      // desde donde sea pinta lo correcto. `backDisabled` de mas abajo cierra
+      // la carrera en origen; esto es la red por si se abre otra.
+      setStep(6)
     },
     // -----------------------------------------------------------------
     // T10: the backend cannot tell "the slot was just taken by someone
@@ -102,13 +105,6 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
     // `public-datetime-step.tsx` already uses). If the slot is still there,
     // it is a different business failure -- fall through to the banner.
     onError: async (err) => {
-      // Mismo motivo que en `onSuccess`: si el visitante se ha ido del paso 5
-      // mientras la peticion volaba, ni el banner ni el conflicto son suyos ya.
-      // `page.tsx` comprueba `conflict` ANTES que `step`, asi que sin esto un
-      // `setConflict` disparado desde el paso 4 le arranca del formulario de
-      // sus datos y le planta la pantalla de hueco ocupado.
-      if (usePublicBookingStore.getState().step !== 5) return
-
       const conflictSlot = selectedSlot
       const conflictDate = selectedDate
 
@@ -141,6 +137,13 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
             (slot) => `${availability.date}T${slot.startTime}` === conflictSlot
           )
 
+          // La comprobacion va AQUI, despues del `await`, no a la entrada del
+          // callback: entre una cosa y otra hay un viaje de red entero, que es
+          // la ventana grande. `page.tsx` mira `conflict` ANTES que `step`, asi
+          // que un `setConflict` disparado cuando el visitante ya se ha ido le
+          // arranca de donde este y le planta la pantalla de hueco ocupado.
+          if (usePublicBookingStore.getState().step !== 5) return
+
           if (!stillAvailable) {
             setConflict({ slot: conflictSlot, date: conflictDate })
             return
@@ -154,6 +157,8 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
         }
       }
 
+      // Mismo motivo: el banner es del paso 5, no de donde haya ido a parar.
+      if (usePublicBookingStore.getState().step !== 5) return
       const message = err instanceof Error ? err.message : "Error al crear la reserva"
       setErrorMessage(message)
     },
@@ -196,6 +201,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       title="Confirma tu reserva"
       subtitle={DESKTOP_SUBTITLE}
       onBack={prevStep}
+      backDisabled={isSending}
       aside={
         <BookingSummaryAside
           rows={asideRows}

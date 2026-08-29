@@ -36,6 +36,14 @@ export interface BookingStepShellProps {
    */
   subtitle?: ReactNode
   onBack?: () => void
+  /**
+   * Apaga la navegacion hacia atras sin quitarla de la pantalla. Lo necesita el
+   * paso 5 mientras la reserva esta en vuelo: los callbacks de `useMutation`
+   * viven en la instancia, no en el observer, asi que corren aunque el
+   * componente se haya desmontado. Volver a mitad de peticion dejaba al
+   * visitante fuera del paso 5 con una cita ya creada en el salon.
+   */
+  backDisabled?: boolean
   aside?: ReactNode
   footer?: ReactNode
   asideWidth?: 320 | 340
@@ -48,6 +56,7 @@ export function BookingStepShell({
   title,
   subtitle,
   onBack,
+  backDisabled = false,
   aside,
   footer,
   asideWidth = 320,
@@ -65,7 +74,7 @@ export function BookingStepShell({
 
   return (
     <div className="flex flex-1 flex-col">
-      <MobileStepHeader salon={salon} step={step} onBack={onBack} />
+      <MobileStepHeader salon={salon} step={step} onBack={onBack} backDisabled={backDisabled} />
       <BookingDesktopHeader salon={salon} />
 
       {/*
@@ -111,6 +120,7 @@ export function BookingStepShell({
               variant="ghost"
               size="sm"
               onClick={onBack}
+              disabled={backDisabled}
               className="-ml-2 hidden self-start text-muted-foreground md:inline-flex"
             >
               <ChevronLeft className="size-4" />
@@ -153,9 +163,10 @@ interface MobileStepHeaderProps {
   salon: SalonPublic
   step: 1 | 2 | 3 | 4 | 5
   onBack?: () => void
+  backDisabled?: boolean
 }
 
-function MobileStepHeader({ salon, step, onBack }: MobileStepHeaderProps) {
+function MobileStepHeader({ salon, step, onBack, backDisabled }: MobileStepHeaderProps) {
   if (step === 1) {
     return <MobileStepOneHeader salon={salon} />
   }
@@ -164,7 +175,14 @@ function MobileStepHeader({ salon, step, onBack }: MobileStepHeaderProps) {
     <div className="flex h-[60px] shrink-0 items-center justify-between gap-2.5 bg-muted py-0 pr-4 pl-2 border-b md:hidden">
       <div className="flex items-center gap-1">
         {onBack && (
-          <Button variant="ghost" size="icon" className="size-11" onClick={onBack} aria-label="Volver">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            onClick={onBack}
+            disabled={backDisabled}
+            aria-label="Volver"
+          >
             <ChevronLeft className="size-5" />
           </Button>
         )}

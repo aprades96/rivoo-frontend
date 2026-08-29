@@ -169,7 +169,7 @@ describe("PublicEmployeeStep", () => {
 
     expect(screen.getByText("Ninguno de estos profesionales ofrece Barba.")).toBeInTheDocument()
     expect(
-      screen.getByText("Toca la flecha de arriba para elegir otro servicio.")
+      screen.getByText("Vuelve atras para elegir otro servicio.")
     ).toBeInTheDocument()
     expect(screen.queryByText(LOAD_FAILURE_TITLE)).not.toBeInTheDocument()
     expect(
