@@ -117,6 +117,18 @@ export function PageShell({
 
   const mobileActionsContent = mobileActions === undefined ? actions : mobileActions
 
+  // `contentClassName` trae anchos calibrados contra los artboards de
+  // ESCRITORIO (554/800/860px, `AjustesXDesktop.dc.html`). Colarlos tal
+  // cual en esta rama pega el contenido a la izquierda de los 736px que
+  // reserva `max-w-3xl` de aqui abajo, con hueco muerto a la derecha
+  // (regresion real en `/settings/billing` y `/settings/booking` entre
+  // 768-1023px). El espaciado (`space-y-4`, `gap-...`) si es universal,
+  // asi que solo se descarta el token de ancho.
+  const mobileContentClassName = contentClassName
+    ?.split(" ")
+    .filter((token) => !token.startsWith("max-w-"))
+    .join(" ")
+
   return (
     <div className="flex flex-1 flex-col">
       <MobileHeader
@@ -131,7 +143,7 @@ export function PageShell({
         cabecera y su `border-b` se quedarian centrados con hueco a los lados.
       */}
       <div className="mx-auto w-full max-w-3xl p-4 md:py-6">
-        <div data-slot="page-shell-content" className={cn(contentClassName)}>
+        <div data-slot="page-shell-content" className={cn(mobileContentClassName)}>
           {children}
         </div>
       </div>

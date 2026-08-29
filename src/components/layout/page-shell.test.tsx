@@ -292,4 +292,20 @@ describe("PageShell", () => {
     )?.parentElement
     expect(contentWrapper).toHaveClass("max-w-3xl")
   })
+
+  it("en movil `contentClassName` no cuela su ancho de escritorio (regresion: dejaba el contenido pegado a la izquierda de los 736px de `max-w-3xl`, con hueco muerto a la derecha)", () => {
+    mockMatchMedia(false)
+    const { container } = render(
+      <PageShell title="Facturacion y plan" contentClassName="max-w-[554px] space-y-4">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    const content = container.querySelector('[data-slot="page-shell-content"]')
+    expect(content).not.toHaveClass("max-w-[554px]")
+    expect(content).toHaveClass("space-y-4")
+
+    const contentWrapper = content?.parentElement
+    expect(contentWrapper).toHaveClass("max-w-3xl")
+  })
 })
