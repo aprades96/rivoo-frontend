@@ -50,7 +50,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               : // `max-w-3xl` vive en `PageShell` (contenido), no aqui: la
                 // cabecera movil necesita el ancho completo de `<main>` entre
                 // 768 y 1023px, y este `<main>` es su ancestro.
-                "w-full flex-1 pb-20"
+                //
+                // `flex flex-col min-h-0` (antes era un bloque a secas): el
+                // hijo unico es el `flex flex-1 flex-col` de `PageShell`, y
+                // dentro de un bloque su `flex-1` es inerte y su altura queda
+                // en `auto`. Como columna flex el `flex-1` vuelve a valer, y
+                // `min-h-0` levanta el minimo automatico para que un hijo con
+                // `flex-1 min-h-0` (`PageShell layout="fill"`) pueda encogerse
+                // y hacer scroll DENTRO de si mismo en vez de estirar la
+                // pagina. Las once pantallas sin `fill` no cambian: el shell
+                // de arriba es `min-h-dvh` con alto automatico, asi que sigue
+                // creciendo con el contenido y el scroll de pagina es el de
+                // siempre -- `pb-20` incluido, que sigue despejando la
+                // `BottomNav` fija al final del contenido.
+                "flex w-full min-h-0 flex-1 flex-col pb-20"
           }
         >
           {children}

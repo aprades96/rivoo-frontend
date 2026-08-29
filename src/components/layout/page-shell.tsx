@@ -49,6 +49,22 @@ export interface PageShellProps {
   titleSize?: "default" | "lg"
   /** Clase de la capa INTERNA del contenido; nunca el padding exterior. */
   contentClassName?: string
+  /**
+   * `"fill"` entrega el cuerpo SIN padding exterior y a alto completo, para
+   * las pantallas de rejilla. `CalendarioDesktop.dc.html:103` pega la fila de
+   * empleados a la barra superior sin hueco vertical y le pone su propio
+   * `padding: 0 24px`, y `:130` da a la rejilla horaria el alto restante con
+   * `overflow` propio -- dos cosas imposibles bajo el `px-7 py-6` (escritorio)
+   * / `p-4 md:py-6` (movil) de `"default"`, que `contentClassName` no toca.
+   *
+   * Con `fill` cada franja de la pantalla trae su propio espaciado y la cadena
+   * de alturas (`flex-1 min-h-0` en las dos capas) llega hasta el hijo, que asi
+   * puede hacer scroll DENTRO de si mismo en vez de estirar la pagina.
+   *
+   * `"default"` deja intactas las otras once pantallas: mismo arbol, mismas
+   * clases, salvo el `min-h-0` del contenedor raiz.
+   */
+  layout?: "default" | "fill"
   children: ReactNode
 }
 
@@ -62,6 +78,7 @@ export function PageShell({
   titleAdjacent,
   titleSize = "default",
   contentClassName,
+  layout = "default",
   children,
 }: PageShellProps) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
@@ -84,9 +101,14 @@ export function PageShell({
   // Montaje condicional, no CSS: jsdom no aplica CSS, asi que un arbol
   // duplicado escondido con `hidden` seguiria rompiendo `getByRole` por
   // ambiguedad -- y peor, dejaria pasar defectos.
+  const isFill = layout === "fill"
+
   if (isDesktop) {
     return (
-      <div className="flex flex-1 flex-col">
+      // `min-h-0`: sin el, este contenedor no puede encogerse por debajo de su
+      // contenido y la altura que baja de `<main>` se pierde aqui -- el hijo
+      // con `flex-1` crece en vez de hacer scroll interno.
+      <div className="flex min-h-0 flex-1 flex-col">
         <DesktopHeader
           title={title}
           desktopBack={desktopBackResolved}
@@ -94,19 +116,27 @@ export function PageShell({
           subtitle={subtitle}
           titleAdjacent={titleAdjacent}
           titleSize={titleSize}
+          fill={isFill}
         />
-        <div className="flex flex-col px-7 py-6">
+        <div className={cn(isFill ? "flex min-h-0 flex-1 flex-col" : "flex flex-col px-7 py-6")}>
           <div
             data-slot="page-shell-content"
-            className={cn(
-              "flex max-w-[1084px] flex-col",
-              // `contentClassName` SUSTITUYE el espaciado por defecto, no se
-              // suma: `gap-[18px]` y `space-y-4` son grupos distintos para
-              // tailwind-merge, asi que sobrevivirian los dos (34px en vez
-              // de los 18px que dibuja `EquipoDesktop:90`) si se aplicaran
-              // ambos a la vez.
-              contentClassName ? contentClassName : "gap-[18px]"
-            )}
+            className={
+              isFill
+                ? // Sin `max-w-[1084px]` (`CalendarioDesktop.dc.html:130` deja
+                  // la rejilla a ancho completo) y sin gap por defecto: cada
+                  // franja trae su espaciado. `contentClassName` sigue mandando.
+                  cn("flex min-h-0 flex-1 flex-col", contentClassName)
+                : cn(
+                    "flex max-w-[1084px] flex-col",
+                    // `contentClassName` SUSTITUYE el espaciado por defecto, no se
+                    // suma: `gap-[18px]` y `space-y-4` son grupos distintos para
+                    // tailwind-merge, asi que sobrevivirian los dos (34px en vez
+                    // de los 18px que dibuja `EquipoDesktop:90`) si se aplicaran
+                    // ambos a la vez.
+                    contentClassName ? contentClassName : "gap-[18px]"
+                  )
+            }
           >
             {children}
           </div>
@@ -130,7 +160,7 @@ export function PageShell({
     .join(" ")
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <MobileHeader
         title={title}
         onBack={mobileBackResolved}
@@ -142,8 +172,23 @@ export function PageShell({
         `<main>` entre 768 y 1023px -- si el limite siguiera en `<main>`, la
         cabecera y su `border-b` se quedarian centrados con hueco a los lados.
       */}
-      <div className="mx-auto w-full max-w-3xl p-4 md:py-6">
-        <div data-slot="page-shell-content" className={cn(mobileContentClassName)}>
+      <div
+        className={cn(
+          // `fill` se queda con el `max-w-3xl` (el limite de lectura sigue
+          // valiendo) y solo suelta el padding: `Calendario.dc.html:66` da a la
+          // rejilla su propio `padding: 0 12px` bajo unas franjas fijas.
+          isFill
+            ? "mx-auto flex w-full min-h-0 flex-1 flex-col max-w-3xl"
+            : "mx-auto w-full max-w-3xl p-4 md:py-6"
+        )}
+      >
+        <div
+          data-slot="page-shell-content"
+          // `flex min-h-0 flex-1 flex-col` tambien AQUI: es el ultimo eslabon
+          // de la cadena de alturas de movil; sin el, el hijo se pinta a su
+          // alto natural y quien hace scroll es la pagina, no la rejilla.
+          className={cn(isFill && "flex min-h-0 flex-1 flex-col", mobileContentClassName)}
+        >
           {children}
         </div>
       </div>
@@ -158,6 +203,14 @@ interface DesktopHeaderProps {
   subtitle?: ReactNode
   titleAdjacent?: ReactNode
   titleSize: "default" | "lg"
+  /**
+   * La familia de la rejilla dibuja la barra superior a `padding: 0 24px`
+   * (`CalendarioDesktop.dc.html:74`), no a los 28px que usan los otros quince
+   * artboards de escritorio. El cuerpo de `fill` tambien va a 24
+   * (`CalendarioDesktop.dc.html:103,130`), asi que dejar la cabecera en 28
+   * sacaria el titulo y el CTA 4px fuera del canal de horas de abajo.
+   */
+  fill: boolean
 }
 
 function DesktopHeader({
@@ -167,12 +220,14 @@ function DesktopHeader({
   subtitle,
   titleAdjacent,
   titleSize,
+  fill,
 }: DesktopHeaderProps) {
   return (
     <div
       className={cn(
-        "flex h-[72px] shrink-0 items-center justify-between border-b border-border pr-7",
-        desktopBack ? "pl-[18px]" : "pl-7"
+        "flex h-[72px] shrink-0 items-center justify-between border-b border-border",
+        fill ? "pr-6" : "pr-7",
+        desktopBack ? "pl-[18px]" : fill ? "pl-6" : "pl-7"
       )}
     >
       <div className="flex items-center gap-1.5 min-w-0">
