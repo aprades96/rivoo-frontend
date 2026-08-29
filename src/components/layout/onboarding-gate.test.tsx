@@ -162,7 +162,7 @@ describe("OnboardingGate", () => {
     expect(screen.getByRole("button", { name: /cerrar sesion/i })).toBeInTheDocument()
   })
 
-  it("lets the owner log out from the unrecoverable 404 screen -- AppHeader never mounts there, so this is the only way out", async () => {
+  it("lets the owner log out from the unrecoverable 404 screen -- no shell mounts there, so this is the only way out", async () => {
     useAuthMock.mockReturnValue(auth({ isOwner: true }))
     useSalonMock.mockReturnValue(
       salonHook({
@@ -219,7 +219,7 @@ describe("OnboardingGate", () => {
     expect(screen.getByRole("button", { name: /cerrar sesion/i })).toBeInTheDocument()
   })
 
-  it("lets the owner log out from the 'unavailable' screen -- AppHeader never mounts there, so this is the only way out besides retrying", async () => {
+  it("lets the owner log out from the 'unavailable' screen -- no shell mounts there, so this is the only way out besides retrying", async () => {
     useAuthMock.mockReturnValue(auth({ isOwner: true }))
     useSalonMock.mockReturnValue(
       salonHook({

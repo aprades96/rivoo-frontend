@@ -1,15 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { PageShell } from "@/components/layout/page-shell"
 import { salonsApi } from "@/lib/api/salons"
 import { useSalon } from "@/hooks/use-salon"
 import { useAuth } from "@/hooks/use-auth"
@@ -31,7 +31,6 @@ function formStateFrom(salon: Salon | undefined) {
 }
 
 export default function SalonSettingsPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
   const { data: salon, isLoading } = useSalon()
@@ -68,17 +67,24 @@ export default function SalonSettingsPage() {
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
-  if (isLoading) return <div className="p-4"><LoadingSkeleton count={4} /></div>
+  // `contentClassName` fija el ancho a `AjustesSalonDesktop.dc.html:115`
+  // (tarjeta de 554px, formulario de una columna Nombre/Telefono/Descripcion
+  // -- no `AjustesDesktop.dc.html`, que dibuja un formulario a dos/tres
+  // columnas que esta pantalla no implementa): sin ella, `PageShell` la
+  // estira a los 1084px que reserva para listas/tablas, y el boton "Guardar
+  // cambios" (`w-full` mas abajo) queda absurdamente ancho. Se repite en el
+  // estado de carga para que no cambien de ancho entre si al terminar de
+  // cargar (mismo defecto que se arreglo en `settings/billing`).
+  if (isLoading) {
+    return (
+      <PageShell title="Perfil del salon" back contentClassName="max-w-[554px]">
+        <LoadingSkeleton count={4} />
+      </PageShell>
+    )
+  }
 
   return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Perfil del salon</h1>
-      </div>
-
+    <PageShell title="Perfil del salon" back contentClassName="max-w-[554px]">
       <div className="space-y-3">
         <div>
           <Label className="text-xs">Nombre</Label>
@@ -106,6 +112,6 @@ export default function SalonSettingsPage() {
           Guardar cambios
         </Button>
       </div>
-    </div>
+    </PageShell>
   )
 }

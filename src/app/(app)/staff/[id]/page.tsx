@@ -4,7 +4,7 @@ import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PageShell } from "@/components/layout/page-shell"
 import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { ServiceAssignment } from "@/components/staff/service-assignment"
 import { EmployeeFormSheet } from "@/components/staff/employee-form"
@@ -37,6 +38,11 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   const [editSheetOpen, setEditSheetOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
+  // router.back() no sirve aqui: esta pantalla se puede alcanzar sin pasar
+  // por /staff (p.ej. enlace directo), y el destino fijo es esa lista, no
+  // "lo que hubiera en el historial". Mismo motivo en desktopBack abajo.
+  const backToStaff = () => router.push("/staff")
 
   const { data: employee, isLoading } = useQuery<Employee>({
     queryKey: ["employee", id],
@@ -107,22 +113,40 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   if (isLoading || !employee) {
     return (
-      <div className="p-4">
+      <PageShell
+        title="Detalle empleado"
+        back={backToStaff}
+        desktopBack={{ variant: "bordered", onBack: backToStaff }}
+      >
         <LoadingSkeleton count={5} />
-      </div>
+      </PageShell>
     )
   }
 
-  return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Detalle empleado</h1>
-      </div>
+  // Desviacion deliberada de los dos artboards (que dicen "Detalle
+  // empleado"): el usuario decidio unificar los titulos y aqui se elige el
+  // nombre del empleado por coherencia con la ficha de cliente. No reabrir.
+  const headerActions = isOwner ? (
+    <>
+      <Button variant="outline" size="action" onClick={() => setEditSheetOpen(true)}>
+        <Pencil className="mr-1 h-4 w-4" />
+        Editar
+      </Button>
+      <Button variant="outline" size="action" onClick={() => setDeleteDialogOpen(true)}>
+        <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+        Desactivar
+      </Button>
+    </>
+  ) : undefined
 
+  return (
+    <PageShell
+      title={`${employee.firstName} ${employee.lastName}`}
+      back={backToStaff}
+      desktopBack={{ variant: "bordered", onBack: backToStaff }}
+      actions={headerActions}
+      mobileActions={null}
+    >
       {/* Profile */}
       <div className="flex items-center gap-3">
         <Avatar className="h-14 w-14">
@@ -134,9 +158,14 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <p className="text-base font-semibold">
-            {employee.firstName} {employee.lastName}
-          </p>
+          {/* `DetalleEmpleado.dc.html:52` SI lleva el nombre aqui (17px/600),
+              pero esa pantalla movil tambien lleva "Detalle empleado" en su
+              propia cabecera -- dos textos distintos. Al unificar el titulo
+              de PageShell con el nombre del empleado (decision del usuario,
+              ver arriba), dejar esta linea lo duplicaria literalmente en
+              movil (mismo texto en <h1> y aqui) y volveria ambiguas las
+              consultas por texto; se quita como consecuencia de esa
+              decision, no como atajo para callar un test. */}
           {employee.jobTitle && (
             <p className="text-sm text-muted-foreground">{employee.jobTitle}</p>
           )}
@@ -144,12 +173,29 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
             {employee.isActive ? "Activo" : "Inactivo"}
           </Badge>
         </div>
+        {/* `mobileActions={null}` vacia la cabecera movil (igual que en
+            /staff): en movil, Editar/Desactivar viven aqui como
+            botones-icono 36x36 (`DetalleEmpleado.dc.html:57,60`), con
+            `lg:hidden` porque en escritorio esos mismos destinos ya estan en
+            la barra superior con etiqueta (`headerActions` arriba). */}
         {isOwner && (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon-sm" onClick={() => setEditSheetOpen(true)}>
+          <div className="flex gap-1.5 lg:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9"
+              aria-label="Editar"
+              onClick={() => setEditSheetOpen(true)}
+            >
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon-sm" onClick={() => setDeleteDialogOpen(true)}>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9 border-destructive-border"
+              aria-label="Desactivar"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
@@ -230,6 +276,6 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   )
 }
