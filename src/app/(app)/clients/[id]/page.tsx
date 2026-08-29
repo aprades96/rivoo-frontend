@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, use } from "react"
-import { useRouter } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Pencil, CalendarPlus, Mail, Phone, FileText } from "lucide-react"
+import { Pencil, Mail, Phone, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
@@ -19,7 +18,6 @@ import type { Client } from "@/types/client"
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { accessToken, isOwner } = useAuth()
   const [editOpen, setEditOpen] = useState(false)
@@ -32,7 +30,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
   if (isLoading || !client) {
     return (
-      <PageShell title="" back desktopBack="plain">
+      <PageShell title="Cliente" back desktopBack="plain">
         <LoadingSkeleton count={5} />
       </PageShell>
     )
@@ -49,18 +47,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       desktopBack="plain"
       titleAdjacent={<span className="text-xs text-muted-foreground">{clientSince}</span>}
       actions={
-        <>
-          {isOwner && (
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil className="mr-1.5 h-4 w-4" />
-              Editar
-            </Button>
-          )}
-          <Button size="sm" onClick={() => router.push("/appointments/new")}>
-            <CalendarPlus className="mr-1.5 h-4 w-4" />
-            Nueva cita
+        isOwner && (
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1.5 h-4 w-4" />
+            Editar
           </Button>
-        </>
+        )
       }
     >
       <div className="space-y-4">
@@ -73,7 +65,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           </Avatar>
           <div className="flex-1">
             <p className="text-base font-semibold">{fullName}</p>
-            <p className="text-xs text-muted-foreground">{clientSince}</p>
+            <p className="text-xs text-muted-foreground lg:hidden">{clientSince}</p>
           </div>
         </div>
 
