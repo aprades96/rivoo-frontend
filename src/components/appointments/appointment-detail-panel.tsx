@@ -254,12 +254,27 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
         isPending={updateStatus.isPending}
       />
 
+      {/*
+        SIN `onCancelled`: cancelar NO cierra el panel, igual que confirmar
+        tampoco lo cierra. Solo lo cierran la X y `Escape` (D9).
+
+        Tratar las dos acciones distinto era incoherente dentro del mismo
+        componente, y ademas sobraba: el calendario NO esconde las citas
+        canceladas (`(app)/calendar/page.tsx:149-155` -- una cancelada sigue
+        ocupando su franja hasta que alguien la reasigne), asi que la cita
+        sigue en `dayAppointments` y el panel, que la DERIVA por id (D16), pasa
+        solo a "Cancelada" y se queda sin acciones porque es un estado
+        terminal. Eso es informacion; cerrarse de golpe la esconde.
+
+        La hoja de movil SI se cierra tras actuar, y es correcto: tapa la
+        pantalla entera, asi que quedarse abierta esconderia la agenda. El
+        panel convive con la rejilla.
+      */}
       <CancelAppointmentDialog
         appointmentId={appointment.id}
         clientName={appointment.clientName}
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
-        onCancelled={onClose}
       />
     </aside>
   )
