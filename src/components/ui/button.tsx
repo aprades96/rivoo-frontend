@@ -28,6 +28,11 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        // Talla de 38px para los controles de cabecera de escritorio/movil
+        // (`ClientesDesktop:75`, `EquipoDesktop:84`, `DetalleEmpleadoDesktop:28`,
+        // `DetalleClienteDesktop:26`, `Clientes.dc.html:27`). Ninguna talla
+        // existente sirve: `default` es 32px, `lg` 36px, `xl` 44px.
+        action: "h-[38px] gap-1.5 px-[18px] text-sm font-semibold",
         xl: "h-11 gap-2 px-4 text-[15px] font-semibold has-data-[icon=inline-end]:pr-3.5 has-data-[icon=inline-start]:pl-3.5",
         "2xl": "h-[50px] w-full gap-2 px-4 text-[15px] font-semibold",
         icon: "size-8",

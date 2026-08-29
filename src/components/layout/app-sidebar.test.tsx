@@ -112,4 +112,26 @@ describe("AppSidebar", () => {
 
     expect(screen.getByText("Maria Gil")).toBeInTheDocument()
   })
+
+  it("truncates a long salon name instead of wrapping and pushing the nav down", () => {
+    useSalonMock.mockReturnValue({
+      data: { name: "Peluqueria y Barberia Bella Vista del Centro" },
+    })
+
+    render(<AppSidebar />)
+
+    const name = screen.getByText("Peluqueria y Barberia Bella Vista del Centro")
+    expect(name).toHaveClass("truncate")
+    expect(name.parentElement).toHaveClass("min-w-0")
+  })
+
+  it("shows a loading placeholder instead of the brand next to an empty string while useSalon loads", () => {
+    useSalonMock.mockReturnValue({ data: undefined, isLoading: true })
+
+    render(<AppSidebar />)
+
+    expect(screen.queryByText("Bella Vista")).not.toBeInTheDocument()
+    const placeholder = document.querySelector('[aria-hidden="true"]')
+    expect(placeholder).toBeInTheDocument()
+  })
 })

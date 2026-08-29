@@ -236,4 +236,60 @@ describe("PageShell", () => {
     expect(onBack).toHaveBeenCalledTimes(1)
     expect(routerBackMock).not.toHaveBeenCalled()
   })
+
+  it("en escritorio sin `contentClassName` el contenido lleva el gap por defecto de 18px", () => {
+    mockMatchMedia(true)
+    const { container } = render(
+      <PageShell title="Equipo">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    const content = container.querySelector('[data-slot="page-shell-content"]')
+    expect(content).toHaveClass("gap-[18px]")
+  })
+
+  it("`contentClassName` SUSTITUYE el gap por defecto en escritorio, no se le suma", () => {
+    mockMatchMedia(true)
+    const { container } = render(
+      <PageShell title="Ajustes" contentClassName="space-y-4">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    const content = container.querySelector('[data-slot="page-shell-content"]')
+    expect(content).toHaveClass("space-y-4")
+    expect(content).not.toHaveClass("gap-[18px]")
+  })
+
+  it("la cabecera movil es sticky con fondo opaco", () => {
+    mockMatchMedia(false)
+    render(
+      <PageShell title="Ajustes de reserva">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    const header = screen.getByText("Ajustes de reserva").closest('[class*="sticky"]')
+    expect(header).toHaveClass("sticky")
+    expect(header).toHaveClass("top-0")
+    expect(header).toHaveClass("bg-background")
+  })
+
+  it("en movil el contenido (no la cabecera) es quien lleva `max-w-3xl`, para que la cabecera pueda ocupar el ancho completo de `<main>`", () => {
+    mockMatchMedia(false)
+    const { container } = render(
+      <PageShell title="Ajustes de reserva">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    const header = screen.getByText("Ajustes de reserva").closest('[class*="sticky"]')
+    expect(header).not.toHaveClass("max-w-3xl")
+
+    const contentWrapper = container.querySelector(
+      '[data-slot="page-shell-content"]'
+    )?.parentElement
+    expect(contentWrapper).toHaveClass("max-w-3xl")
+  })
 })

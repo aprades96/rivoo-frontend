@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { render, screen } from "@testing-library/react"
-import type { ReactNode } from "react"
+import { act, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { useState, type ReactNode } from "react"
 import AppLayout from "./layout"
 
 const usePathnameMock = vi.fn()
@@ -47,6 +48,48 @@ function mockMatchMedia(desktop: boolean) {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   })) as unknown as typeof window.matchMedia
+}
+
+/**
+ * Variante de `mockMatchMedia` que ademas puede disparar el evento `change`
+ * -- necesaria para el test de remount: `useMediaQuery` solo vuelve a
+ * renderizar cuando `subscribe` invoca `onChange` (via
+ * `addEventListener("change", ...)`), no por el mero hecho de que
+ * `matchMedia` devuelva un valor distinto.
+ */
+function mockToggleableMatchMedia(initialDesktop: boolean) {
+  let matches = initialDesktop
+  const listeners = new Set<() => void>()
+  window.matchMedia = ((query: string) => ({
+    get matches() {
+      return matches
+    },
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: (_event: string, cb: () => void) => listeners.add(cb),
+    removeEventListener: (_event: string, cb: () => void) => listeners.delete(cb),
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+
+  return {
+    setDesktop(next: boolean) {
+      matches = next
+      listeners.forEach((cb) => cb())
+    },
+  }
+}
+
+function StatefulProbe() {
+  const [value, setValue] = useState("")
+  return (
+    <input
+      aria-label="probe"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  )
 }
 
 function renderLayout(pathname: string) {
@@ -111,12 +154,12 @@ describe("AppLayout", () => {
   )
 
   it.each(["/today", "/calendar"])(
-    "pinta el boton flotante en %s en escritorio",
+    "NO pinta el boton flotante en %s en escritorio -- ningun artboard de escritorio lo dibuja",
     (route) => {
       mockMatchMedia(true)
       renderLayout(route)
 
-      expect(screen.getByTestId("fab-button")).toBeInTheDocument()
+      expect(screen.queryByTestId("fab-button")).not.toBeInTheDocument()
     }
   )
 
@@ -128,5 +171,27 @@ describe("AppLayout", () => {
     mockMatchMedia(true)
     renderLayout("/staff")
     expect(screen.queryByTestId("fab-button")).not.toBeInTheDocument()
+  })
+
+  it("cruzar 1024px no remonta children -- conserva el estado de un formulario abierto", async () => {
+    const mm = mockToggleableMatchMedia(false)
+    usePathnameMock.mockReturnValue("/staff")
+    const user = userEvent.setup()
+
+    render(
+      <AppLayout>
+        <StatefulProbe />
+      </AppLayout>
+    )
+
+    const input = screen.getByLabelText("probe")
+    await user.type(input, "hola")
+    expect(input).toHaveValue("hola")
+
+    act(() => mm.setDesktop(true))
+
+    // Si `children` se hubiera remontado, el input seria uno nuevo (vacio).
+    expect(screen.getByLabelText("probe")).toHaveValue("hola")
+    expect(screen.getByTestId("app-sidebar")).toBeInTheDocument()
   })
 })

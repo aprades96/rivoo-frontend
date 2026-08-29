@@ -98,7 +98,15 @@ export function PageShell({
         <div className="flex flex-col px-7 py-6">
           <div
             data-slot="page-shell-content"
-            className={cn("flex max-w-[1084px] flex-col gap-[18px]", contentClassName)}
+            className={cn(
+              "flex max-w-[1084px] flex-col",
+              // `contentClassName` SUSTITUYE el espaciado por defecto, no se
+              // suma: `gap-[18px]` y `space-y-4` son grupos distintos para
+              // tailwind-merge, asi que sobrevivirian los dos (34px en vez
+              // de los 18px que dibuja `EquipoDesktop:90`) si se aplicaran
+              // ambos a la vez.
+              contentClassName ? contentClassName : "gap-[18px]"
+            )}
           >
             {children}
           </div>
@@ -116,7 +124,13 @@ export function PageShell({
         onBack={mobileBackResolved}
         actions={mobileActionsContent}
       />
-      <div className="p-4 md:py-6">
+      {/*
+        `mx-auto max-w-3xl`: vive aqui, no en `<main>` de `layout.tsx`, para que
+        la cabecera movil (hermana, arriba) pueda ocupar el ancho completo del
+        `<main>` entre 768 y 1023px -- si el limite siguiera en `<main>`, la
+        cabecera y su `border-b` se quedarian centrados con hueco a los lados.
+      */}
+      <div className="mx-auto w-full max-w-3xl p-4 md:py-6">
         <div data-slot="page-shell-content" className={cn(contentClassName)}>
           {children}
         </div>
@@ -192,7 +206,11 @@ function MobileHeader({ title, onBack, actions }: MobileHeaderProps) {
   return (
     <div
       className={cn(
-        "flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border",
+        // `sticky top-0 z-40` + fondo opaco: el `AppHeader` que sustituyo a
+        // esta cabecera lo era; sin ello, en `/settings/business-hours`
+        // (donde "Guardar" vive aqui, `Horario.dc.html:37`) hay que volver
+        // arriba a mano tras editar los siete dias.
+        "sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-background",
         hasBack ? "pl-2 pr-3.5" : "px-4"
       )}
     >

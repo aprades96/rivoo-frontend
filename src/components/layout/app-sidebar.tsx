@@ -39,14 +39,21 @@ export function AppSidebar() {
 }
 
 function Brand() {
-  const { data: salon } = useSalon()
+  const { data: salon, isLoading } = useSalon()
 
   return (
-    <div className="flex items-center gap-[10px] px-2">
-      <SalonMark className="size-[26px] text-sidebar-primary" />
-      <span className="font-heading text-[23px] font-semibold tracking-display">
-        {salon?.name}
-      </span>
+    <div className="flex min-w-0 items-center gap-[10px] px-2">
+      <SalonMark className="size-[26px] shrink-0 text-sidebar-primary" />
+      {isLoading ? (
+        <span
+          aria-hidden="true"
+          className="h-[23px] w-24 animate-pulse rounded bg-sidebar-accent"
+        />
+      ) : (
+        <span className="truncate font-heading text-[23px] font-semibold tracking-display">
+          {salon?.name}
+        </span>
+      )}
     </div>
   )
 }
