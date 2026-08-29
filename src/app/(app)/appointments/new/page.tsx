@@ -29,7 +29,7 @@ export default function NewAppointmentPage() {
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
       {/* Header */}
-      <div className="sticky top-14 z-30 border-b bg-background px-4 py-3">
+      <div className="sticky top-0 z-30 border-b bg-background px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {step > 1 ? (
