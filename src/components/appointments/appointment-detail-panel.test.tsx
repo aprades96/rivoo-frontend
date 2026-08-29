@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { AppointmentDetailPanel } from "./appointment-detail-panel"
+import { cn } from "@/lib/utils"
 import type { Appointment, AppointmentStatus } from "@/types/appointment"
 
 const useEmployeesMock = vi.fn()
@@ -66,6 +67,17 @@ function mockMatchMedia(desktop: boolean) {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   })) as unknown as typeof window.matchMedia
+}
+
+/**
+ * `Intl.NumberFormat("es-ES", { currency: "EUR" })` separa la cifra del
+ * simbolo con un espacio DURO (U+00A0). Mismo patron que
+ * `appointment-block.test.tsx:43-51`: sin normalizar, un `toContain` a pelo
+ * seria un verde-falso trivial.
+ */
+const NON_BREAKING_SPACE = String.fromCharCode(160)
+function normalize(value: string): string {
+  return value.split(NON_BREAKING_SPACE).join(String.fromCharCode(32))
 }
 
 function employeePage(overrides: Partial<{ firstName: string; lastName: string; jobTitle: string | null; colorHex: string | null }> = {}) {
@@ -339,5 +351,171 @@ describe("AppointmentDetailPanel", () => {
 
     // Meta a 11px.
     expect(screen.getByTestId("appointment-panel-meta")).toHaveClass("text-[11px]")
+  })
+
+  it('el dialogo de cancelacion se remonta al cambiar de cita gracias a `key={appointment.id}` (hallazgo 1, HIGH)', async () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    const user = userEvent.setup()
+    const appointmentA = makeAppointment({ id: "apt_ana", clientName: "Ana Garcia" })
+    const appointmentB = makeAppointment({ id: "apt_carla", clientName: "Carla Ruiz" })
+    const { rerender } = render(<AppointmentDetailPanel appointment={appointmentA} onClose={vi.fn()} />)
+
+    await user.click(screen.getByText("Cancelar"))
+    const reasonBefore = screen.getByPlaceholderText("Motivo de cancelacion (opcional)")
+    await user.type(reasonBefore, "No puede venir")
+    expect(reasonBefore).toHaveValue("No puede venir")
+
+    // El panel NO se desmonta al cambiar de cita (D9): sigue siendo el mismo
+    // arbol de React, y `cancelDialogOpen` -- estado INTERNO del panel -- se
+    // queda en `true`. Sin `key={appointment.id}` en `CancelAppointmentDialog`
+    // esto seguiria siendo la MISMA instancia al pasar a la cita de Carla, y
+    // el motivo escrito para Ana sobreviviria sobre su dialogo -- exactamente
+    // la fuga que documenta el comentario junto al `key` en el componente.
+    rerender(<AppointmentDetailPanel appointment={appointmentB} onClose={vi.fn()} />)
+
+    const reasonAfter = screen.getByPlaceholderText("Motivo de cancelacion (opcional)")
+    expect(reasonAfter).toHaveValue("")
+    expect(screen.getByText(/cancelara la cita de Carla Ruiz/)).toBeInTheDocument()
+  })
+
+  it('"Confirmar cita" dispara la mutacion de estado con el id y CONFIRMED (H3: el CTA principal puede quedar desconectado sin que ningun test lo note)', async () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    const user = userEvent.setup()
+    render(<AppointmentDetailPanel appointment={makeAppointment({ id: "apt_1", status: "PENDING" })} onClose={vi.fn()} />)
+
+    await user.click(screen.getByText("Confirmar cita"))
+
+    expect(updateStatusMutateMock).toHaveBeenCalledTimes(1)
+    expect(updateStatusMutateMock).toHaveBeenCalledWith({ id: "apt_1", status: "CONFIRMED" })
+  })
+
+  it("la tarjeta de servicio pinta precio y duracion, no solo la clase del precio (H3b)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(
+      <AppointmentDetailPanel
+        appointment={makeAppointment({ servicePrice: 65, serviceDurationMinutes: 90 })}
+        onClose={vi.fn()}
+      />
+    )
+
+    const price = screen.getByTestId("appointment-panel-price")
+    expect(normalize(price.textContent ?? "")).toBe("65,00 €")
+    expect(screen.getByText("1h 30min")).toBeInTheDocument()
+  })
+
+  it("el avatar del empleado usa su colorHex cuando existe, no solo el fallback (H3b)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage({ colorHex: "#123456" }) })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    const avatar = screen.getByTestId("appointment-panel-employee-avatar")
+    expect(avatar).toHaveStyle({ backgroundColor: "#12345620", color: "#123456" })
+  })
+
+  it("el color de reserva del avatar para un empleado ausente es SIEMPRE el primero de la paleta, nunca el ultimo (M3, D11 + D12)", () => {
+    mockMatchMedia(true)
+    // Lista de dos ACTIVOS que no incluye al empleado de la cita: si el
+    // resolutor no normalizase el -1 de "no encontrado", `paletteIndex` lo
+    // interpretaria como la ULTIMA posicion de la paleta (modulo de un
+    // negativo), y el avatar cambiaria de color en silencio.
+    useEmployeesMock.mockReturnValue({
+      data: {
+        content: [
+          { id: "emp_a", firstName: "A", lastName: "A", email: "a@x.com", phone: null, jobTitle: null, colorHex: null, isActive: true, createdAt: `${DAY}T00:00:00` },
+          { id: "emp_b", firstName: "B", lastName: "B", email: "b@x.com", phone: null, jobTitle: null, colorHex: null, isActive: true, createdAt: `${DAY}T00:00:00` },
+        ],
+      },
+    })
+    render(
+      <AppointmentDetailPanel
+        appointment={makeAppointment({ employeeId: "emp_borrado", employeeName: "Laura Martinez" })}
+        onClose={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId("appointment-panel-employee-avatar")).toHaveClass(
+      "bg-chart-1/12",
+      "text-chart-1"
+    )
+  })
+
+  it('`cn()` no descarta `leading-tight` cuando `text-[11px]` va ANTES en la cadena (H2: el orden dentro de cn() importa)', () => {
+    // Reproduce la medicion del hallazgo: `twMerge` trata las utilidades
+    // `text-[Npx]` como del mismo grupo de conflicto que `leading-*` (el
+    // tamano de fuente arbitrario tambien fija un interlineado implicito), asi
+    // que la clase que va DESPUES en la cadena es la que sobrevive. Si alguien
+    // reordenase el literal de `:170` a "leading-tight text-[11px]...", este
+    // test lo cazaria porque `leading-tight` desaparece del resultado.
+    const invertido = cn("leading-tight text-[11px] font-bold", "bg-x text-y")
+    expect(invertido).not.toContain("leading-tight")
+
+    const enOrden = cn("text-[11px] leading-tight font-bold", "bg-x text-y")
+    expect(enOrden).toContain("leading-tight")
+  })
+
+  it("el interlineado (leading-tight) se conserva en las lineas de texto del panel, incluida la que pasa por cn() (H2)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    // `:170`, unica linea de interlineado que pasa por `cn()` en este fichero
+    // -- la que demuestra el riesgo de orden de arriba.
+    expect(screen.getByTestId("appointment-panel-status")).toHaveClass("leading-tight")
+
+    // El resto de lineas de texto del panel que llevan `leading-tight` en el
+    // fuente (rotulo, fecha, meta, nombre/telefono de cliente, nombre/duracion
+    // de servicio, nombre/puesto de empleado): quitar cualquiera de ellas
+    // sigue verde sin estas aserciones.
+    expect(screen.getByTestId("appointment-panel-label")).toHaveClass("leading-tight")
+    expect(screen.getByTestId("appointment-panel-date")).toHaveClass("leading-tight")
+    expect(screen.getByTestId("appointment-panel-meta")).toHaveClass("leading-tight")
+    expect(screen.getByText("Ana Garcia")).toHaveClass("leading-tight")
+    expect(screen.getByText("612 345 678")).toHaveClass("leading-tight")
+    expect(screen.getByText("Corte + Tinte")).toHaveClass("leading-tight")
+    expect(screen.getByText("1h 30min")).toHaveClass("leading-tight")
+    expect(screen.getByText("Laura Martinez")).toHaveClass("leading-tight")
+    expect(screen.getByText("Estilista")).toHaveClass("leading-tight")
+  })
+
+  it('doce medidas de §1.2 que hoy pueden borrarse sin romper ningun test (M4, DetalleCitaDesktop.dc.html:249-330)', () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    // Acciones al fondo del panel (`:314`, item explicito del plan): sin
+    // `mt-auto` las acciones subirian pegadas a la franja con scroll.
+    expect(screen.getByTestId("appointment-actions")).toHaveClass("mt-auto")
+
+    // Boton de cerrar 30x30 (`:253`).
+    expect(screen.getByTestId("appointment-panel-close")).toHaveClass("size-[30px]")
+
+    // Botones de contacto 32x32 (`:273`, `:276`).
+    expect(screen.getByTestId("appointment-panel-call")).toHaveClass("size-8")
+    expect(screen.getByTestId("appointment-panel-sms")).toHaveClass("size-8")
+
+    // Icono dentro del chip `.ico`: 17px (`:266` cliente, `:284` servicio).
+    const clientIcon = screen.getByTestId("appointment-panel-client-icon").querySelector("svg")
+    expect(clientIcon).toHaveClass("size-[17px]")
+    const serviceIcon = screen.getByTestId("appointment-panel-service-card").querySelector("svg")
+    expect(serviceIcon).toHaveClass("size-[17px]")
+
+    // `strokeWidth` del CTA (2.25, `:316`) y de los iconos del panel (1.75,
+    // p.ej. el propio icono de cliente, `:266`). Lucide vuelca `strokeWidth`
+    // como atributo `stroke-width` en el SVG.
+    const ctaIcon = screen.getByTestId("appointment-cta").querySelector("svg")
+    expect(ctaIcon).toHaveAttribute("stroke-width", "2.25")
+    expect(clientIcon).toHaveAttribute("stroke-width", "1.75")
+
+    // Tipografia del cuerpo de la nota: 12px, interlineado 1.45 (`:305`).
+    expect(screen.getByText("Alergia al amoniaco.")).toHaveClass("text-[12px]", "leading-[1.45]")
+
+    // Gap del bloque "estado + hora + fecha" (`:258`): 7px.
+    expect(screen.getByTestId("appointment-panel-status").parentElement).toHaveClass(
+      "flex-col",
+      "gap-[7px]"
+    )
   })
 })

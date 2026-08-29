@@ -327,8 +327,24 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
         La hoja de movil SI se cierra tras actuar, y es correcto: tapa la
         pantalla entera, asi que quedarse abierta esconderia la agenda. El
         panel convive con la rejilla.
+
+        `key={appointment.id}` NO es decorativo, es quien sostiene la
+        invariante (hallazgo 1 de la re-revision): D9 dice que este panel NO
+        se desmonta al cambiar de cita, solo cambia de contenido -- y sin
+        `key` este dialogo seria la MISMA instancia de React al saltar de una
+        cita a otra. Eso deja dos fugas demostradas: un `onError` que aterriza
+        tarde escribe el error de la cita VIEJA sobre el dialogo de la NUEVA
+        (cancelas a Ana, "Volver", falla, abres el de Carla y ahi esta el
+        error de Ana), y `useCancelAppointment()` -- que vive DENTRO de
+        `CancelAppointmentDialog`, no aqui -- es la misma instancia para las
+        dos citas, asi que el boton de Carla sale deshabilitado por la
+        mutacion en vuelo de Ana. Cambiar el `key` fuerza a React a destruir
+        la instancia vieja y montar una limpia: es la unica via, porque un
+        efecto no puede cancelar una mutacion ya en vuelo ni impedir que su
+        callback aterrice sobre el estado equivocado.
       */}
       <CancelAppointmentDialog
+        key={appointment.id}
         appointmentId={appointment.id}
         clientName={appointment.clientName}
         open={cancelDialogOpen}
