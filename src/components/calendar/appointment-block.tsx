@@ -100,6 +100,17 @@ function laneGeometry(
   }
 }
 
+/**
+ * Por que todas las lineas llevan leading explicito: el artboard no declara
+ * `line-height` en ninguna de ellas, asi que valen `normal` (~1,25 en
+ * Schibsted Grotesk), mientras que la preflight de Tailwind impone
+ * `line-height: 1.5` a todo el documento (`html,:host`). Sin `leading-tight`
+ * (= 1.25) el bloque compacto mide 6 + 16,25 + 2 + 16,5 + 6 = 46,75px DENTRO
+ * de una caja de 44px con `overflow: hidden` (`design/CalendarioDesktop.dc.html:204`)
+ * y las dos lineas se cortan por abajo; con el, vuelve a los 44,00px exactos
+ * del canvas y la columna de texto del bloque de tres lineas a los 65,00px de
+ * `:164-165`. El nombre ya lo llevaba, estas dos lo heredaban del documento.
+ */
 export function AppointmentBlock({
   appointment,
   variant = "mobile",
@@ -204,7 +215,11 @@ export function AppointmentBlock({
         <span
           className={cn(
             "truncate text-muted-foreground",
-            isDesktop ? "text-[12px]" : "text-[11px]"
+            isDesktop ? "text-[12px]" : "text-[11px]",
+            // Detras del `text-[Npx]` a proposito: para tailwind-merge el
+            // tamano de fuente pisa el leading (por la forma `text-sm/6`), asi
+            // que un `leading-tight` escrito ANTES se descarta en silencio.
+            "leading-tight"
           )}
         >
           {isDesktop ? appointment.serviceName : `${appointment.serviceName} · ${startLabel}`}
@@ -213,7 +228,7 @@ export function AppointmentBlock({
 
       <span
         className={cn(
-          "truncate text-[11px] tabular-nums",
+          "truncate text-[11px] leading-tight tabular-nums",
           isDestructiveText
             ? "text-destructive"
             : isDesktop

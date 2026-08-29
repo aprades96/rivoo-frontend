@@ -4,7 +4,14 @@ import userEvent from "@testing-library/user-event"
 import { AppointmentBlock } from "./appointment-block"
 import { BreakBlock } from "./break-block"
 import { FreeSlotHint } from "./free-slot-hint"
+import {
+  EmployeeColumnHeader,
+  employeeFallbackAvatarClassName,
+} from "./employee-column-header"
+import { EmployeeFilter } from "./employee-filter"
+import type { EmployeeColumn } from "@/lib/utils/calendar"
 import type { Appointment, AppointmentStatus } from "@/types/appointment"
+import type { Employee } from "@/types/employee"
 
 const DAY = "2026-08-27"
 
@@ -397,5 +404,274 @@ describe("FreeSlotHint", () => {
     render(<FreeSlotHint top={0} height={92} />)
 
     expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ height: "92px" })
+  })
+})
+
+function makeEmployee(overrides: Partial<Employee> = {}): Employee {
+  return {
+    id: "emp_1",
+    firstName: "Laura",
+    lastName: "Martinez",
+    email: "laura@bellavista.test",
+    phone: null,
+    jobTitle: null,
+    colorHex: "#B4522F",
+    isActive: true,
+    createdAt: `${DAY}T08:00:00`,
+    ...overrides,
+  }
+}
+
+/**
+ * ---------------------------------------------------------------------------
+ * El leading que el artboard no declara
+ * ---------------------------------------------------------------------------
+ * Ninguna linea de las cajas de la agenda declara `line-height` en el canvas,
+ * asi que todas valen `normal` (~1,25 en Schibsted Grotesk); la preflight de
+ * Tailwind, en cambio, impone `line-height: 1.5` a todo el documento
+ * (`html,:host`). La diferencia no se ve leyendo el DOM, se ve SUMANDO, asi
+ * que estas pruebas reconstruyen la altura del contenido a partir de las
+ * clases y la comparan con el alto que dibuja el artboard. jsdom no maqueta:
+ * la aritmetica la hace el test.
+ */
+
+/** Lo que vale cada clase de leading. Sin ninguna manda el 1.5 de la preflight. */
+const LEADING_FACTORS: Record<string, number> = {
+  "leading-tight": 1.25,
+  "leading-[1.2]": 1.2,
+}
+const INHERITED_LEADING = 1.5
+
+/** `py-1.5` y `py-2` del bloque, en px por lado. */
+const PADDING_Y_PX: Record<string, number> = { "py-1.5": 6, "py-2": 8 }
+/** `gap-0.5` (escritorio) y `gap-[3px]` (movil), en px. */
+const GAP_PX: Record<string, number> = { "gap-0.5": 2, "gap-[3px]": 3 }
+
+function lookup(el: Element, table: Record<string, number>): number | undefined {
+  for (const className of Array.from(el.classList)) {
+    if (className in table) return table[className]
+  }
+  return undefined
+}
+
+function leadingOf(el: Element): number {
+  return lookup(el, LEADING_FACTORS) ?? INHERITED_LEADING
+}
+
+/** El tamano en px que declara la clase `text-[Npx]` del nodo. */
+function fontSizeOf(el: Element): number {
+  for (const className of Array.from(el.classList)) {
+    const match = /^text-\[(\d+)px\]$/.exec(className)
+    if (match) return Number(match[1])
+  }
+  throw new Error(`sin clase text-[Npx]: "${el.className}"`)
+}
+
+/** El alto de la caja de linea: tamano de fuente x leading. */
+function lineBox(el: Element): number {
+  return fontSizeOf(el) * leadingOf(el)
+}
+
+/** Padding + lineas + gaps: el alto que ocupa el contenido del bloque. */
+function contentHeight(container: HTMLElement, lines: Element[]): number {
+  const padding = lookup(container, PADDING_Y_PX)
+  const gap = lookup(container, GAP_PX)
+  if (padding === undefined) throw new Error(`sin padding vertical: "${container.className}"`)
+  if (gap === undefined) throw new Error(`sin gap: "${container.className}"`)
+
+  const text = lines.reduce((total, line) => total + lineBox(line), 0)
+  return padding * 2 + text + gap * (lines.length - 1)
+}
+
+describe("AppointmentBlock · el leading que el artboard no declara", () => {
+  it("compacta de escritorio: el contenido cabe EXACTO en los 44px del canvas", () => {
+    render(
+      <AppointmentBlock
+        variant="desktop"
+        appointment={makeAppointment({
+          clientName: "Jordi Mas",
+          startTime: `${DAY}T14:00:00`,
+          endTime: `${DAY}T14:30:00`,
+        })}
+      />
+    )
+
+    const el = block()
+    const name = screen.getByText("Jordi Mas")
+    const time = screen.getByText(exact("14:00 - 14:30"))
+
+    // Las dos lineas llevan leading propio: ninguna hereda el 1.5.
+    expect(leadingOf(name)).toBe(1.25)
+    expect(leadingOf(time)).toBe(1.25)
+
+    // 6 + 13x1,25 (16,25) + 2 + 11x1,25 (13,75) + 6 = 44,00
+    // (`design/CalendarioDesktop.dc.html:204`). Con el 1.5 heredado en la hora
+    // saldrian 46,75px dentro de una caja de 44px con `overflow: hidden`.
+    expect(contentHeight(el, [name, time])).toBeCloseTo(44, 5)
+    expect(el).toHaveStyle({ height: "44px" })
+  })
+
+  it("tres lineas de escritorio: la columna de texto mide los 65px dibujados", () => {
+    render(<AppointmentBlock variant="desktop" appointment={makeAppointment()} />)
+
+    const el = block()
+    const name = screen.getByText("Carla Ruiz")
+    const service = screen.getByText(exact("Corte y secado"))
+    const time = screen.getByText(exact("09:00 - 10:00 · 35,00 €"))
+
+    expect(leadingOf(service)).toBe(1.25)
+    expect(leadingOf(time)).toBe(1.25)
+
+    // 8 + 16,25 + 2 + 12x1,25 (15) + 2 + 13,75 + 8 = 65,00
+    // (`design/CalendarioDesktop.dc.html:164-165`). Heredando el 1.5 en
+    // servicio y hora saldrian 70,75px y las dos lineas caerian mas abajo.
+    expect(contentHeight(el, [name, service, time])).toBeCloseTo(65, 5)
+    expect(el).toHaveStyle({ height: "92px" })
+  })
+
+  it("tres lineas de movil: el nombre conserva su 1.2 declarado y el resto va a 1.25", () => {
+    render(<AppointmentBlock variant="mobile" appointment={makeAppointment()} />)
+
+    const el = block()
+    const name = screen.getByText("Carla Ruiz")
+    const service = screen.getByText(exact("Corte y secado · 09:00"))
+    const time = screen.getByText(exact("60min · 35,00 €"))
+
+    // `design/Calendario.dc.html:98` SI declara `line-height: 1.2` en el nombre.
+    expect(leadingOf(name)).toBe(1.2)
+    expect(leadingOf(service)).toBe(1.25)
+    expect(leadingOf(time)).toBe(1.25)
+
+    // 8 + 13x1,2 (15,6) + 3 + 13,75 + 3 + 13,75 + 8 = 65,10, dentro de los 92px.
+    expect(contentHeight(el, [name, service, time])).toBeCloseTo(65.1, 5)
+  })
+})
+
+describe("BreakBlock · el leading que el artboard no declara", () => {
+  it("titulo y rango llevan leading propio", () => {
+    render(<BreakBlock variant="desktop" top={480} height={92} label="13:00 - 14:00" />)
+
+    expect(leadingOf(screen.getByText("Almuerzo"))).toBe(1.25)
+    expect(leadingOf(screen.getByText("13:00 - 14:00"))).toBe(1.25)
+  })
+})
+
+describe("FreeSlotHint · el leading que el artboard no declara", () => {
+  it("la unica linea lleva leading propio", () => {
+    render(<FreeSlotHint top={384} />)
+
+    expect(leadingOf(screen.getByText("Libre · toca para crear"))).toBe(1.25)
+  })
+})
+
+/**
+ * ---------------------------------------------------------------------------
+ * La cabecera de columna y el filtro de pildoras
+ * ---------------------------------------------------------------------------
+ * Comparten fichero con los bloques porque pintan el MISMO elemento del canvas
+ * -- el avatar de color del empleado -- a los dos anchos, y la unica forma de
+ * fijar que no vuelvan a separarse es compararlos en la misma prueba.
+ */
+function makeColumn(employee: Employee | null, label = "Laura Martinez"): EmployeeColumn {
+  return {
+    employeeId: employee?.id ?? null,
+    label,
+    employee,
+    appointments: [],
+  }
+}
+
+describe("EmployeeColumnHeader", () => {
+  it("nombre y resumen llevan leading propio", () => {
+    render(<EmployeeColumnHeader column={makeColumn(makeEmployee())} index={0} />)
+
+    expect(leadingOf(screen.getByText("Laura Martinez"))).toBe(1.25)
+    expect(leadingOf(screen.getByText(/citas/))).toBe(1.25)
+  })
+
+  it("sin colorHex tira de la paleta de reserva compartida", () => {
+    render(
+      <EmployeeColumnHeader column={makeColumn(makeEmployee({ colorHex: null }))} index={1} />
+    )
+
+    const avatar = screen.getByTestId("employee-column-avatar")
+    for (const className of employeeFallbackAvatarClassName(1).split(" ")) {
+      expect(avatar).toHaveClass(className)
+    }
+    expect(avatar).not.toHaveClass("bg-muted")
+  })
+})
+
+describe("EmployeeFilter", () => {
+  const employees = [
+    makeEmployee({ id: "emp_1", firstName: "Laura", lastName: "Martinez", colorHex: null }),
+    makeEmployee({ id: "emp_2", firstName: "Sofia", lastName: "Puig", colorHex: null }),
+  ]
+
+  function pill(name: string): HTMLElement {
+    return screen.getByRole("button", { name: new RegExp(name) })
+  }
+
+  it("la pildora en reposo es BLANCA, no del color de la pagina", () => {
+    render(<EmployeeFilter employees={employees} selectedId={null} onSelect={vi.fn()} />)
+
+    // `Calendario.dc.html:51,56,60`: background #FFFFFF sobre una hoja #FBF7F2.
+    // `bg-background` ES el #FBF7F2 de la hoja: la pildora se volvia invisible.
+    const idle = pill("Laura")
+    expect(idle).toHaveClass("bg-card")
+    expect(idle).not.toHaveClass("bg-background")
+
+    // La seleccionada sigue siendo la teja de marca, no la blanca.
+    const selected = pill("Todos")
+    expect(selected).toHaveClass("bg-primary")
+    expect(selected).not.toHaveClass("bg-card")
+  })
+
+  it("el avatar de la pildora no lleva el aro de la primitiva", () => {
+    const { container } = render(
+      <EmployeeFilter employees={employees} selectedId={null} onSelect={vi.fn()} />
+    )
+
+    // `ui/avatar.tsx` pinta un `after:border after:border-border` permanente; el
+    // artboard dibuja estos avatares de 24px sin borde (`Calendario.dc.html:53`).
+    const avatars = container.querySelectorAll("[data-slot=avatar]")
+    expect(avatars).toHaveLength(2)
+    for (const avatar of Array.from(avatars)) {
+      expect(avatar).toHaveClass("after:hidden")
+    }
+  })
+
+  it("un empleado sin colorHex se colorea con la MISMA paleta que en escritorio", () => {
+    const { container } = render(
+      <EmployeeFilter employees={employees} selectedId={null} onSelect={vi.fn()} />
+    )
+
+    const fallbacks = container.querySelectorAll("[data-slot=avatar-fallback]")
+    expect(fallbacks).toHaveLength(2)
+
+    fallbacks.forEach((fallback, index) => {
+      for (const className of employeeFallbackAvatarClassName(index).split(" ")) {
+        expect(fallback).toHaveClass(className)
+      }
+      // Sin reserva mandaba el gris por defecto de `AvatarFallback`.
+      expect(fallback).not.toHaveClass("bg-muted")
+      expect(fallback).not.toHaveClass("text-muted-foreground")
+    })
+  })
+
+  it("la pildora seleccionada manda sobre la paleta de reserva", () => {
+    const { container } = render(
+      <EmployeeFilter employees={employees} selectedId="emp_1" onSelect={vi.fn()} />
+    )
+
+    const fallback = container.querySelectorAll("[data-slot=avatar-fallback]")[0]
+    expect(fallback).toHaveClass("bg-white/22", "text-primary-foreground")
+    expect(fallback).not.toHaveClass("bg-chart-1/12")
+  })
+
+  it("el color de reserva se reparte por posicion y da la vuelta al agotarse", () => {
+    const first = employeeFallbackAvatarClassName(0)
+    expect(employeeFallbackAvatarClassName(1)).not.toBe(first)
+    expect(employeeFallbackAvatarClassName(5)).toBe(first)
   })
 })

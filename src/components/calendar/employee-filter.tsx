@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { initials } from "@/lib/utils/format"
+import { employeeFallbackAvatarClassName } from "./employee-column-header"
 import type { Employee } from "@/types/employee"
 
 interface EmployeeFilterProps {
@@ -17,7 +18,10 @@ const PILL_BASE =
   "flex h-[34px] shrink-0 items-center rounded-full border text-xs transition-colors"
 const PILL_SELECTED =
   "border-primary bg-primary font-semibold text-primary-foreground"
-const PILL_IDLE = "border-border bg-background font-medium hover:bg-muted"
+// La pildora en reposo va en BLANCO (`Calendario.dc.html:51,56,60`), no en el
+// `#FBF7F2` del fondo de pagina: con `bg-background` se confundia con la hoja
+// y solo sobrevivia el contorno. `bg-card` = #FFFFFF.
+const PILL_IDLE = "border-border bg-card font-medium hover:bg-muted"
 
 /**
  * Filtro de agenda por empleado. SOLO MOVIL (Calendario.dc.html:50-63): en
@@ -41,7 +45,7 @@ export function EmployeeFilter({ employees, selectedId, onSelect }: EmployeeFilt
           Todos
         </button>
 
-        {employees.filter((e) => e.isActive).map((emp) => {
+        {employees.filter((e) => e.isActive).map((emp, index) => {
           const isSelected = selectedId === emp.id
           return (
             <button
@@ -53,10 +57,20 @@ export function EmployeeFilter({ employees, selectedId, onSelect }: EmployeeFilt
                 isSelected ? PILL_SELECTED : PILL_IDLE
               )}
             >
-              <Avatar className="size-6">
+              {/* `after:hidden` apaga el aro #E7DCCF que `Avatar` pinta por
+                  defecto (`ui/avatar.tsx:20`): el artboard dibuja estos avatares
+                  de 24px SIN borde (`Calendario.dc.html:53,57,61`), igual que la
+                  cabecera de escritorio. Se apaga aqui y no en la primitiva,
+                  que la comparten otras pantallas. */}
+              <Avatar className="size-6 after:hidden">
                 <AvatarFallback
                   className={cn(
                     "text-[9px] font-bold",
+                    // Sin color propio, el mismo color de reserva que le da la
+                    // cabecera de columna en escritorio. Sin esto mandaba el gris
+                    // de `AvatarFallback` y el empleado salia de color arriba y
+                    // gris en su pildora.
+                    !isSelected && !emp.colorHex && employeeFallbackAvatarClassName(index),
                     isSelected && "bg-white/22 text-primary-foreground"
                   )}
                   style={

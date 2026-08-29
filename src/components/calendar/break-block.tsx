@@ -63,8 +63,15 @@ export function BreakBlock({
         ...style,
       }}
     >
-      <span className="truncate text-[12px] font-semibold text-muted-foreground">{title}</span>
-      <span className="truncate text-[11px] tabular-nums text-muted-foreground-2">{label}</span>
+      {/* `leading-tight` = el `normal` del artboard; sin el, la preflight de
+          Tailwind (`line-height: 1.5`) estira las dos lineas y el rotulo deja
+          de caer donde lo dibuja `design/CalendarioDesktop.dc.html:178-179`. */}
+      <span className="truncate text-[12px] leading-tight font-semibold text-muted-foreground">
+        {title}
+      </span>
+      <span className="truncate text-[11px] leading-tight tabular-nums text-muted-foreground-2">
+        {label}
+      </span>
     </div>
   )
 }

@@ -45,7 +45,9 @@ export function FreeSlotHint({
       )}
       style={{ top, height, left: INSET_PX, right: INSET_PX, ...style }}
     >
-      <span className="truncate text-[11px] text-muted-foreground-2">{label}</span>
+      {/* `leading-tight` = el `normal` del artboard (`design/Calendario.dc.html:113`):
+          la preflight de Tailwind impone 1.5 y engorda la linea de 13,75 a 16,5px. */}
+      <span className="truncate text-[11px] leading-tight text-muted-foreground-2">{label}</span>
     </button>
   )
 }
