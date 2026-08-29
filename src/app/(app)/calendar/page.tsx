@@ -83,7 +83,7 @@ export default function CalendarPage() {
 
   // La lista de empleados va ANTES de la consulta de citas porque el filtro de
   // movil arranca sobre ella: sin saber quien hay no se sabe a quien pedir.
-  const { data: employeesData } = useEmployees()
+  const { data: employeesData, isLoading: employeesLoading } = useEmployees()
   // Memorizado porque `groupByEmployee` depende de el: sin esto la lista
   // seria un array nuevo en cada render y el reparto en columnas se
   // recalcularia siempre.
@@ -119,6 +119,17 @@ export default function CalendarPage() {
    * se queda en "Todos" hasta que exista alguien.
    */
   const selectedEmployeeId = employeeChoice ? employeeChoice.id : (employeeIds[0] ?? null)
+
+  /**
+   * En movil no se pinta agenda hasta saber DE QUIEN es. Las dos consultas
+   * salen a la vez, y si la de citas contesta primero la pantalla llegaria a
+   * pintar el dia entero fundido en una columna -- lo que el artboard no
+   * dibuja -- para sustituirlo por el esqueleto en cuanto la lista de
+   * empleados cambiara el filtro y con el la `queryKey`. Se espera a la
+   * lista, no a que tenga contenido: si la peticion falla, `isLoading` baja
+   * igual y la pantalla sigue, en "Todos".
+   */
+  const waitingForFilter = !isDesktop && employeesLoading
 
   const { data: appointmentsData, isLoading: aptsLoading } = useAppointments({
     date: dateStr,
@@ -313,7 +324,7 @@ export default function CalendarPage() {
         </>
       )}
 
-      {aptsLoading ? (
+      {aptsLoading || waitingForFilter ? (
         /*
           La rama de carga tiene que sostener la MISMA cadena de alturas que la
           rama cargada: `flex-1 min-h-0 overflow-y-auto`. `LoadingSkeleton` es

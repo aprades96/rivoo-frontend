@@ -472,6 +472,54 @@ describe("CalendarPage", () => {
   })
 
   /**
+   * El arranque depende de una lista que llega POR RED, y la de citas sale a
+   * la vez. Si contesta primero, la pantalla llegaria a pintar el dia entero
+   * fundido en una columna -- que no es lo que el artboard dibuja -- para
+   * cambiarlo por el esqueleto en cuanto la lista de empleados moviera el
+   * filtro: dato, esqueleto y dato otra vez. En movil se espera.
+   */
+  it("en movil no pinta agenda hasta saber de quien es", () => {
+    mockMatchMedia(false)
+    useEmployeesMock.mockReturnValue({ data: undefined, isLoading: true })
+
+    render(<CalendarPage />)
+
+    expect(screen.getByTestId("calendar-loading")).toBeInTheDocument()
+    expect(screen.queryByTestId("day-view")).not.toBeInTheDocument()
+  })
+
+  /**
+   * Y solo en movil: en escritorio la rejilla no depende de ningun filtro --
+   * dibuja una columna por empleado y va apareciendo con ellos --, asi que
+   * esperar alli seria una pantalla en blanco de mas.
+   */
+  it("en escritorio la rejilla no espera a la lista de empleados", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: undefined, isLoading: true })
+
+    render(<CalendarPage />)
+
+    expect(screen.getByTestId("day-view")).toBeInTheDocument()
+    expect(screen.queryByTestId("calendar-loading")).not.toBeInTheDocument()
+  })
+
+  /**
+   * Si la lista FALLA, `isLoading` baja igual y la pantalla sigue: en "Todos",
+   * sin pildoras de empleado, pero con la agenda del dia. Sin esto, esperar
+   * "a que haya empleados" dejaria un esqueleto perpetuo.
+   */
+  it("si la lista de empleados falla, la agenda sigue saliendo", () => {
+    mockMatchMedia(false)
+    useEmployeesMock.mockReturnValue({ data: undefined, isLoading: false, isError: true })
+
+    render(<CalendarPage />)
+
+    expect(screen.getByTestId("day-view")).toBeInTheDocument()
+    expect(screen.queryByTestId("calendar-loading")).not.toBeInTheDocument()
+    expect(lastQueryParams().employeeId).toBeUndefined()
+  })
+
+  /**
    * El primero ACTIVO, no el primero de la lista: un empleado dado de baja no
    * tiene columna (`groupByEmployee` filtra por `isActive`) ni pildora
    * (`employee-filter.tsx:48`), asi que arrancar en el dejaria la agenda vacia
