@@ -901,6 +901,39 @@ describe("CalendarPage", () => {
     expect(lastQueryParams()).toMatchObject({ date: TODAY_ISO })
   })
 
+  /**
+   * Hallazgo 1: el panel podia REAPARECER SOLO al volver de dia. Reproduccion
+   * real: dia 27, se abre el panel de Ana -> "Siguiente" la cita no esta en el
+   * 28 y el panel se cierra (derivado por id, D16) -> "Anterior" vuelve al 27,
+   * donde Ana SI existe otra vez, y sin limpiar la seleccion el panel se
+   * reabriria solo con el id que sobrevivio al viaje, sin que nadie lo pidiera.
+   */
+  it("Hallazgo 1: el panel no reaparece solo al volver de dia", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+
+    // Dia 28: Ana ya no esta en la agenda (simula lo que devolveria el
+    // servidor para ese dia).
+    useAppointmentsMock.mockReturnValue({
+      data: { content: APPOINTMENTS.filter((appointment) => appointment.id !== "apt_2") },
+      isLoading: false,
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+
+    // Vuelta al dia 27: Ana vuelve a estar en la lista, pero nadie ha vuelto a
+    // pulsar su bloque.
+    useAppointmentsMock.mockReturnValue({ data: { content: APPOINTMENTS }, isLoading: false })
+    fireEvent.click(screen.getByRole("button", { name: "Dia anterior" }))
+
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+    expect(screen.getByTestId("day-view")).toHaveClass("px-6")
+    expect(screen.getByTestId("day-view")).not.toHaveClass("px-5")
+  })
+
   // --- CTA -----------------------------------------------------------------
 
   /**
@@ -979,6 +1012,37 @@ describe("CalendarPage", () => {
     expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
     expect(screen.getByTestId("day-view")).toHaveClass("px-6")
     expect(screen.getByTestId("day-view")).not.toHaveClass("px-5")
+  })
+
+  /**
+   * Hallazgo 2: ningun caso afirmaba que pulsar un bloque le pone el anillo A
+   * ESE bloque -- `DayView` ya prueba el anillo dado `selectedAppointmentId`
+   * (`day-view.test.tsx:717-743`), y esta pagina ya prueba `narrow`, pero el
+   * CABLEADO entre pulsar y `selectedAppointmentId` no lo afirmaba nadie: se
+   * pudo sustituir `selectedAppointmentId={selectedAppointmentId}` por
+   * `{null}` en la llamada a `DayView` y la suite entera siguio verde. La
+   * clase es la misma que usa `day-view.test.tsx` para el anillo.
+   */
+  it("Hallazgo 2: pulsar un bloque le pone el anillo A ESE bloque, no a otro", () => {
+    mockMatchMedia(true)
+    const RING_CLASS = "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]"
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+
+    // El panel abierto repite "Ana Garcia" (bloque + tarjeta cliente), asi que
+    // `getByText` es ambiguo aqui: se busca el BLOQUE de la rejilla por su
+    // primer `<span>`, igual que `clientNames()` mas arriba.
+    const blocks = screen.getAllByTestId("appointment-block")
+    const selected = blocks.find(
+      (block) => block.querySelector("span")?.textContent === "Ana Garcia"
+    ) as HTMLElement
+    const other = blocks.find(
+      (block) => block.querySelector("span")?.textContent === "Carla Ruiz"
+    ) as HTMLElement
+
+    expect(selected).toHaveClass(RING_CLASS)
+    expect(other).not.toHaveClass(RING_CLASS)
   })
 
   /**

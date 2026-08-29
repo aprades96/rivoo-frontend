@@ -252,9 +252,30 @@ export default function CalendarPage() {
 
   const closeAppointmentDetail = () => setSelectedAppointmentId(null)
 
-  const goToPreviousDay = () => setCurrentDate((d) => subDays(d, 1))
-  const goToNextDay = () => setCurrentDate((d) => addDays(d, 1))
-  const goToToday = () => setCurrentDate(new Date())
+  /**
+   * Hallazgo 1: la seleccion es DEL DIA, no sobrevive a cambiar de dia. Sin
+   * esto, `selectedAppointmentId` seguia vivo tras "Siguiente"/"Anterior"/"Hoy"
+   * y el panel podia REAPARECER SOLO -- si el id vuelve a existir en el dia de
+   * destino (p.ej. "Anterior" tras "Siguiente") -- sin que nadie lo pidiera, y
+   * de paso la rejilla volvia a modo estrecho (D17) sin motivo. Ademas, justo
+   * durante el vuelo del refetch, `use-appointments.ts:differsOnlyByDate`
+   * presta los datos del dia anterior (misma pagina, solo cambia la fecha), asi
+   * que sin limpiar aqui el panel anunciaria un instante una cita que ya no es
+   * del dia visible. Limpiar en el propio navegador -- no con un `useEffect`
+   * sobre `currentDate` -- evita ese fotograma intermedio.
+   */
+  const goToPreviousDay = () => {
+    setSelectedAppointmentId(null)
+    setCurrentDate((d) => subDays(d, 1))
+  }
+  const goToNextDay = () => {
+    setSelectedAppointmentId(null)
+    setCurrentDate((d) => addDays(d, 1))
+  }
+  const goToToday = () => {
+    setSelectedAppointmentId(null)
+    setCurrentDate(new Date())
+  }
 
   /**
    * Pulsar la rejilla lleva al alta con el dia, la hora y -- si se sabe -- el

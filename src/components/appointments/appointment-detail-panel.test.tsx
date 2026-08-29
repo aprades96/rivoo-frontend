@@ -183,24 +183,28 @@ describe("AppointmentDetailPanel", () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it("Escape NO cierra el panel si el foco esta en un campo de texto ajeno (hallazgo 3, caso a)", () => {
+  it("Escape NO cierra el panel si otro listener ya lo ha marcado como atendido (hallazgo 3, caso a)", () => {
     mockMatchMedia(true)
     useEmployeesMock.mockReturnValue({ data: employeePage() })
     const onClose = vi.fn()
     render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={onClose} />)
 
-    // Simula el buscador desplegado (`calendar-search.tsx:127`): un input
-    // ajeno al panel con el foco cuando llega el Escape.
-    const foreignInput = document.createElement("input")
-    document.body.appendChild(foreignInput)
-    foreignInput.focus()
-    expect(document.activeElement).toBe(foreignInput)
+    // Simula el buscador desplegado (`calendar-search.tsx:118`): un campo
+    // ajeno al panel que, al plegarse con Escape, marca el evento como
+    // atendido con `preventDefault()` -- la SENAL EXPLICITA que sustituye a la
+    // heuristica de foco (hallazgo 3). El panel escucha en `document`, y como
+    // el evento burbujea desde el campo, le llega con `defaultPrevented`.
+    const foreignField = document.createElement("input")
+    document.body.appendChild(foreignField)
+    foreignField.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") event.preventDefault()
+    })
 
-    fireEvent.keyDown(document, { key: "Escape" })
+    fireEvent.keyDown(foreignField, { key: "Escape" })
 
     expect(onClose).not.toHaveBeenCalled()
 
-    document.body.removeChild(foreignInput)
+    document.body.removeChild(foreignField)
   })
 
   it("sin telefono no hay botones de contacto (tel:/sms:)", () => {

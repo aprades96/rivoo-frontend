@@ -59,32 +59,31 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
   // vive mientras haya una cita mostrada.
   //
   // Hallazgo 3: ese mismo caracter global lo deja ciego a que OTRO listener
-  // atienda el mismo Escape. Dos casos reales: (a) con el buscador desplegado,
-  // su propio `onKeyDown` (`calendar-search.tsx:118`) pliega el campo en la
-  // MISMA burbuja sin detener nada; (b) con el dialogo de cancelacion abierto,
-  // Base UI llama a `stopPropagation` pero su listener vive en el MISMO nodo
-  // `document` (`useDismiss.js:399`) y se registra DESPUES que este efecto --
-  // `stopPropagation` no frena a otros listeners de un mismo nodo, y aunque
-  // frenara, el orden de registro no es una garantia estable de la que fiarse.
-  // Por eso NO comprobamos `event.defaultPrevented` (ninguno de los dos
-  // emisores lo llama) ni el orden de listeners: leemos el ESTADO real del
-  // documento en el momento del evento, que no depende de que nadie deje
-  // aviso a proposito:
-  //   - hay un dialogo abierto (el de cancelacion, o cualquier otro futuro) --
-  //     Base UI le pone `role="dialog"`/`"alertdialog"` mientras esta montado,
-  //     y solo esta montado mientras esta abierto;
-  //   - el foco esta en un campo de texto -- convencion estandar: Escape en un
-  //     input/textarea es "vaciar/replegar ESE campo", no lo de detras (el
-  //     buscador vive justo en ese caso, y el panel no tiene inputs propios).
+  // atienda el mismo Escape. Dos guardas, de naturaleza distinta:
+  //   - `event.defaultPrevented` -- SENAL EXPLICITA. El buscador
+  //     (`calendar-search.tsx`) llama a `preventDefault()` en su propio
+  //     `onKeyDown` cuando pliega el campo con Escape: es la forma estandar de
+  //     decir "esto ya lo he consumido yo", y cualquier otro emisor futuro
+  //     puede sumarse con el mismo gesto sin que este componente tenga que
+  //     conocerlo. Antes se adivinaba mirando si el foco seguia en un
+  //     INPUT/TEXTAREA, una heuristica que dejaba de cubrir en cuanto el foco
+  //     se movia (o si el emisor no era un campo de texto) -- una senal
+  //     explicita la hace innecesaria.
+  //   - `[role="dialog"], [role="alertdialog"]` -- SIGUE haciendo falta, y no
+  //     se puede sustituir por lo de arriba: Base UI (dialogo de cancelacion)
+  //     no llama a `preventDefault` en su Escape, y su listener vive en el
+  //     MISMO nodo `document` (`useDismiss.js:399`), asi que ni
+  //     `defaultPrevented` ni `stopPropagation` lo frenan -- el orden de
+  //     registro tampoco es una garantia estable de la que fiarse. Por eso se
+  //     comprueba el ESTADO real del documento: mientras el dialogo este
+  //     montado, esta abierto.
   useEffect(() => {
     if (!appointment) return
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return
+      if (event.defaultPrevented) return
       const dialogIsOpen = document.querySelector('[role="dialog"], [role="alertdialog"]') !== null
-      const active = document.activeElement
-      const focusIsTextField =
-        active instanceof HTMLElement && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")
-      if (dialogIsOpen || focusIsTextField) return
+      if (dialogIsOpen) return
       onClose()
     }
     document.addEventListener("keydown", handleKeyDown)

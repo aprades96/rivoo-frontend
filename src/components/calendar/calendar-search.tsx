@@ -116,7 +116,18 @@ export function CalendarSearch({ value, onChange, variant, className }: Calendar
     <div
       className={cn("flex items-center gap-1.5", className)}
       onKeyDown={(event) => {
-        if (event.key === "Escape") collapse()
+        if (event.key !== "Escape") return
+        // Hallazgo 3: `preventDefault` es la senal EXPLICITA de "este Escape ya
+        // esta atendido". El panel de detalle (`appointment-detail-panel.tsx`)
+        // escucha el mismo evento en `document` y, sin esto, no tenia forma de
+        // saber que el buscador ya lo habia consumido -- adivinaba mirando si
+        // el foco seguia en el campo, una heuristica que dejaba de cubrir en
+        // cuanto el foco se movia. `stopPropagation` no basta (el listener del
+        // panel esta en el MISMO nodo, `document`, y el orden de registro no es
+        // una garantia de la que fiarse); `defaultPrevented` si es una senal
+        // fiable independientemente del orden.
+        event.preventDefault()
+        collapse()
       }}
     >
       <div className="relative">
