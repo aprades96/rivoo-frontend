@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import type { Employee } from "@/types/employee"
 
 /**
  * Paleta de reserva para el avatar cuando el empleado no tiene `colorHex`.
@@ -91,4 +92,23 @@ export function employeeAvatarAlphaStyle(colorHex: string): CSSProperties {
  */
 export function employeeSolidColor(colorHex: string | null, fallbackIndex: number): string {
   return colorHex ?? employeeFallbackAvatarColor(fallbackIndex)
+}
+
+/**
+ * Posicion del empleado en la paleta de reserva, o -1 si no esta.
+ *
+ * Filtra por `isActive` a proposito: la invariante que da estabilidad a la
+ * paleta es "posicion entre los empleados ACTIVOS, en el orden que da la
+ * API" -- la misma que ya aplican `groupByEmployee` (`calendar.ts`) y
+ * `EmployeeFilter`. Hoy `useEmployees()` solo trae activos porque el backend
+ * filtra en `findAllActive`, pero el propio frontend filtra por `isActive`
+ * en tres sitios distintos: no se puede asumir ese detalle de servidor sin
+ * contradecir el propio codigo. Si este resolutor dejase de filtrar y algun
+ * consumidor le pasase la lista cruda, el mismo empleado sin `colorHex`
+ * saldria de un color en la cabecera de columna y de otro en el panel de
+ * detalle -- justo el bug que corrige esta funcion.
+ */
+export function employeePaletteIndex(employees: Employee[], employeeId: string): number {
+  const activeEmployees = employees.filter((employee) => employee.isActive)
+  return activeEmployees.findIndex((employee) => employee.id === employeeId)
 }

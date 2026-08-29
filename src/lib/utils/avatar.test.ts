@@ -1,12 +1,28 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, it, expect } from "vitest"
+import type { Employee } from "@/types/employee"
 import {
   employeeFallbackAvatarClassName,
   employeeFallbackAvatarColor,
   employeeAvatarAlphaStyle,
   employeeSolidColor,
+  employeePaletteIndex,
 } from "./avatar"
+
+function makeEmployee(id: string, isActive: boolean): Employee {
+  return {
+    id,
+    firstName: id,
+    lastName: "",
+    email: `${id}@example.com`,
+    phone: null,
+    jobTitle: null,
+    colorHex: null,
+    isActive,
+    createdAt: "2026-01-01T00:00:00Z",
+  }
+}
 
 describe("employeeFallbackAvatarClassName · la paleta de reserva", () => {
   it("cada posicion apunta a su token, en orden y sin permutar", () => {
@@ -95,5 +111,31 @@ describe("employeeSolidColor · el punto SOLIDO de la hoja de movil (D12)", () =
     // (jsdom no resuelve `var()`), pero los dos resolutores comparten indice
     // y token: se comprueba aqui que usan la MISMA tabla de variables.
     expect(employeeSolidColor(null, 2)).toBe(employeeFallbackAvatarColor(2))
+  })
+})
+
+describe("employeePaletteIndex · resolutor UNICO de posicion en la paleta", () => {
+  it("empleado activo en medio de inactivos: posicion ENTRE LOS ACTIVOS, no la de la lista cruda", () => {
+    // [A(inactivo), B, C] -> B es 0, no 1 (su indice en la lista cruda).
+    const employees = [makeEmployee("A", false), makeEmployee("B", true), makeEmployee("C", true)]
+
+    expect(employeePaletteIndex(employees, "B")).toBe(0)
+    expect(employeePaletteIndex(employees, "C")).toBe(1)
+  })
+
+  it("empleado inactivo: -1", () => {
+    const employees = [makeEmployee("A", false), makeEmployee("B", true)]
+
+    expect(employeePaletteIndex(employees, "A")).toBe(-1)
+  })
+
+  it("empleado que no esta: -1", () => {
+    const employees = [makeEmployee("A", true), makeEmployee("B", true)]
+
+    expect(employeePaletteIndex(employees, "Z")).toBe(-1)
+  })
+
+  it("lista vacia: -1", () => {
+    expect(employeePaletteIndex([], "A")).toBe(-1)
   })
 })
