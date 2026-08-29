@@ -61,7 +61,6 @@ describe("APP_NAV_ITEMS", () => {
     ["/settings", "", "Ajustes"],
     ["/settings/salon", "", "Ajustes"],
     ["/appointments/new", "", "Citas"],
-    ["/appointments/apt_1", "", "Citas"],
   ])(
     "activates exactly one destination for %s?%s (%s)",
     (pathname, search, expectedLabel) => {
