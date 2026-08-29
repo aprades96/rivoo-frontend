@@ -6,6 +6,7 @@ import { es } from "date-fns/locale"
 import { CalendarCheck, Clock, RefreshCw } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { PageShell } from "@/components/layout/page-shell"
 import { AppointmentCard } from "@/components/appointments/appointment-card"
 import { AppointmentDetailSheet } from "@/components/appointments/appointment-detail-sheet"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -73,18 +74,14 @@ export default function TodayPage() {
       (a.status === "PENDING" || a.status === "CONFIRMED")
   )
 
+  const greetingTitle = `${getGreeting()}${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`
+  const todayLabel = format(new Date(), "EEEE, d MMMM", { locale: es })
+
   return (
-    <div className="space-y-4 p-4 md:py-6">
-      {/* Greeting */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">
-            {getGreeting()}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
-          </h1>
-          <p className="text-sm text-muted-foreground capitalize">
-            {format(new Date(), "EEEE, d MMMM", { locale: es })}
-          </p>
-        </div>
+    <PageShell
+      title={greetingTitle}
+      subtitle={`${todayLabel} · ${format(new Date(), "HH:mm")}`}
+      actions={
         <Button
           variant="ghost"
           size="icon"
@@ -93,102 +90,125 @@ export default function TodayPage() {
         >
           <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
         </Button>
-      </div>
+      }
+      mobileActions={user ? <UserBadge name={user.name} /> : null}
+    >
+      <div className="space-y-4">
+        {/*
+          El saludo y el refrescar viven en la cabecera de PageShell en los dos
+          anchos; esta linea de fecha + el refrescar de 44x44 son propios del
+          cuerpo en movil (Main.dc.html:33-40) -- en escritorio esa misma
+          fecha (con hora) ya sale en el `subtitle` de la cabecera.
+        */}
+        <div className="flex items-center justify-between gap-3 lg:hidden">
+          <p className="text-sm text-muted-foreground capitalize">{todayLabel}</p>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Actualizar"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="size-11 shrink-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
 
-      {/*
-        Un fallo puntual del GET de servicios nunca debe tapar la agenda: la
-        pantalla principal del dia sigue pintandose con normalidad y este
-        aviso se limita a informar aparte (nunca sustituye a `hasNoServices`
-        ni al resto del cuerpo).
-      */}
-      {servicesError && (
-        <UnavailableNotice
-          title="No se ha podido comprobar tu catalogo de servicios"
-          description="La agenda de hoy sigue disponible. Vuelve a intentarlo en unos minutos."
-        />
-      )}
+        {/*
+          Un fallo puntual del GET de servicios nunca debe tapar la agenda: la
+          pantalla principal del dia sigue pintandose con normalidad y este
+          aviso se limita a informar aparte (nunca sustituye a `hasNoServices`
+          ni al resto del cuerpo).
+        */}
+        {servicesError && (
+          <UnavailableNotice
+            title="No se ha podido comprobar tu catalogo de servicios"
+            description="La agenda de hoy sigue disponible. Vuelve a intentarlo en unos minutos."
+          />
+        )}
 
-      {hasNoServices ? (
-        <EmptyState
-          title="Aun no tienes servicios"
-          description="Sin servicios no se pueden coger citas. Crea el primero para empezar a recibir reservas."
-          action={
-            <Link
-              href="/staff?tab=services"
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Crear servicio
-            </Link>
-          }
-        />
-      ) : (
-        <>
-          {/* Stat cards */}
-          <div className="grid grid-cols-3 gap-2">
-            <StatCard
-              label="Total"
-              value={stats.total}
-              icon={<CalendarCheck className="h-4 w-4" />}
-            />
-            <StatCard
-              label="Pendientes"
-              value={stats.pending}
-              icon={<Clock className="h-4 w-4" />}
-              highlight={stats.pending > 0}
-            />
-            <StatCard
-              label="Completadas"
-              value={stats.completed}
-              icon={<CalendarCheck className="h-4 w-4" />}
-            />
-          </div>
-
-          {/* Next appointment highlight */}
-          {nextAppointment && (
-            <Card className="border-primary/20 bg-primary/5 p-3">
-              <p className="text-xs font-medium text-primary">Proxima cita</p>
-              <AppointmentCard
-                appointment={nextAppointment}
-                onTap={handleTapAppointment}
+        {hasNoServices ? (
+          <EmptyState
+            title="Aun no tienes servicios"
+            description="Sin servicios no se pueden coger citas. Crea el primero para empezar a recibir reservas."
+            action={
+              <Link
+                href="/staff?tab=services"
+                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Crear servicio
+              </Link>
+            }
+          />
+        ) : (
+          <>
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-2">
+              <StatCard
+                label="Total"
+                value={stats.total}
+                icon={<CalendarCheck className="h-4 w-4" />}
               />
-            </Card>
-          )}
-
-          {/* Timeline */}
-          <div>
-            <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-              Todas las citas de hoy
-            </h2>
-
-            {isLoading ? (
-              <LoadingSkeleton count={4} />
-            ) : sorted.length === 0 ? (
-              <EmptyState
-                title="No hay citas para hoy"
-                description="Crea una nueva cita o espera a que tus clientes reserven."
-                action={
-                  <Link
-                    href="/appointments/new"
-                    className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                  >
-                    Crear cita
-                  </Link>
-                }
+              <StatCard
+                label="Pendientes"
+                value={stats.pending}
+                icon={<Clock className="h-4 w-4" />}
+                highlight={stats.pending > 0}
               />
-            ) : (
-              <div className="space-y-2">
-                {sorted.map((appointment) => (
-                  <AppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    onTap={handleTapAppointment}
-                  />
-                ))}
-              </div>
+              <StatCard
+                label="Completadas"
+                value={stats.completed}
+                icon={<CalendarCheck className="h-4 w-4" />}
+              />
+            </div>
+
+            {/* Next appointment highlight */}
+            {nextAppointment && (
+              <Card className="border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs font-medium text-primary">Proxima cita</p>
+                <AppointmentCard
+                  appointment={nextAppointment}
+                  onTap={handleTapAppointment}
+                />
+              </Card>
             )}
-          </div>
-        </>
-      )}
+
+            {/* Timeline */}
+            <div>
+              <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+                Todas las citas de hoy
+              </h2>
+
+              {isLoading ? (
+                <LoadingSkeleton count={4} />
+              ) : sorted.length === 0 ? (
+                <EmptyState
+                  title="No hay citas para hoy"
+                  description="Crea una nueva cita o espera a que tus clientes reserven."
+                  action={
+                    <Link
+                      href="/appointments/new"
+                      className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                      Crear cita
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="space-y-2">
+                  {sorted.map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onTap={handleTapAppointment}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Detail sheet */}
       <AppointmentDetailSheet
@@ -196,8 +216,36 @@ export default function TodayPage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
       />
+    </PageShell>
+  )
+}
+
+// Cluster de la cabecera movil (Main.dc.html:25-28): nombre corto + iniciales
+// en circulo. Distinto del `UserCard` de la barra lateral (ese lleva borde,
+// rol y avatar de 34px); aqui es un elemento de cabecera de 32px sin borde,
+// asi que no se reutiliza.
+function UserBadge({ name }: { name: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground">{formatShortName(name)}</span>
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-accent-foreground">
+        {getInitials(name)}
+      </div>
     </div>
   )
+}
+
+function formatShortName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return parts[0] ?? ""
+  return `${parts[0]} ${parts[parts.length - 1]!.charAt(0)}.`
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase()
+  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase()
 }
 
 function StatCard({
