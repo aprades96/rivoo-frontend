@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { PublicEmployeeStep } from "./public-employee-step"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
@@ -61,11 +61,35 @@ function clickEverything(container: HTMLElement) {
   })
 }
 
+/**
+ * `window.matchMedia` no existe en jsdom; `src/test/setup.ts` ya pone un
+ * fallback global que no coincide con nada (mobile). Este helper lo
+ * sobrescribe puntualmente para simular escritorio, igual que
+ * `booking-step-shell.test.tsx` -- y `afterEach` lo repone a mobile para no
+ * filtrar el mock a otras pruebas del fichero.
+ */
+function mockMatchMedia(desktop: boolean) {
+  window.matchMedia = ((query: string) => ({
+    matches: desktop,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
+
 describe("PublicEmployeeStep", () => {
   beforeEach(() => {
     usePublicBookingStore.getState().reset()
     // El paso de profesional es el 2; avanzar significa llegar al 3.
     usePublicBookingStore.getState().setStep(2)
+  })
+
+  afterEach(() => {
+    mockMatchMedia(false)
   })
 
   it("avisa de que los profesionales no se han podido cargar cuando employeesUnavailable esta activo", () => {
@@ -184,5 +208,24 @@ describe("PublicEmployeeStep", () => {
     expect(screen.getByText("Ninguno de estos profesionales ofrece Barba.")).toBeInTheDocument()
     expect(screen.queryByText(LOAD_FAILURE_TITLE)).not.toBeInTheDocument()
     expect(screen.queryByText("Sin preferencia")).not.toBeInTheDocument()
+  })
+
+  // T5: BookingStepShell ahora pinta el titulo del paso; el componente ya no
+  // tiene su propio <h2>. `getByText` ya falla si hay mas de una coincidencia,
+  // asi que no encontrar el titulo (cero) o encontrarlo duplicado (2+) rompen
+  // esta prueba igual.
+  it("no duplica el titulo: BookingStepShell lo pinta una unica vez", () => {
+    usePublicBookingStore.getState().selectService(haircut)
+    render(<PublicEmployeeStep salon={{ ...baseSalon, employees: [employee] }} />)
+
+    expect(screen.getByText("Con quien la quieres")).toBeInTheDocument()
+  })
+
+  it("el CTA del aside sale deshabilitado sin profesional elegido", () => {
+    mockMatchMedia(true)
+    usePublicBookingStore.getState().selectService(haircut)
+    render(<PublicEmployeeStep salon={{ ...baseSalon, employees: [employee] }} />)
+
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled()
   })
 })
