@@ -57,6 +57,26 @@ describe("TimeGrid · el ancho del canal y la tipografia de su etiqueta", () => 
     expect(channel).toHaveClass("shrink-0", "select-none")
   })
 
+  it("modo estrecho en escritorio: canal de 58px (design/DetalleCitaDesktop.dc.html:113,141)", () => {
+    const { container } = render(<TimeGrid variant="desktop" narrow />)
+    const channel = container.firstElementChild as HTMLElement
+
+    expect(channel).toHaveStyle({ width: "58px" })
+    expect(channel).not.toHaveStyle({ width: "64px" })
+  })
+
+  it("modo estrecho no tiene efecto en movil: sigue en 46px", () => {
+    const { container } = render(<TimeGrid variant="mobile" narrow />)
+    const channel = container.firstElementChild as HTMLElement
+
+    expect(channel).toHaveStyle({ width: "46px" })
+  })
+
+  it("sin narrow, escritorio se queda en 64px", () => {
+    const channel = renderChannel("desktop")
+    expect(channel).toHaveStyle({ width: "64px" })
+  })
+
   it("movil: canal de 46px con etiquetas de 10px a top -7px", () => {
     const channel = renderChannel("mobile")
 

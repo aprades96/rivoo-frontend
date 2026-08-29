@@ -22,6 +22,19 @@ interface AppointmentBlockProps {
   lane?: number
   /** Cuantos carriles tiene el grupo de solape; el bloque ocupa `1 / lanes`. */
   lanes?: number
+  /**
+   * Hay un panel de detalle acoplado a la derecha y la columna se ha
+   * estrechado (D17, §1.3.2): sin `selected`, el bloque pierde el sufijo de
+   * su tercera linea (precio o etiqueta terminal) y solo pinta el rango
+   * horario. Solo tiene efecto en `variant="desktop"`.
+   */
+  narrow?: boolean
+  /**
+   * El bloque que el panel de detalle esta mostrando (D10). Sustituye la
+   * sombra base por un anillo (§1.3.1) y, en modo estrecho, es el unico que
+   * conserva el sufijo de su tercera linea (§1.3.2).
+   */
+  selected?: boolean
   onTap?: (appointment: Appointment) => void
   className?: string
   /** Se aplica DESPUES de la geometria calculada: quien llama manda. */
@@ -116,6 +129,8 @@ export function AppointmentBlock({
   variant = "mobile",
   lane = 0,
   lanes = 1,
+  narrow = false,
+  selected = false,
   onTap,
   className,
   style,
@@ -162,13 +177,24 @@ export function AppointmentBlock({
    * rango, porque sin la linea del servicio una hora de inicio suelta no dice
    * cuando acaba la cita. El artboard solo dibuja ese caso en escritorio; el
    * movil compacto es analogia.
+   *
+   * Modo estrecho (D17, §1.3.2): con el panel de detalle abierto la columna se
+   * comprime y el bloque pierde el sufijo (precio o etiqueta terminal) de su
+   * tercera linea -- salvo que sea el SELECCIONADO, que lo conserva. Solo
+   * afecta a `desktop`: en movil el panel no se pinta (D10) y `narrow` no
+   * tiene efecto.
    */
+  const hideNarrowSuffix = isDesktop && narrow && !selected
   const timeLine = isTwoLine
     ? terminalSuffix
-      ? `${range} · ${terminalSuffix}`
+      ? hideNarrowSuffix
+        ? range
+        : `${range} · ${terminalSuffix}`
       : range
     : isDesktop
-      ? `${range} · ${price}`
+      ? hideNarrowSuffix
+        ? range
+        : `${range} · ${price}`
       : `${durationMinutes}min · ${price}`
 
   const isDestructiveText = DESTRUCTIVE_TEXT[appointment.status] === true
@@ -184,6 +210,10 @@ export function AppointmentBlock({
         isCompact ? "py-1.5" : "py-2",
         isDesktop ? "gap-0.5" : "gap-[3px]",
         STATUS_STYLES[appointment.status],
+        // El anillo de seleccion SUSTITUYE la sombra base (§1.3.1), no se
+        // suma: va DESPUES en el `cn` para que tailwind-merge se quede con
+        // esta clase de `shadow-*` y descarte la de arriba.
+        selected && "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]",
         className
       )}
       style={{

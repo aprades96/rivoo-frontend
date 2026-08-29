@@ -713,6 +713,86 @@ describe("DayView · dos citas solapadas nunca se pisan en pantalla", () => {
   })
 })
 
+describe("DayView · modo estrecho y seleccion (D17, §1.3)", () => {
+  it("selectedAppointmentId marca el anillo solo en el bloque que corresponde", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} selectedAppointmentId="apt_2" />)
+
+    const selected = blockOf("Ana Garcia")
+    const other = blockOf("Carla Ruiz")
+
+    expect(selected).toHaveClass("shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]")
+    expect(other).not.toHaveClass(
+      "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]"
+    )
+  })
+
+  it("sin selectedAppointmentId ningun bloque lleva el anillo", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} />)
+
+    for (const block of screen.getAllByTestId("appointment-block")) {
+      expect(block).not.toHaveClass(
+        "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]"
+      )
+    }
+  })
+
+  it("la seleccion tambien se aplica en movil, aunque la hoja la tape (D10)", () => {
+    render(<DayView variant="mobile" columns={columnsOf()} selectedAppointmentId="apt_1" />)
+
+    const selected = blockOf("Carla Ruiz")
+    expect(selected).toHaveClass("shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]")
+  })
+
+  it("narrow estrecha el canal de horas a 58px", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} narrow />)
+
+    const channel = screen.getByTestId("day-view").querySelector(".shrink-0.select-none")
+    expect(channel).toHaveStyle({ width: "58px" })
+  })
+
+  it("sin narrow el canal se queda en 64px", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} />)
+
+    const channel = screen.getByTestId("day-view").querySelector(".shrink-0.select-none")
+    expect(channel).toHaveStyle({ width: "64px" })
+  })
+
+  it("narrow cambia las dos clases del marco: px-6 -> px-5 y gap-x-3 -> gap-x-2.5", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} narrow />)
+
+    const scroller = screen.getByTestId("day-view")
+    expect(scroller.className).toContain("px-5")
+    expect(scroller.className).not.toContain("px-6")
+
+    const grid = screen.getByTestId("day-view-grid")
+    expect(grid.className).toContain("gap-x-2.5")
+    expect(grid.className).not.toContain("gap-x-3")
+  })
+
+  it("sin narrow el marco se queda como hoy: px-6 y gap-x-3", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} />)
+
+    const scroller = screen.getByTestId("day-view")
+    expect(scroller.className).toContain("px-6")
+    expect(scroller.className).not.toContain("px-5")
+
+    const grid = screen.getByTestId("day-view-grid")
+    expect(grid.className).toContain("gap-x-3")
+    expect(grid.className).not.toContain("gap-x-2.5")
+  })
+
+  it("narrow no tiene efecto en movil: marco y canal se quedan como hoy", () => {
+    render(<DayView variant="mobile" columns={columnsOf()} narrow />)
+
+    const scroller = screen.getByTestId("day-view")
+    expect(scroller.className).toContain("px-3")
+    expect(scroller.className).not.toContain("px-5")
+
+    const channel = scroller.querySelector(".shrink-0.select-none")
+    expect(channel).toHaveStyle({ width: "46px" })
+  })
+})
+
 describe("DayView · el reparto de carriles va memorizado", () => {
   /**
    * `assignLanes` cuesta O(k³) por grupo de solape y corria en el cuerpo del

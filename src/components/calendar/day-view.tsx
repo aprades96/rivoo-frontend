@@ -26,11 +26,24 @@ const labels = generateTimeLabels()
  * El padding lateral del marco: 24px en escritorio
  * (`design/CalendarioDesktop.dc.html:130`), 12px en movil
  * (`design/Calendario.dc.html:66`).
+ *
+ * Modo estrecho (`narrow`, D17, §1.3.5): con el panel de detalle acoplado el
+ * marco de escritorio se estrecha a 20px (`DetalleCitaDesktop.dc.html:112,139`).
+ * Movil no tiene version estrecha.
  */
 const FRAME_PADDING_CLASSNAME: Record<CalendarGridVariant, string> = {
   desktop: "px-6",
   mobile: "px-3",
 }
+const NARROW_FRAME_PADDING_CLASSNAME = "px-5"
+
+/**
+ * El canalon horizontal entre columnas: 12px normal, 10px en modo estrecho
+ * (D17, §1.3.5 -- `DetalleCitaDesktop.dc.html:114,159`). Afecta a las DOS
+ * filas -- cabeceras y rejilla -- porque comparten cuadricula CSS.
+ */
+const GRID_GAP_CLASSNAME = "gap-x-3"
+const NARROW_GRID_GAP_CLASSNAME = "gap-x-2.5"
 
 /**
  * El descanso de un empleado, indexado por su id. Vive en `lib/utils/calendar`
@@ -72,6 +85,20 @@ export interface DayViewProps {
   onSlotTap?: (employeeId: string | null, time: string) => void
   onFreeSlotTap?: (slot: FreeSlot) => void
   className?: string
+  /**
+   * Hay un panel de detalle acoplado a la derecha (D2): el canvas redibuja la
+   * rejilla entera para caber en menos ancho (D17, §1.3). Se reparte al canal
+   * de horas, a la cabecera de empleado y a los bloques; el marco de esta
+   * vista tambien lo lee directamente (§1.3.5). Solo tiene efecto en
+   * `variant="desktop"`.
+   */
+  narrow?: boolean
+  /**
+   * El id de la cita que el panel de detalle esta mostrando (D10, D16): se
+   * deriva por id, no se guarda el objeto. Se compara con `appointment.id`
+   * en cada bloque para pintar el anillo de seleccion (§1.3.1).
+   */
+  selectedAppointmentId?: string | null
 }
 
 /**
@@ -108,8 +135,11 @@ export function DayView({
   onSlotTap,
   onFreeSlotTap,
   className,
+  narrow = false,
+  selectedAppointmentId = null,
 }: DayViewProps) {
   const isDesktop = variant === "desktop"
+  const isNarrow = isDesktop && narrow
 
   return (
     <div
@@ -117,7 +147,7 @@ export function DayView({
       data-variant={variant}
       className={cn(
         "min-h-0 flex-1 overflow-y-auto",
-        FRAME_PADDING_CLASSNAME[variant],
+        isNarrow ? NARROW_FRAME_PADDING_CLASSNAME : FRAME_PADDING_CLASSNAME[variant],
         className
       )}
     >
@@ -138,7 +168,7 @@ export function DayView({
               style={{ height: EMPLOYEE_HEADER_HEIGHT_PX }}
             />
           )}
-          <TimeGrid variant={variant} />
+          <TimeGrid variant={variant} narrow={isNarrow} />
         </div>
 
         {isDesktop ? (
@@ -148,6 +178,8 @@ export function DayView({
             breaks={breaks}
             onAppointmentTap={onAppointmentTap}
             onSlotTap={onSlotTap}
+            narrow={isNarrow}
+            selectedAppointmentId={selectedAppointmentId}
           />
         ) : (
           <MobileColumn
@@ -157,6 +189,7 @@ export function DayView({
             onAppointmentTap={onAppointmentTap}
             onSlotTap={onSlotTap}
             onFreeSlotTap={onFreeSlotTap}
+            selectedAppointmentId={selectedAppointmentId}
           />
         )}
       </div>
@@ -178,17 +211,21 @@ function DesktopColumns({
   breaks,
   onAppointmentTap,
   onSlotTap,
+  narrow,
+  selectedAppointmentId,
 }: {
   columns: EmployeeColumn[]
   summaryColumns: EmployeeColumn[] | undefined
   breaks: EmployeeBreaks | undefined
   onAppointmentTap: ((appointment: Appointment) => void) | undefined
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
+  narrow: boolean
+  selectedAppointmentId: string | null
 }) {
   return (
     <div
       data-testid="day-view-grid"
-      className="grid min-w-0 grow gap-x-3"
+      className={cn("grid min-w-0 grow", narrow ? NARROW_GRID_GAP_CLASSNAME : GRID_GAP_CLASSNAME)}
       style={{
         // `Math.max(..., 1)`: `repeat(0, ...)` no es una plantilla valida y
         // tumbaria la rejilla entera si el salon aun no tuviese empleados.
@@ -201,6 +238,7 @@ function DesktopColumns({
           column={summaryColumnFor(summaryColumns, column)}
           index={index}
           className="sticky top-0 z-10 bg-background"
+          narrow={narrow}
         />
       ))}
       {columns.map((column, index) => (
@@ -213,6 +251,8 @@ function DesktopColumns({
           employeeBreak={breakOfColumn(breaks, column.employeeId)}
           onAppointmentTap={onAppointmentTap}
           onSlotTap={onSlotTap}
+          narrow={narrow}
+          selectedAppointmentId={selectedAppointmentId}
         />
       ))}
     </div>
@@ -242,6 +282,7 @@ function MobileColumn({
   onAppointmentTap,
   onSlotTap,
   onFreeSlotTap,
+  selectedAppointmentId,
 }: {
   columns: EmployeeColumn[]
   breaks: EmployeeBreaks | undefined
@@ -249,6 +290,7 @@ function MobileColumn({
   onAppointmentTap: ((appointment: Appointment) => void) | undefined
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
   onFreeSlotTap: ((slot: FreeSlot) => void) | undefined
+  selectedAppointmentId: string | null
 }) {
   const appointments = useMemo(
     () => columns.flatMap((column) => column.appointments),
@@ -274,6 +316,8 @@ function MobileColumn({
         onAppointmentTap={onAppointmentTap}
         onSlotTap={onSlotTap}
         onFreeSlotTap={onFreeSlotTap}
+        narrow={false}
+        selectedAppointmentId={selectedAppointmentId}
       />
     </div>
   )
@@ -299,6 +343,8 @@ function ColumnBody({
   onAppointmentTap,
   onSlotTap,
   onFreeSlotTap,
+  narrow,
+  selectedAppointmentId,
 }: {
   variant: CalendarGridVariant
   employeeId: string | null
@@ -309,6 +355,8 @@ function ColumnBody({
   onAppointmentTap: ((appointment: Appointment) => void) | undefined
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
   onFreeSlotTap?: ((slot: FreeSlot) => void) | undefined
+  narrow: boolean
+  selectedAppointmentId: string | null
 }) {
   const lanes = useMemo(() => assignLanes(appointments), [appointments])
 
@@ -342,6 +390,8 @@ function ColumnBody({
             lane={lane}
             lanes={laneCount}
             onTap={onAppointmentTap}
+            narrow={narrow}
+            selected={appointment.id === selectedAppointmentId}
           />
         ))}
 

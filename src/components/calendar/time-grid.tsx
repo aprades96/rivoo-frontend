@@ -22,6 +22,14 @@ const CHANNEL_CONFIG: Record<
 }
 
 /**
+ * Modo estrecho: hay un panel de detalle acoplado a la derecha
+ * (`design/DetalleCitaDesktop.dc.html:113,141`) y el canal se estrecha de
+ * 64px a 58px para hacerle sitio. Solo tiene efecto en `variant="desktop"`
+ * -- en movil `narrow` se ignora (D17, §1.3.3).
+ */
+const NARROW_DESKTOP_WIDTH = 58
+
+/**
  * Borde superior de una fila de media hora. Definicion UNICA que comparten
  * `TimeGrid` (canal de horas) y `GridRows` (fondo de las columnas de citas):
  * las dos tienen que alinear sus horizontales pixel a pixel, asi que no puede
@@ -38,6 +46,8 @@ function rowBorderClassName(isHour: boolean): string {
 
 export interface TimeGridProps {
   variant: CalendarGridVariant
+  /** Ver `NARROW_DESKTOP_WIDTH`. Contrato D17: opcional, por defecto `false`. */
+  narrow?: boolean
 }
 
 /**
@@ -45,8 +55,9 @@ export interface TimeGridProps {
  * las citas de todos los empleados en escritorio (`CalendarioDesktop.dc.html`)
  * y a la columna unica de movil (`Calendario.dc.html`).
  */
-export function TimeGrid({ variant }: TimeGridProps) {
-  const { width, fontSize, labelTop } = CHANNEL_CONFIG[variant]
+export function TimeGrid({ variant, narrow = false }: TimeGridProps) {
+  const { fontSize, labelTop } = CHANNEL_CONFIG[variant]
+  const width = variant === "desktop" && narrow ? NARROW_DESKTOP_WIDTH : CHANNEL_CONFIG[variant].width
 
   return (
     <div className="shrink-0 select-none" style={{ width }}>

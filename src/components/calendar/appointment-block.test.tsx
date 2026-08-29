@@ -349,6 +349,94 @@ describe("AppointmentBlock · carriles y comportamiento", () => {
   })
 })
 
+describe("AppointmentBlock · seleccion y modo estrecho (§1.3.1, §1.3.2)", () => {
+  it("seleccionado: la sombra base se SUSTITUYE por el anillo, no se suma", () => {
+    render(<AppointmentBlock variant="desktop" appointment={makeAppointment()} selected />)
+
+    const el = block()
+    // El anillo con `var(--primary)`, no el hex (§1.5).
+    expect(el).toHaveClass(
+      "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]"
+    )
+    // Y la sombra base ya no esta: tailwind-merge la ha descartado, no se ha
+    // limitado a anadir la nueva encima.
+    expect(el).not.toHaveClass("shadow-[0_1px_2px_rgba(42,35,32,0.05)]")
+  })
+
+  it("sin seleccionar: se queda con la sombra base y sin el anillo", () => {
+    render(<AppointmentBlock variant="desktop" appointment={makeAppointment()} />)
+
+    const el = block()
+    expect(el).toHaveClass("shadow-[0_1px_2px_rgba(42,35,32,0.05)]")
+    expect(el).not.toHaveClass(
+      "shadow-[0_0_0_2px_var(--primary),0_6px_14px_rgba(42,35,32,0.12)]"
+    )
+  })
+
+  it("narrow sin seleccionar recorta el sufijo de precio de la tercera linea", () => {
+    render(<AppointmentBlock variant="desktop" appointment={makeAppointment()} narrow />)
+
+    expect(screen.getByText(exact("09:00 - 10:00"))).toBeInTheDocument()
+    expect(normalize(block().textContent ?? "")).not.toContain("35,00")
+  })
+
+  it("narrow Y seleccionado conserva el sufijo de precio", () => {
+    render(
+      <AppointmentBlock variant="desktop" appointment={makeAppointment()} narrow selected />
+    )
+
+    expect(screen.getByText(exact("09:00 - 10:00 · 35,00 €"))).toBeInTheDocument()
+  })
+
+  it("narrow sin seleccionar recorta la etiqueta de estado terminal", () => {
+    render(
+      <AppointmentBlock
+        variant="desktop"
+        appointment={makeAppointment({
+          status: "COMPLETED",
+          clientName: "Nuria Camps",
+          startTime: `${DAY}T08:00:00`,
+          endTime: `${DAY}T08:45:00`,
+        })}
+        narrow
+      />
+    )
+
+    expect(screen.getByText(exact("08:00 - 08:45"))).toBeInTheDocument()
+    expect(screen.queryByText(exact("08:00 - 08:45 · Completada"))).not.toBeInTheDocument()
+  })
+
+  it("narrow Y seleccionado conserva la etiqueta de estado terminal", () => {
+    render(
+      <AppointmentBlock
+        variant="desktop"
+        appointment={makeAppointment({
+          status: "CANCELLED",
+          clientName: "Marta Vidal",
+          startTime: `${DAY}T11:30:00`,
+          endTime: `${DAY}T12:00:00`,
+        })}
+        narrow
+        selected
+      />
+    )
+
+    expect(screen.getByText(exact("11:30 - 12:00 · Cancelada"))).toBeInTheDocument()
+  })
+
+  it("sin narrow, todo como hoy aunque venga selected en false", () => {
+    render(<AppointmentBlock variant="desktop" appointment={makeAppointment()} />)
+
+    expect(screen.getByText(exact("09:00 - 10:00 · 35,00 €"))).toBeInTheDocument()
+  })
+
+  it("narrow no tiene efecto en movil: conserva su tercera linea completa", () => {
+    render(<AppointmentBlock variant="mobile" appointment={makeAppointment()} narrow />)
+
+    expect(screen.getByText(exact("60min · 35,00 €"))).toBeInTheDocument()
+  })
+})
+
 /**
  * `BreakBlock` y `FreeSlotHint` comparten fichero de prueba con la cita a
  * proposito: son las otras dos cajas de la misma tarea, de una decena de lineas
