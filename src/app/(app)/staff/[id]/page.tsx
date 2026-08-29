@@ -4,7 +4,7 @@ import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PageShell } from "@/components/layout/page-shell"
 import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { ServiceAssignment } from "@/components/staff/service-assignment"
 import { EmployeeFormSheet } from "@/components/staff/employee-form"
@@ -37,6 +38,11 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   const [editSheetOpen, setEditSheetOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+
+  // router.back() no sirve aqui: esta pantalla se puede alcanzar sin pasar
+  // por /staff (p.ej. enlace directo), y el destino fijo es esa lista, no
+  // "lo que hubiera en el historial". Mismo motivo en desktopBack abajo.
+  const backToStaff = () => router.push("/staff")
 
   const { data: employee, isLoading } = useQuery<Employee>({
     queryKey: ["employee", id],
@@ -107,22 +113,39 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   if (isLoading || !employee) {
     return (
-      <div className="p-4">
+      <PageShell
+        title="Detalle empleado"
+        back={backToStaff}
+        desktopBack={{ variant: "bordered", onBack: backToStaff }}
+      >
         <LoadingSkeleton count={5} />
-      </div>
+      </PageShell>
     )
   }
 
-  return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Detalle empleado</h1>
-      </div>
+  // Desviacion deliberada de los dos artboards (que dicen "Detalle
+  // empleado"): el usuario decidio unificar los titulos y aqui se elige el
+  // nombre del empleado por coherencia con la ficha de cliente. No reabrir.
+  const headerActions = isOwner ? (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setEditSheetOpen(true)}>
+        <Pencil className="mr-1 h-4 w-4" />
+        Editar
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+        <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+        Desactivar
+      </Button>
+    </>
+  ) : undefined
 
+  return (
+    <PageShell
+      title={`${employee.firstName} ${employee.lastName}`}
+      back={backToStaff}
+      desktopBack={{ variant: "bordered", onBack: backToStaff }}
+      actions={headerActions}
+    >
       {/* Profile */}
       <div className="flex items-center gap-3">
         <Avatar className="h-14 w-14">
@@ -134,9 +157,9 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <p className="text-base font-semibold">
-            {employee.firstName} {employee.lastName}
-          </p>
+          {/* El nombre ya lo lleva el titulo de PageShell (ver la desviacion
+              deliberada arriba): repetirlo aqui tal cual duplicaria el texto
+              exacto del <h1> y volveria ambiguas las consultas por texto. */}
           {employee.jobTitle && (
             <p className="text-sm text-muted-foreground">{employee.jobTitle}</p>
           )}
@@ -144,16 +167,6 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
             {employee.isActive ? "Activo" : "Inactivo"}
           </Badge>
         </div>
-        {isOwner && (
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon-sm" onClick={() => setEditSheetOpen(true)}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" onClick={() => setDeleteDialogOpen(true)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Contact info */}
@@ -230,6 +243,6 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { PageShell } from "@/components/layout/page-shell"
 import { EmployeeCard } from "@/components/staff/employee-card"
 import { ServiceCard } from "@/components/services/service-card"
 import { EmployeeFormSheet } from "@/components/staff/employee-form"
@@ -20,7 +21,13 @@ import type { ServiceOffering } from "@/types/service"
 // la URL, asi que el fallback solo cubre la lectura de `?tab=`.
 export default function StaffPage() {
   return (
-    <Suspense fallback={<div className="p-4 md:py-6"><LoadingSkeleton count={4} /></div>}>
+    <Suspense
+      fallback={
+        <PageShell title="Equipo" mobileActions={null}>
+          <LoadingSkeleton count={4} />
+        </PageShell>
+      }
+    >
       <StaffPageContent />
     </Suspense>
   )
@@ -32,11 +39,13 @@ function StaffPageContent() {
   const { data: employeesData, isLoading: empLoading } = useEmployees()
   const { data: servicesData, isLoading: svcLoading } = useServices()
 
-  // `?tab=services` deja aterrizar directamente en la pestana de Servicios
-  // (p.ej. desde el "Crear servicio" de /today): sin esto siempre se abria
-  // en Empleados, que es donde no hay nada que crear para ese caso de uso.
-  // Cualquier otro valor (o su ausencia) mantiene el comportamiento previo.
-  const initialTab = searchParams.get("tab") === "services" ? "services" : "employees"
+  // Controlado por la URL en vez de `defaultValue`: el destino "Servicios" de
+  // la barra lateral enlaza a `/staff?tab=services`, y estando ya en `/staff`
+  // esa pulsacion es una navegacion de cliente dentro de la misma ruta -- el
+  // componente no se remonta, asi que un `defaultValue` solo leido al montar
+  // dejaria la URL y la barra lateral en Servicios con el contenido seguindo
+  // en Empleados. Con `value` ligado a la query, cambia con ella.
+  const tab = searchParams.get("tab") === "services" ? "services" : "employees"
 
   const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false)
   const [serviceSheetOpen, setServiceSheetOpen] = useState(false)
@@ -55,9 +64,35 @@ function StaffPageContent() {
     setServiceSheetOpen(true)
   }
 
+  // Cluster de escritorio (`mobileActions={null}` lo oculta en movil, donde
+  // el CTA vive en el cuerpo de cada pestana, ver `lg:hidden` mas abajo):
+  // un solo boton que se adapta a la pestana activa, no dos apilados.
+  const addAction = (
+    <Button
+      size="sm"
+      onClick={() => {
+        if (tab === "services") {
+          setEditingService(null)
+          setServiceSheetOpen(true)
+        } else {
+          setEditingEmployee(null)
+          setEmployeeSheetOpen(true)
+        }
+      }}
+    >
+      <Plus className="mr-1 h-4 w-4" />
+      Anadir
+    </Button>
+  )
+
   return (
-    <div className="p-4 md:py-6">
-      <Tabs defaultValue={initialTab}>
+    <PageShell title="Equipo" actions={addAction} mobileActions={null}>
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          router.replace(`/staff?tab=${value}`, { scroll: false })
+        }
+      >
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="employees">Empleados</TabsTrigger>
@@ -71,8 +106,10 @@ function StaffPageContent() {
             <p className="text-sm text-muted-foreground">
               {employees.length} empleado{employees.length !== 1 ? "s" : ""}
             </p>
+            {/* Duplicaria el `addAction` de la cabecera de escritorio: solo movil. */}
             <Button
               size="sm"
+              className="lg:hidden"
               onClick={() => {
                 setEditingEmployee(null)
                 setEmployeeSheetOpen(true)
@@ -107,8 +144,10 @@ function StaffPageContent() {
             <p className="text-sm text-muted-foreground">
               {services.length} servicio{services.length !== 1 ? "s" : ""}
             </p>
+            {/* Duplicaria el `addAction` de la cabecera de escritorio: solo movil. */}
             <Button
               size="sm"
+              className="lg:hidden"
               onClick={() => {
                 setEditingService(null)
                 setServiceSheetOpen(true)
@@ -148,6 +187,6 @@ function StaffPageContent() {
         onOpenChange={setServiceSheetOpen}
         service={editingService}
       />
-    </div>
+    </PageShell>
   )
 }
