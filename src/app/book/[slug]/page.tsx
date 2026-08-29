@@ -6,7 +6,6 @@ import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { UnavailableNotice } from "@/components/booking/unavailable-notice"
-import { BookingStepShell } from "@/components/booking/booking-step-shell"
 import { salonsApi } from "@/lib/api/salons"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { PublicServiceStep } from "@/components/booking/public-service-step"
@@ -17,29 +16,6 @@ import { PublicConfirmStep } from "@/components/booking/public-confirm-step"
 import { PublicSuccessStep } from "@/components/booking/public-success-step"
 import { formatAddress } from "@/lib/utils/format"
 import type { SalonPublic } from "@/types/salon"
-
-/**
- * Titulo/subtitulo estatico de cada paso, tal cual aparecen en los artboards
- * (`design/ReservaPaso1..5.dc.html`). Es contenido DUPLICADO a proposito, no
- * un descuido: cada `Public*Step` sigue pintando su propio `<h2>` con este
- * mismo texto (y, en los pasos 2-3, con datos dinamicos que este chasis no
- * tiene motivo para recalcular). Ese duplicado desaparece cuando la tarea de
- * cada paso individual retire su cabecera interna y empiece a fiarse de la
- * que ya pinta `BookingStepShell` -- fuera del alcance de la tarea de chasis.
- */
-const STEP_META: Record<1 | 2 | 3 | 4 | 5, { title: string; subtitle?: string }> = {
-  1: {
-    title: "Elige un servicio",
-    subtitle: "Reserva en menos de un minuto. No necesitas crear cuenta.",
-  },
-  2: {
-    title: "Con quien la quieres",
-    subtitle: "Si eliges profesional veras solo sus huecos libres.",
-  },
-  3: { title: "Elige fecha y hora" },
-  4: { title: "Tus datos", subtitle: "Solo para gestionar esta reserva." },
-  5: { title: "Confirma tu reserva" },
-}
 
 /**
  * Ancho responsive compartido por las dos pantallas de este fichero que no
@@ -59,7 +35,7 @@ function ResponsivePageContainer({ children }: { children: ReactNode }) {
 
 export default function PublicBookingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  const { step, prevStep, setSalonSlug, reset, conflict } = usePublicBookingStore()
+  const { step, setSalonSlug, reset, conflict } = usePublicBookingStore()
 
   useEffect(() => {
     reset()
@@ -155,23 +131,21 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
   if (step === 6) {
     // TODO: montar sobre BookingResultShell tone="success" cuando la tarea de
     // este paso retire el icono/titulo que PublicSuccessStep ya pinta por su
-    // cuenta (mismo duplicado transitorio que STEP_META, ver comentario ahi).
+    // cuenta.
     return <PublicSuccessStep salon={salon} />
   }
 
+  // Pure dispatcher: each `Public*Step` mounts its own `BookingStepShell`
+  // (title, subtitle, aside, footer are its own business, not this page's --
+  // see PublicServiceStep for the pattern). Steps 2-5 have no chassis yet
+  // until their own tasks wrap them; that gap is expected here, not a bug.
   return (
-    <BookingStepShell
-      salon={salon}
-      step={step as 1 | 2 | 3 | 4 | 5}
-      title={STEP_META[step as 1 | 2 | 3 | 4 | 5].title}
-      subtitle={STEP_META[step as 1 | 2 | 3 | 4 | 5].subtitle}
-      onBack={step > 1 ? prevStep : undefined}
-    >
+    <>
       {step === 1 && <PublicServiceStep salon={salon} />}
       {step === 2 && <PublicEmployeeStep salon={salon} />}
       {step === 3 && <PublicDateTimeStep salon={salon} />}
       {step === 4 && <PublicClientStep />}
       {step === 5 && <PublicConfirmStep salon={salon} />}
-    </BookingStepShell>
+    </>
   )
 }

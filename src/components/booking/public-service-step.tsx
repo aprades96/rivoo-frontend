@@ -1,16 +1,28 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
+import { BookingStepShell } from "@/components/booking/booking-step-shell"
+import { SalonInfoAside } from "@/components/booking/salon-info-aside"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
-import { dayName } from "@/lib/utils/business-hours"
 import type { SalonPublic, ServicePublic } from "@/types/salon"
 
 interface PublicServiceStepProps {
   salon: SalonPublic
 }
 
+/**
+ * `design/ReservaDesktopPaso1.dc.html:67,103` groups the desktop grid under
+ * section labels ("Cabello", "Barberia y unas"). There is no data behind that
+ * grouping: `ServicePublic` (the public catalogue salon-service actually
+ * returns, see `src/types/salon.ts`) carries no `category` field at all --
+ * unlike the owner-facing `ServiceOffering` (`src/types/service.ts`), which
+ * has one but is never wired into this public flow. Rendering fake or
+ * inferred categories would be worse than none, so this grid stays flat
+ * (ungrouped) until the public endpoint actually exposes a category; see the
+ * task report for the flag raised to the orchestrator.
+ */
 export function PublicServiceStep({ salon }: PublicServiceStepProps) {
   const { selectedService, selectService, nextStep } = usePublicBookingStore()
 
@@ -22,65 +34,46 @@ export function PublicServiceStep({ salon }: PublicServiceStepProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold">Elige un servicio</h2>
-        {salon.description && (
-          <p className="mt-1 text-sm text-muted-foreground">{salon.description}</p>
-        )}
-      </div>
-
+    <BookingStepShell
+      salon={salon}
+      step={1}
+      title="Elige un servicio"
+      subtitle="Reserva en menos de un minuto. No necesitas crear cuenta."
+      aside={<SalonInfoAside salon={salon} />}
+    >
       {/*
         No dead-end branch here for `services.length === 0`: this component
-        has a single caller, book/[slug]/page.tsx:52, which already returns
+        has a single caller, book/[slug]/page.tsx, which already returns
         its own screen (the "unavailable catalogue" / "no acepta reservas"
         split, using `salon.servicesUnavailable`) before ever reaching step 1
         with an empty catalogue. Reintroducing that split here would be
         unreachable production code covered only by tests that render this
         component directly -- false confidence, not a real regression net.
       */}
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-[14px]">
         {services.map((service) => {
           const isSelected = selectedService?.id === service.id
           return (
             <Card
               key={service.id}
-              className={`cursor-pointer p-3 transition-colors hover:bg-muted/50 ${
+              className={`flex-row items-center justify-between gap-3 rounded-[10px] border border-border bg-card p-3.5 transition-colors hover:bg-muted/50 lg:gap-[14px] lg:p-4 cursor-pointer ${
                 isSelected ? "border-primary bg-primary/5" : ""
               }`}
               onClick={() => handleSelect(service)}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{service.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDuration(service.durationMinutes)}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold">
-                  {formatCurrency(service.price, service.currency)}
-                </span>
+              <div className="flex min-w-0 flex-col gap-[3px]">
+                <p className="text-[15px] font-semibold">{service.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDuration(service.durationMinutes)}
+                </p>
               </div>
+              <span className="whitespace-nowrap text-[22px] font-semibold tabular-nums lg:text-xl">
+                {formatCurrency(service.price, service.currency)}
+              </span>
             </Card>
           )
         })}
       </div>
-
-      {/* Business hours info */}
-      {salon.businessHours && salon.businessHours.length > 0 && (
-        <div className="rounded-lg bg-muted p-3">
-          <p className="mb-1 text-xs font-medium">Horario</p>
-          <div className="space-y-0.5 text-xs text-muted-foreground">
-            {salon.businessHours
-              .filter((h) => h.isOpen)
-              .map((h) => (
-                <p key={h.dayOfWeek}>
-                  {dayName(h.dayOfWeek)}: {h.openTime} - {h.closeTime}
-                </p>
-              ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </BookingStepShell>
   )
 }

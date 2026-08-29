@@ -110,11 +110,10 @@ describe("PublicBookingPage", () => {
   it("sigue el flujo normal del asistente cuando el salon si tiene servicios", () => {
     renderPage("salon-demo", { ...baseSalon, services: [service] })
 
-    // Aparece dos veces a proposito: BookingStepShell pinta su propio
-    // titulo (T2) y PublicServiceStep todavia pinta el suyo (se retira en
-    // una tarea posterior, ver STEP_META en page.tsx). getAllByText tolera
-    // el duplicado transitorio sin ser fragil ante ese futuro cambio.
-    expect(screen.getAllByText("Elige un servicio").length).toBeGreaterThan(0)
+    // page.tsx ya no pinta un titulo propio (STEP_META se elimino): el unico
+    // titulo en pantalla es el que monta PublicServiceStep a traves de su
+    // propio BookingStepShell. getByText falla si el duplicado reaparece.
+    expect(screen.getByText("Elige un servicio")).toBeInTheDocument()
     expect(screen.getByText("Corte hombre")).toBeInTheDocument()
     expect(
       screen.queryByText("Este salon aun no acepta reservas online")
