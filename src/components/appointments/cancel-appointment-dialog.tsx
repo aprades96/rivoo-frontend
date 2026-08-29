@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useCancelAppointment } from "@/hooks/use-appointments"
+import { ApiError } from "@/lib/api/client"
 import { Loader2 } from "lucide-react"
+
+const FALLBACK_ERROR_MESSAGE = "No se ha podido cancelar la cita. Intentalo de nuevo."
 
 interface CancelAppointmentDialogProps {
   appointmentId: string
@@ -38,9 +41,32 @@ export function CancelAppointmentDialog({
   onCancelled,
 }: CancelAppointmentDialogProps) {
   const [reason, setReason] = useState("")
+  const [mutationError, setMutationError] = useState<string | null>(null)
   const cancelAppointment = useCancelAppointment()
 
+  /**
+   * El panel de detalle NO desmonta este dialogo al cambiar de cita
+   * (`appointment-detail-panel.tsx:273` lo monta sin `key`) ni al cerrarlo con
+   * "Volver": por D9 el panel solo cambia de contenido. Sin este reset, el
+   * `reason` de una cita sobrevivia al cierre y se colaba en la siguiente
+   * `cancelAppointment.mutate` con OTRO `appointmentId`. El estado tiene que
+   * morir con la cita, dentro del propio dialogo -- no depender de que cada
+   * consumidor (hoja/panel/movil) se acuerde de pasar una `key`.
+   */
+  useEffect(() => {
+    setReason("")
+    setMutationError(null)
+  }, [appointmentId])
+
+  useEffect(() => {
+    if (!open) {
+      setReason("")
+      setMutationError(null)
+    }
+  }, [open])
+
   const handleCancel = () => {
+    setMutationError(null)
     cancelAppointment.mutate(
       { id: appointmentId, reason: reason || undefined, cancelledBy: "SALON" },
       {
@@ -48,6 +74,13 @@ export function CancelAppointmentDialog({
           onOpenChange(false)
           setReason("")
           onCancelled?.()
+        },
+        onError: (error) => {
+          setMutationError(
+            error instanceof ApiError && error.problem.detail
+              ? error.problem.detail
+              : FALLBACK_ERROR_MESSAGE
+          )
         },
       }
     )
@@ -67,6 +100,14 @@ export function CancelAppointmentDialog({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
+        {mutationError ? (
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive-border bg-destructive-soft px-3 py-2 text-sm text-destructive"
+          >
+            {mutationError}
+          </p>
+        ) : null}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Volver

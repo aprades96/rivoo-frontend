@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { CancelAppointmentDialog } from "./cancel-appointment-dialog"
+import { ApiError, type ProblemDetail } from "@/lib/api/client"
 
 const mutateMock = vi.fn()
 let isPending = false
@@ -128,6 +129,95 @@ describe("CancelAppointmentDialog", () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(mutateMock).not.toHaveBeenCalled()
+  })
+
+  it("REGRESION: el motivo no sobrevive a cerrar con 'Volver' ni a cambiar de cita (HALLAZGO 1)", async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+
+    const { rerender } = render(
+      <CancelAppointmentDialog
+        appointmentId="apt_ana"
+        clientName="Ana Garcia"
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    )
+
+    await user.type(
+      screen.getByPlaceholderText("Motivo de cancelacion (opcional)"),
+      "el cliente aviso que no viene"
+    )
+    expect(screen.getByPlaceholderText("Motivo de cancelacion (opcional)")).toHaveValue(
+      "el cliente aviso que no viene"
+    )
+
+    // "Volver": el padre cierra el dialogo (D9: el componente NO se desmonta,
+    // solo cambia `open`).
+    await user.click(screen.getByRole("button", { name: "Volver" }))
+    rerender(
+      <CancelAppointmentDialog
+        appointmentId="apt_ana"
+        clientName="Ana Garcia"
+        open={false}
+        onOpenChange={onOpenChange}
+      />
+    )
+
+    // El panel de detalle cambia de cita SIN desmontar (no lleva `key`,
+    // `appointment-detail-panel.tsx:273`).
+    rerender(
+      <CancelAppointmentDialog
+        appointmentId="apt_carla"
+        clientName="Carla Ruiz"
+        open={false}
+        onOpenChange={onOpenChange}
+      />
+    )
+
+    // Se reabre el dialogo, ahora para Carla.
+    rerender(
+      <CancelAppointmentDialog
+        appointmentId="apt_carla"
+        clientName="Carla Ruiz"
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    )
+
+    expect(screen.getByPlaceholderText("Motivo de cancelacion (opcional)")).toHaveValue("")
+  })
+
+  it("REGRESION: si la mutacion falla, el dialogo no se cierra y muestra el error (HALLAZGO 2)", async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const problem: ProblemDetail = {
+      type: "about:blank",
+      title: "Bad Request",
+      status: 400,
+      detail: "La cita no se puede cancelar en su estado actual.",
+      instance: "/appointments/apt_1/cancel",
+      timestamp: "2026-08-27T10:00:00Z",
+      correlationId: "corr-1",
+    }
+    mutateMock.mockImplementation((_vars, options) => {
+      options.onError(new ApiError(problem))
+    })
+
+    render(
+      <CancelAppointmentDialog
+        appointmentId="apt_1"
+        clientName="Ana Garcia"
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    )
+
+    await user.click(screen.getByRole("button", { name: "Cancelar cita" }))
+
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("La cita no se puede cancelar en su estado actual.")
+    expect(onOpenChange).not.toHaveBeenCalled()
   })
 
   it("isPending deshabilita el boton de cancelar y pinta el spinner", () => {
