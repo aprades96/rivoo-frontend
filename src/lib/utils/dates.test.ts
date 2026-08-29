@@ -99,4 +99,38 @@ describe("formatRelativeTime", () => {
     const now = new Date(2026, 2, 22, 8, 0, 0)
     expect(formatRelativeTime(createdAt, now)).toBe("hace 0 min")
   })
+
+  describe("unit boundaries (minute -> hour -> day)", () => {
+    const createdAt = "2026-03-22T09:00:00"
+
+    it("59 min stays in minutes", () => {
+      const now = new Date(2026, 2, 22, 9, 59, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 59 min")
+    })
+
+    it("60 min exactos ya cuentan como 1 h, no como 60 min", () => {
+      const now = new Date(2026, 2, 22, 10, 0, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 1 h")
+    })
+
+    it("61 min sigue siendo 1 h", () => {
+      const now = new Date(2026, 2, 22, 10, 1, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 1 h")
+    })
+
+    it("23 h stays in hours", () => {
+      const now = new Date(2026, 2, 23, 8, 0, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 23 h")
+    })
+
+    it("24 h exactas ya cuentan como 1 d, no como 24 h", () => {
+      const now = new Date(2026, 2, 23, 9, 0, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 1 d")
+    })
+
+    it("25 h sigue siendo 1 d", () => {
+      const now = new Date(2026, 2, 23, 10, 0, 0)
+      expect(formatRelativeTime(createdAt, now)).toBe("hace 1 d")
+    })
+  })
 })
