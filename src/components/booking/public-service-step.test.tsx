@@ -13,6 +13,15 @@ const service: ServicePublic = {
   currency: "EUR",
 }
 
+const otherService: ServicePublic = {
+  id: "svc_2",
+  name: "Manicura francesa",
+  description: null,
+  durationMinutes: 60,
+  price: 22,
+  currency: "EUR",
+}
+
 // `servicesUnavailable` / `employeesUnavailable` son los nombres de cable que
 // emite SalonPublicResponse (salon-service). Ver salon.ts.
 const baseSalon: SalonPublic = {
@@ -59,5 +68,41 @@ describe("PublicServiceStep", () => {
     expect(container.querySelectorAll('[data-slot="card"]')).toHaveLength(0)
     expect(usePublicBookingStore.getState().step).toBe(1)
     expect(usePublicBookingStore.getState().selectedService).toBeNull()
+  })
+
+  it("no duplica el titulo: BookingStepShell lo pinta una unica vez, el paso ya no tiene su propio <h2>", () => {
+    render(<PublicServiceStep salon={{ ...baseSalon, services: [service] }} />)
+
+    expect(screen.getByText("Elige un servicio")).toBeInTheDocument()
+  })
+
+  it("no agrupa por categoria: ServicePublic no trae ese campo (a diferencia de ServiceOffering), asi que el catalogo sale en una unica lista/grid plana", () => {
+    // Regression net para la decision documentada en public-service-step.tsx:
+    // sin dato de categoria en el tipo publico, no se inventan rotulos de
+    // seccion. Si esto se pone rojo es porque `ServicePublic` gano un campo de
+    // categoria real -- entonces toca revisar esta prueba, no forzarla en verde.
+    render(<PublicServiceStep salon={{ ...baseSalon, services: [service, otherService] }} />)
+
+    expect(screen.getByText("Corte hombre")).toBeInTheDocument()
+    expect(screen.getByText("Manicura francesa")).toBeInTheDocument()
+    expect(screen.queryByText("Cabello")).not.toBeInTheDocument()
+    expect(screen.queryByText("Barberia y unas")).not.toBeInTheDocument()
+  })
+
+  it("ya no pinta el horario semanal: en escritorio vive en SalonInfoAside, y no esta en el artboard movil", () => {
+    render(
+      <PublicServiceStep
+        salon={{
+          ...baseSalon,
+          services: [service],
+          businessHours: [
+            { dayOfWeek: 1, isOpen: true, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+          ],
+        }}
+      />
+    )
+
+    expect(screen.queryByText("Horario")).not.toBeInTheDocument()
+    expect(screen.queryByText(/09:00 - 20:00/)).not.toBeInTheDocument()
   })
 })

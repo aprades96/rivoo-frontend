@@ -469,6 +469,15 @@
       "title": "Equipo - escritorio"
     },
     {
+      "file": "ClientesDesktop.dc.html",
+      "page": "page-1",
+      "x": 4680,
+      "y": 3040,
+      "w": 1440,
+      "h": 900,
+      "title": "Clientes - escritorio"
+    },
+    {
       "file": "ReservaError.dc.html",
       "page": "page-3",
       "x": 2820,

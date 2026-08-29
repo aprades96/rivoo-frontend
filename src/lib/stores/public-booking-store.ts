@@ -19,6 +19,15 @@ export interface PublicBookingState {
     gdprConsent: boolean
   }
   honeypot: string
+  /**
+   * Hueco que se acaba de ocupar mientras el visitante confirmaba (409 del
+   * backend). No es un septimo `step`: la barra de progreso movil tiene 6
+   * tramos fijos y el stepper de escritorio 5 nodos, ninguno de los dos
+   * artboards deja hueco para un paso extra. Un campo aparte deja intacto el
+   * `step` con el que se dibujan ambos, y `page.tsx` decide con
+   * `conflict != null` si pinta el asistente o la pantalla de error.
+   */
+  conflict: { slot: string; date: string } | null
 
   setStep: (step: number) => void
   nextStep: () => void
@@ -29,6 +38,10 @@ export interface PublicBookingState {
   selectDateTime: (date: string, slot: string) => void
   setClientForm: (data: Partial<PublicBookingState["clientForm"]>) => void
   setHoneypot: (value: string) => void
+  setConflict: (conflict: { slot: string; date: string }) => void
+  clearConflict: () => void
+  /** Descarta la fecha y hora elegidas sin tocar el resto de la reserva. */
+  clearDateTime: () => void
   reset: () => void
 }
 
@@ -44,6 +57,7 @@ const INITIAL_STATE = {
   selectedSlot: null,
   clientForm: INITIAL_CLIENT,
   honeypot: "",
+  conflict: null,
 }
 
 export const usePublicBookingStore = create<PublicBookingState>((set) => ({
@@ -66,6 +80,18 @@ export const usePublicBookingStore = create<PublicBookingState>((set) => ({
     set((s) => ({ clientForm: { ...s.clientForm, ...data } })),
 
   setHoneypot: (value) => set({ honeypot: value }),
+
+  setConflict: (conflict) => set({ conflict }),
+  clearDateTime: () => set({ selectedDate: null, selectedSlot: null }),
+
+  /**
+   * Limpia SOLO el conflicto. Que hacer con el hueco muerto lo decide quien
+   * sale de la pantalla, porque las dos salidas quieren cosas contrarias:
+   * elegir una hora alternativa ya fija una valida y borrarsela despues seria
+   * un error de orden; "elegir otro dia" tiene que descartarla con
+   * `clearDateTime` (ver `public-booking-error.tsx`).
+   */
+  clearConflict: () => set({ conflict: null }),
 
   reset: () => set(INITIAL_STATE),
 }))

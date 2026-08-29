@@ -101,6 +101,7 @@ describe("public-booking-store", () => {
     store.getState().selectDateTime("2026-04-01", "10:00")
     store.getState().setClientForm({ firstName: "Test" })
     store.getState().setHoneypot("spam")
+    store.getState().setConflict({ slot: "2026-04-01T10:00:00", date: "2026-04-01" })
 
     store.getState().reset()
     const state = store.getState()
@@ -112,5 +113,20 @@ describe("public-booking-store", () => {
     expect(state.selectedSlot).toBeNull()
     expect(state.clientForm.firstName).toBe("")
     expect(state.honeypot).toBe("")
+    expect(state.conflict).toBeNull()
+  })
+
+  it("setConflict stores the slot that was just taken, clearConflict clears it without touching step", () => {
+    const store = usePublicBookingStore
+    store.getState().setStep(5)
+
+    store.getState().setConflict({ slot: "2026-04-01T10:00:00", date: "2026-04-01" })
+    expect(store.getState().conflict).toEqual({ slot: "2026-04-01T10:00:00", date: "2026-04-01" })
+    // No septimo step: el conflicto vive aparte del asistente de 6 pasos.
+    expect(store.getState().step).toBe(5)
+
+    store.getState().clearConflict()
+    expect(store.getState().conflict).toBeNull()
+    expect(store.getState().step).toBe(5)
   })
 })

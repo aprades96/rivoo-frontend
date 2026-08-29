@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, act } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import PublicBookingPage from "./page"
 import { salonsApi } from "@/lib/api/salons"
@@ -110,11 +110,60 @@ describe("PublicBookingPage", () => {
   it("sigue el flujo normal del asistente cuando el salon si tiene servicios", () => {
     renderPage("salon-demo", { ...baseSalon, services: [service] })
 
+    // page.tsx ya no pinta un titulo propio (STEP_META se elimino): el unico
+    // titulo en pantalla es el que monta PublicServiceStep a traves de su
+    // propio BookingStepShell. getByText falla si el duplicado reaparece.
     expect(screen.getByText("Elige un servicio")).toBeInTheDocument()
     expect(screen.getByText("Corte hombre")).toBeInTheDocument()
     expect(
       screen.queryByText("Este salon aun no acepta reservas online")
     ).not.toBeInTheDocument()
     expect(screen.queryByText("No hemos podido cargar el catalogo")).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * El cable que hace alcanzable la pantalla de "ese hueco se acaba de ocupar".
+ *
+ * Se escribieron 359 lineas de componente y 160 de test para esa pantalla, y la
+ * unica linea que la conecta con la aplicacion — el `if (conflict)` de
+ * `page.tsx` — no la cubria nada: un revisor la borro entera y la suite siguio
+ * en verde. Este test la fija.
+ *
+ * Comprueba ademas el ORDEN: `conflict` se mira antes que `step`. El store se
+ * deja en el paso 5, asi que si la comprobacion se moviera detras del despacho
+ * de pasos, aqui saldria la pantalla de confirmar y no la de error.
+ */
+describe("PublicBookingPage -- la rama de conflicto", () => {
+  beforeEach(() => {
+    usePublicBookingStore.getState().reset()
+    vi.mocked(salonsApi.getPublic).mockReset()
+  })
+
+  it("pinta la pantalla de hueco ocupado cuando hay conflicto, por delante del paso actual", () => {
+    const salon: SalonPublic = {
+      ...baseSalon,
+      services: [service],
+      employees: [
+        { id: "emp_1", firstName: "Laura", lastName: "Martinez", jobTitle: null, serviceIds: ["svc_1"] },
+      ],
+    }
+
+    renderPage("salon-demo", salon)
+
+    // Despues del render, no antes: `page.tsx` llama a `reset()` en un efecto
+    // de montaje, asi que cualquier estado preparado antes se borra. En la
+    // aplicacion real el conflicto se fija con la pagina ya montada, que es lo
+    // que esto reproduce.
+    act(() => {
+      usePublicBookingStore.getState().selectService(service)
+      usePublicBookingStore.getState().selectEmployee("emp_1", false)
+      usePublicBookingStore.getState().selectDateTime("2026-08-28", "2026-08-28T11:00:00")
+      usePublicBookingStore.getState().setStep(5)
+      usePublicBookingStore.getState().setConflict({ slot: "2026-08-28T11:00:00", date: "2026-08-28" })
+    })
+
+    expect(screen.getByText("Ese hueco se acaba de ocupar")).toBeInTheDocument()
+    expect(screen.queryByText("Confirma tu reserva")).not.toBeInTheDocument()
   })
 })
