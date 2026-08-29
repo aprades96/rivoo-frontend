@@ -430,6 +430,33 @@ describe("CalendarPage", () => {
   })
 
   /**
+   * INTEGRACION, HALLAZGO 3: el buscador y el panel de detalle comparten el
+   * MISMO evento de `Escape` sobre `document`, y el panel se calla si lo ve
+   * `defaultPrevented` (`appointment-detail-panel.tsx:84`). El test propio del
+   * panel (`appointment-detail-panel.test.tsx`) fabrica un `<input>` de mentira
+   * con su propio `preventDefault`: prueba al CONSUMIDOR de la senal, nunca al
+   * PRODUCTOR real (`calendar-search.tsx:129`), y ninguna otra prueba monta
+   * buscador y panel A LA VEZ. Aqui si: se abre el panel, se despliega el
+   * buscador y se dispara un `Escape` REAL sobre su campo -- sin el
+   * `preventDefault()` del buscador, el mismo evento pliega el campo Y cierra
+   * el panel de un plumazo.
+   */
+  it("Hallazgo 3: Escape en el buscador desplegado no cierra el panel de detalle abierto", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
+    const field = screen.getByRole("textbox", { name: "Buscar citas" })
+    fireEvent.keyDown(field, { key: "Escape" })
+
+    expect(screen.queryByRole("textbox", { name: "Buscar citas" })).not.toBeInTheDocument()
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+  })
+
+  /**
    * El resumen de la cabecera ("4 citas · 5h 30min") es una afirmacion de
    * HECHO sobre la agenda del empleado, no una descripcion de lo que la vista
    * deja ver. Alimentado con la lista ya filtrada, buscar "corte" dejaba a
@@ -932,6 +959,61 @@ describe("CalendarPage", () => {
     expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
     expect(screen.getByTestId("day-view")).toHaveClass("px-6")
     expect(screen.getByTestId("day-view")).not.toHaveClass("px-5")
+  })
+
+  /**
+   * Hallazgo 1, POR NAVEGADOR: el caso de arriba encadena "Dia siguiente" +
+   * "Dia anterior" y solo se pone rojo si se quitan los DOS resets a la vez --
+   * quitar uno solo lo deja verde, porque el otro ya deja `selectedAppointmentId`
+   * en `null` antes de que el segundo navegador entre en juego. Aqui la lista
+   * mockeada NO cambia con la fecha (misma pagina para hoy y para manana), asi
+   * que la cita sigue estando en el dia de destino: si `goToNextDay` no limpia
+   * la seleccion por su cuenta, el panel reaparece solo, sin ayuda de ningun
+   * otro navegador.
+   */
+  it("Hallazgo 1 (Dia siguiente): si la cita tambien existe manana, el panel no reaparece solo", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(TOMORROW_LABEL)
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+  })
+
+  /** Misma idea que el caso anterior, aislando ahora SOLO `goToPreviousDay`. */
+  it("Hallazgo 1 (Dia anterior): si la cita tambien existe ayer, el panel no reaparece solo", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Dia anterior" }))
+
+    expect(lastQueryParams()).toMatchObject({ date: "2026-08-26" })
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
+  })
+
+  /**
+   * `goToToday` no tenia NINGUNA cobertura, ni compartida ni propia. Aqui ni
+   * siquiera cambia el dia visible (ya se esta en "hoy"): la UNICA forma de que
+   * el panel se cierre es que `goToToday` limpie `selectedAppointmentId` por su
+   * cuenta, asi que este caso aisla ese reset en solitario.
+   */
+  it("Hallazgo 1 (Hoy): pulsar 'Hoy' sin cambiar de dia tambien cierra el panel", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByText("Ana Garcia"))
+    expect(screen.getByTestId("appointment-detail-panel")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Hoy" }))
+
+    expect(screen.queryByTestId("appointment-detail-panel")).not.toBeInTheDocument()
   })
 
   // --- CTA -----------------------------------------------------------------
