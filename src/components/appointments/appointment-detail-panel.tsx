@@ -15,7 +15,11 @@ import { useEmployees } from "@/hooks/use-staff"
 import { useUpdateAppointmentStatus } from "@/hooks/use-appointments"
 import { initials, formatPhone } from "@/lib/utils/format"
 import { formatDuration } from "@/lib/utils/dates"
-import { employeeAvatarAlphaStyle, employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
+import {
+  employeeAvatarAlphaStyle,
+  employeeFallbackAvatarClassName,
+  employeePaletteIndex,
+} from "@/lib/utils/avatar"
 import { statusConfig } from "./status-badge"
 import {
   getAppointmentTimeRange,
@@ -53,10 +57,35 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
   // D9: cierre por X y por Escape, sin trampa de foco. No es un dialogo, asi
   // que el listener es global -- no depende de donde este el foco -- y solo
   // vive mientras haya una cita mostrada.
+  //
+  // Hallazgo 3: ese mismo caracter global lo deja ciego a que OTRO listener
+  // atienda el mismo Escape. Dos casos reales: (a) con el buscador desplegado,
+  // su propio `onKeyDown` (`calendar-search.tsx:118`) pliega el campo en la
+  // MISMA burbuja sin detener nada; (b) con el dialogo de cancelacion abierto,
+  // Base UI llama a `stopPropagation` pero su listener vive en el MISMO nodo
+  // `document` (`useDismiss.js:399`) y se registra DESPUES que este efecto --
+  // `stopPropagation` no frena a otros listeners de un mismo nodo, y aunque
+  // frenara, el orden de registro no es una garantia estable de la que fiarse.
+  // Por eso NO comprobamos `event.defaultPrevented` (ninguno de los dos
+  // emisores lo llama) ni el orden de listeners: leemos el ESTADO real del
+  // documento en el momento del evento, que no depende de que nadie deje
+  // aviso a proposito:
+  //   - hay un dialogo abierto (el de cancelacion, o cualquier otro futuro) --
+  //     Base UI le pone `role="dialog"`/`"alertdialog"` mientras esta montado,
+  //     y solo esta montado mientras esta abierto;
+  //   - el foco esta en un campo de texto -- convencion estandar: Escape en un
+  //     input/textarea es "vaciar/replegar ESE campo", no lo de detras (el
+  //     buscador vive justo en ese caso, y el panel no tiene inputs propios).
   useEffect(() => {
     if (!appointment) return
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose()
+      if (event.key !== "Escape") return
+      const dialogIsOpen = document.querySelector('[role="dialog"], [role="alertdialog"]') !== null
+      const active = document.activeElement
+      const focusIsTextField =
+        active instanceof HTMLElement && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")
+      if (dialogIsOpen || focusIsTextField) return
+      onClose()
     }
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
@@ -67,10 +96,16 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
   const employees = employeesData?.content ?? []
   const employeeIndex = employees.findIndex((candidate) => candidate.id === appointment.employeeId)
   const employee = employeeIndex >= 0 ? employees[employeeIndex] : undefined
-  // Posicion en la paleta de reserva (D12): con empleado encontrado, su
-  // posicion en la lista; sin el (borrado), la 0 -- no hay lista de la que
-  // sacar una posicion real.
-  const fallbackIndex = employeeIndex >= 0 ? employeeIndex : 0
+  // Posicion en la paleta de reserva (D12, hallazgo 2): resolutor UNICO
+  // (`lib/utils/avatar.ts`) compartido con `groupByEmployee` y
+  // `EmployeeFilter`, que calcula sobre la lista de ACTIVOS -- no sobre la
+  // cruda de `useEmployees()` como hacia antes este fichero. `-1` (no
+  // encontrado o inactivo) se mapea a 0, la misma posicion que ya documenta
+  // la funcion para el empleado ausente: pasarle -1 tal cual caeria en la
+  // ULTIMA entrada de la paleta (normalizacion de negativos de
+  // `paletteIndex`) y cambiaria el color de hoy en silencio.
+  const resolvedPaletteIndex = employeePaletteIndex(employees, appointment.employeeId)
+  const fallbackIndex = resolvedPaletteIndex === -1 ? 0 : resolvedPaletteIndex
 
   const avatarInitials = employee
     ? initials(employee.firstName, employee.lastName)
@@ -106,7 +141,10 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
     >
       {/* Rotulo + cierre (`:251-256`) -- fijo, no forma parte de la franja con scroll (D20). */}
       <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold tracking-[0.06em] text-muted-foreground-2 uppercase">
+        <span
+          data-testid="appointment-panel-label"
+          className="text-[12px] leading-tight font-semibold tracking-[0.06em] text-muted-foreground-2 uppercase"
+        >
           Detalle de cita
         </span>
         <button
@@ -122,35 +160,47 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
 
       {/* D20: la franja "de la hora a la meta" lleva su propio scroll; el
           rotulo de arriba y las acciones de abajo quedan fijos. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto">
+      <div
+        data-testid="appointment-panel-scroll"
+        className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto"
+      >
         <div className="flex flex-col gap-[7px]">
           <span
             data-testid="appointment-panel-status"
             className={cn(
-              "self-start rounded-full px-2.5 py-1 text-[11px] font-bold",
+              "self-start rounded-full px-2.5 py-1 text-[11px] leading-tight font-bold",
               statusConfig[appointment.status].className
             )}
           >
             {getAppointmentStatusLabel(appointment, "panel")}
           </span>
-          <span className="text-[30px] leading-[1.1] font-semibold tracking-[-0.02em] tabular-nums">
+          <span
+            data-testid="appointment-panel-time"
+            className="text-[30px] leading-[1.1] font-semibold tracking-[-0.02em] tabular-nums"
+          >
             {getAppointmentTimeRange(appointment)}
           </span>
-          <span className="text-[13px] text-muted-foreground">
+          <span data-testid="appointment-panel-date" className="text-[13px] leading-tight text-muted-foreground">
             {getAppointmentDateAndDuration(appointment)}
           </span>
         </div>
 
         {/* Tarjeta cliente (`:264-280`). SOLO nombre, telefono y contacto --
             el email es de la hoja de movil, no de aqui (§1.2 diferencia 5). */}
-        <div className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+        <div
+          data-testid="appointment-panel-client-card"
+          className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3"
+        >
+          <div
+            data-testid="appointment-panel-client-icon"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"
+          >
             <User className="size-[17px] text-primary" strokeWidth={1.75} />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-px">
-            <span className="truncate text-[14px] font-semibold">{appointment.clientName}</span>
+            <span className="truncate text-[14px] leading-tight font-semibold">{appointment.clientName}</span>
             {appointment.clientPhone && (
-              <span className="truncate text-[12px] tabular-nums text-muted-foreground">
+              <span className="truncate text-[12px] leading-tight tabular-nums text-muted-foreground">
                 {formatPhone(appointment.clientPhone)}
               </span>
             )}
@@ -180,24 +230,33 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
         {/* Tarjeta servicio (`:282-291`): precio AISLADO a 17px, no el combo
             de la hoja de movil (`getAppointmentServiceSummary` es exclusiva
             de esa, aviso explicito de T4). */}
-        <div className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3">
+        <div
+          data-testid="appointment-panel-service-card"
+          className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3"
+        >
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
             <Scissors className="size-[17px] text-primary" strokeWidth={1.75} />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-px">
-            <span className="truncate text-[14px] font-semibold">{appointment.serviceName}</span>
-            <span className="text-[12px] text-muted-foreground">
+            <span className="truncate text-[14px] leading-tight font-semibold">{appointment.serviceName}</span>
+            <span className="text-[12px] leading-tight text-muted-foreground">
               {formatDuration(appointment.serviceDurationMinutes)}
             </span>
           </div>
-          <span className="shrink-0 text-[17px] font-semibold tracking-[-0.02em] tabular-nums">
+          <span
+            data-testid="appointment-panel-price"
+            className="shrink-0 text-[17px] leading-tight font-semibold tracking-[-0.02em] tabular-nums"
+          >
             {getAppointmentServicePrice(appointment)}
           </span>
         </div>
 
         {/* Tarjeta empleado (`:293-299`): avatar de iniciales, sin `.ico` y
             sin acciones. Degradacion D11 si el empleado no aparece. */}
-        <div className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3">
+        <div
+          data-testid="appointment-panel-employee-card"
+          className="flex items-center gap-3 rounded-[10px] border border-border bg-card p-3"
+        >
           <div
             data-testid="appointment-panel-employee-avatar"
             aria-hidden="true"
@@ -210,9 +269,9 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
             {avatarInitials}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-px">
-            <span className="truncate text-[14px] font-semibold">{appointment.employeeName}</span>
+            <span className="truncate text-[14px] leading-tight font-semibold">{appointment.employeeName}</span>
             {employee?.jobTitle && (
-              <span className="truncate text-[12px] text-muted-foreground">{employee.jobTitle}</span>
+              <span className="truncate text-[12px] leading-tight text-muted-foreground">{employee.jobTitle}</span>
             )}
           </div>
         </div>
@@ -228,7 +287,7 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
               strokeWidth={1.75}
             />
             <div className="flex flex-col gap-[3px]">
-              <span className="text-[11px] font-semibold tracking-[0.06em] text-(--color-status-pending-text) uppercase">
+              <span className="text-[11px] leading-tight font-semibold tracking-[0.06em] text-(--color-status-pending-text) uppercase">
                 Nota
               </span>
               <span className="text-[12px] leading-[1.45] text-warning-text">{appointment.notes}</span>
@@ -239,7 +298,7 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
         {/* Meta (`:309-312`): con relativo, SOLO en escritorio (D15). */}
         <div className="flex items-center gap-[7px]">
           <Clock className="size-[13px] text-muted-foreground-2" strokeWidth={1.75} />
-          <span data-testid="appointment-panel-meta" className="text-[11px] text-muted-foreground-2">
+          <span data-testid="appointment-panel-meta" className="text-[11px] leading-tight text-muted-foreground-2">
             {getAppointmentPanelMeta(appointment)}
           </span>
         </div>

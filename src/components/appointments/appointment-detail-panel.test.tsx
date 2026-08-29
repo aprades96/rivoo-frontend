@@ -159,6 +159,50 @@ describe("AppointmentDetailPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it("Escape NO cierra el panel si hay un dialogo abierto encima (hallazgo 3, caso b)", async () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={onClose} />)
+
+    await user.click(screen.getByText("Cancelar"))
+    // Prueba independiente de que el dialogo esta de verdad montado antes de
+    // disparar Escape -- si esto fallase, el test de abajo pasaria en falso.
+    const confirmButton = screen.getByText("Cancelar cita", { selector: "button" })
+    expect(confirmButton).toBeInTheDocument()
+    // El foco lo movemos a un BOTON (no a un campo de texto) para aislar el
+    // mecanismo bajo prueba: el guard de "hay un dialogo abierto", no el de
+    // "el foco esta en un input/textarea" (el `Textarea` del propio dialogo
+    // tambien lo cumpliria y taparia el fallo si el primer guard se rompiera).
+    confirmButton.focus()
+    expect(document.activeElement).toBe(confirmButton)
+
+    fireEvent.keyDown(document, { key: "Escape" })
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it("Escape NO cierra el panel si el foco esta en un campo de texto ajeno (hallazgo 3, caso a)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    const onClose = vi.fn()
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={onClose} />)
+
+    // Simula el buscador desplegado (`calendar-search.tsx:127`): un input
+    // ajeno al panel con el foco cuando llega el Escape.
+    const foreignInput = document.createElement("input")
+    document.body.appendChild(foreignInput)
+    foreignInput.focus()
+    expect(document.activeElement).toBe(foreignInput)
+
+    fireEvent.keyDown(document, { key: "Escape" })
+
+    expect(onClose).not.toHaveBeenCalled()
+
+    document.body.removeChild(foreignInput)
+  })
+
   it("sin telefono no hay botones de contacto (tel:/sms:)", () => {
     mockMatchMedia(true)
     useEmployeesMock.mockReturnValue({ data: employeePage() })
@@ -216,5 +260,80 @@ describe("AppointmentDetailPanel", () => {
     await user.click(screen.getByText("Cancelar"))
 
     expect(screen.getByText("Cancelar cita", { selector: "button" })).toBeInTheDocument()
+  })
+
+  it("no pinta el email del cliente (§1.2 diferencia 5, hallazgo 5)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    expect(screen.queryByText("ana@mail.com")).not.toBeInTheDocument()
+  })
+
+  it("la franja del medio conserva su scroll propio para no empujar las acciones (D20, hallazgo 6)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    expect(screen.getByTestId("appointment-panel-scroll")).toHaveClass(
+      "min-h-0",
+      "flex-1",
+      "overflow-y-auto"
+    )
+  })
+
+  it("el chasis y la tipografia fijan las medidas del canvas (DetalleCitaDesktop:249-330, hallazgo 4)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: employeePage() })
+    render(<AppointmentDetailPanel appointment={makeAppointment()} onClose={vi.fn()} />)
+
+    // Chasis: ancho 360, padding 20, gap 14, borde izquierdo y fondo.
+    expect(screen.getByTestId("appointment-detail-panel")).toHaveClass(
+      "w-[360px]",
+      "p-5",
+      "gap-[14px]",
+      "border-l",
+      "bg-muted-subtle"
+    )
+
+    // Rotulo: 12px/600 en mayusculas.
+    expect(screen.getByTestId("appointment-panel-label")).toHaveClass(
+      "text-[12px]",
+      "font-semibold",
+      "uppercase"
+    )
+
+    // Hora y fecha.
+    expect(screen.getByTestId("appointment-panel-time")).toHaveClass("text-[30px]")
+    expect(screen.getByTestId("appointment-panel-date")).toHaveClass("text-[13px]")
+
+    // Tarjetas `.sec`: padding 12, radio 10, gap 12.
+    for (const testId of [
+      "appointment-panel-client-card",
+      "appointment-panel-service-card",
+      "appointment-panel-employee-card",
+    ]) {
+      expect(screen.getByTestId(testId)).toHaveClass("p-3", "rounded-[10px]", "gap-3")
+    }
+
+    // Chip `.ico`: 36x36, radio 8.
+    expect(screen.getByTestId("appointment-panel-client-icon")).toHaveClass("size-9", "rounded-lg")
+
+    // Avatar de empleado: 36, redondo.
+    expect(screen.getByTestId("appointment-panel-employee-avatar")).toHaveClass("size-9", "rounded-full")
+
+    // Precio aislado a 17px.
+    expect(screen.getByTestId("appointment-panel-price")).toHaveClass("text-[17px]")
+
+    // Recuadro de nota.
+    expect(screen.getByTestId("appointment-panel-note")).toHaveClass(
+      "rounded-[10px]",
+      "border-warning-border",
+      "bg-warning-soft",
+      "p-3"
+    )
+
+    // Meta a 11px.
+    expect(screen.getByTestId("appointment-panel-meta")).toHaveClass("text-[11px]")
   })
 })
