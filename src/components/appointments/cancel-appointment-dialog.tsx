@@ -44,12 +44,33 @@ export function CancelAppointmentDialog({
   const [mutationError, setMutationError] = useState<string | null>(null)
   const cancelAppointment = useCancelAppointment()
 
-  // NOTA: este componente NO se resetea a si mismo por efecto. `reason`,
-  // `mutationError` y la mutacion en vuelo mueren cuando el CONSUMIDOR monta
-  // este dialogo con `key={appointment.id}` (ver `appointment-detail-sheet.tsx`
-  // y `appointment-detail-panel.tsx`) -- un efecto no puede cancelar una
-  // mutacion en vuelo ni evitar que su `onError` aterrice tarde sobre la
-  // siguiente cita; el `key` si, porque destruye la instancia entera.
+  /**
+   * El estado de este dialogo se limpia por DOS ejes distintos, y hacen falta
+   * los dos -- ninguno cubre al otro:
+   *
+   * 1. CAMBIO DE CITA -> lo sostiene el `key={appointment.id}` con que lo
+   *    montan sus dos consumidores (`appointment-detail-sheet.tsx` y
+   *    `appointment-detail-panel.tsx`). Tiene que ser el `key` y no un efecto,
+   *    porque un efecto no puede cancelar una mutacion en vuelo ni evitar que
+   *    su `onError` aterrice tarde sobre la cita siguiente; destruir la
+   *    instancia si.
+   * 2. CIERRE SOBRE LA MISMA CITA -> lo sostiene `close`, aqui abajo. El `key`
+   *    NO cubre este eje: cerrar y reabrir sobre la misma cita no cambia el id,
+   *    asi que no remonta nada y el motivo escrito antes seguiria en el
+   *    textarea (y la alerta de un intento fallido reapareceria sin que el
+   *    usuario haya hecho nada).
+   *
+   * Va en el MANEJADOR y no en un `useEffect` a proposito: el efecto equivalente
+   * disparaba `react-hooks/set-state-in-effect`, y aqui no hace falta -- el
+   * cierre es un evento, no una sincronizacion.
+   */
+  const close = (next: boolean) => {
+    if (!next) {
+      setReason("")
+      setMutationError(null)
+    }
+    onOpenChange(next)
+  }
 
   const handleCancel = () => {
     setMutationError(null)
@@ -57,8 +78,7 @@ export function CancelAppointmentDialog({
       { id: appointmentId, reason: reason || undefined, cancelledBy: "SALON" },
       {
         onSuccess: () => {
-          onOpenChange(false)
-          setReason("")
+          close(false)
           onCancelled?.()
         },
         onError: (error) => {
@@ -73,7 +93,7 @@ export function CancelAppointmentDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cancelar cita</DialogTitle>
@@ -95,7 +115,7 @@ export function CancelAppointmentDialog({
           </p>
         ) : null}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => close(false)}>
             Volver
           </Button>
           <Button

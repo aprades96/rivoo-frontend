@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -189,5 +190,47 @@ describe("CancelAppointmentDialog", () => {
     const button = screen.getByRole("button", { name: /Cancelar cita/ })
     expect(button).toBeDisabled()
     expect(document.querySelector(".animate-spin")).not.toBeNull()
+  })
+
+  /**
+   * REGRESION. El `key={appointment.id}` de los consumidores limpia este
+   * dialogo al cambiar de CITA, pero NO al cerrarlo y reabrirlo sobre la MISMA:
+   * ahi el id no cambia, asi que no remonta nada. Ese segundo eje lo sostiene
+   * `close()`, y sin el reaparecen el motivo escrito antes y la alerta de un
+   * intento fallido, sin que el usuario haya hecho nada.
+   */
+  it("REGRESION: ni el motivo ni el error sobreviven a cerrar y reabrir la MISMA cita", async () => {
+    const user = userEvent.setup()
+
+    function Host() {
+      const [open, setOpen] = useState(true)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>reabrir</button>
+          <CancelAppointmentDialog
+            appointmentId="apt_1"
+            clientName="Ana Garcia"
+            open={open}
+            onOpenChange={setOpen}
+          />
+        </>
+      )
+    }
+
+    mutateMock.mockImplementation(
+      (_vars: unknown, options?: { onError?: (e: Error) => void }) =>
+        options?.onError?.(new Error("network"))
+    )
+    render(<Host />)
+
+    await user.type(screen.getByPlaceholderText(/Motivo/), "me equivoque")
+    await user.click(screen.getByRole("button", { name: "Cancelar cita" }))
+    expect(await screen.findByRole("alert")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Volver" }))
+    await user.click(screen.getByRole("button", { name: "reabrir" }))
+
+    expect(await screen.findByPlaceholderText(/Motivo/)).toHaveValue("")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 })
