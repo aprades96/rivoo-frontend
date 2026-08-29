@@ -369,11 +369,18 @@ describe("AppointmentDetailSheet · el chasis y la tipografia fijados (hallazgo 
     expect(title).toHaveClass("text-[23px]", "leading-[1.1]", "font-semibold")
   })
 
-  it("el badge: padding 4/10, radio 999 y 11px/600", () => {
+  it("el badge: padding 4/10, radio 999, 11px/600 y leading-tight (hallazgo 1: `:44` tampoco declara line-height)", () => {
     render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
 
     const badge = screen.getByText("Pendiente")
-    expect(badge).toHaveClass("rounded-full", "px-[10px]", "py-1", "text-[11px]", "font-semibold")
+    expect(badge).toHaveClass(
+      "rounded-full",
+      "px-[10px]",
+      "py-1",
+      "text-[11px]",
+      "leading-tight",
+      "font-semibold"
+    )
   })
 
   it("la lista de hechos: gap 14 entre filas", () => {
@@ -422,55 +429,21 @@ describe("AppointmentDetailSheet · el chasis y la tipografia fijados (hallazgo 
 
 /**
  * ---------------------------------------------------------------------------
- * Hallazgo 5 (LOW): la hoja no animaba al cerrarse
+ * Re-revision, Hallazgo 5: se retira el `useRef` que retenia la ultima cita
  * ---------------------------------------------------------------------------
- * `calendar/page.tsx:428-429` limpia `selectedAppointment` Y baja `open` en
- * el MISMO render; sin conservar la ultima cita, `if (!appointment) return
- * null` desmontaba el `<Sheet>` entero de golpe.
- *
- * Estas pruebas mantienen `open` en `true` a proposito: jsdom no implementa
- * `Element.getAnimations`, asi que en cuanto `open` pasa a `false` el propio
- * `@base-ui/react/dialog` resuelve la transicion de salida de forma SINCRONA
- * (`useAnimationsFinished.js:42-43`) y el popup desaparece del DOM en el
- * mismo `act()`, con o sin el arreglo -- no hay ventana observable para
- * distinguir los dos comportamientos por ese lado en este entorno. Lo que SI
- * es observable, y es la causa raiz del hallazgo, es que `appointment` pase a
- * `null` NO debe colapsar el arbol por si solo: sin el `useRef`, cualquier
- * render con `appointment=null` devuelve `null` inmediatamente, `open` sea
- * cual sea. Fijar `open` en `true` aisla justo esa mecanica.
+ * La ronda anterior escribia un `useRef` DURANTE EL RENDER para conservar la
+ * ultima cita no nula y comprar asi una animacion de salida (`data-ending-style`)
+ * que ningun artboard dibuja y que en jsdom ni siquiera es observable
+ * (`Element.getAnimations` no existe: `@base-ui/react/dialog` resuelve la
+ * transicion de forma sincrona). El coste real: 24 errores
+ * `react-hooks/refs -- Cannot access refs during render`, y que tras la
+ * primera apertura el componente ya nunca devolvia `null`, dejando montados
+ * para siempre un `<Sheet>` y un `<CancelAppointmentDialog>` cerrados con la
+ * ultima cita dentro. Se vuelve a `if (!appointment) return null`; las dos
+ * pruebas que consagraban el estado retenido se retiran con el `ref`. Se deja
+ * la de "no revienta" porque no depende de la retencion.
  */
-describe("AppointmentDetailSheet · no se desmonta de golpe al cerrar (hallazgo 5)", () => {
-  it("retiene el contenido si appointment pasa a null: no colapsa el arbol por si solo", () => {
-    const appointment = makeAppointment()
-    const { rerender } = render(
-      <AppointmentDetailSheet appointment={appointment} open onOpenChange={vi.fn()} />
-    )
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
-
-    rerender(<AppointmentDetailSheet appointment={null} open onOpenChange={vi.fn()} />)
-
-    // Sin el useRef, `if (!appointment) return null` desmontaria el <Sheet>
-    // entero aqui mismo -- justo el fallo de hallazgo 5.
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
-  })
-
-  it("una cita nueva sustituye a la conservada, no se queda pegada a la anterior", () => {
-    const first = makeAppointment({ clientName: "Ana Garcia" })
-    const { rerender } = render(
-      <AppointmentDetailSheet appointment={first} open onOpenChange={vi.fn()} />
-    )
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
-
-    rerender(<AppointmentDetailSheet appointment={null} open onOpenChange={vi.fn()} />)
-    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
-
-    const second = makeAppointment({ id: "apt_2", clientName: "Marc Soler" })
-    rerender(<AppointmentDetailSheet appointment={second} open onOpenChange={vi.fn()} />)
-
-    expect(screen.getByText("Marc Soler")).toBeInTheDocument()
-    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
-  })
-
+describe("AppointmentDetailSheet · appointment=null desmonta limpio (hallazgo 5)", () => {
   it("no revienta cuando appointment y open cambian a la vez, como hace calendar/page.tsx", () => {
     const appointment = makeAppointment()
     const { rerender } = render(
@@ -481,5 +454,73 @@ describe("AppointmentDetailSheet · no se desmonta de golpe al cerrar (hallazgo 
       rerender(<AppointmentDetailSheet appointment={null} open={false} onOpenChange={vi.fn()} />)
     ).not.toThrow()
   })
+
+  it("appointment=null desmonta el contenido (ya no se retiene la ultima cita)", () => {
+    const appointment = makeAppointment()
+    const { rerender } = render(
+      <AppointmentDetailSheet appointment={appointment} open onOpenChange={vi.fn()} />
+    )
+    expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+
+    rerender(<AppointmentDetailSheet appointment={null} open onOpenChange={vi.fn()} />)
+
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
   })
+})
+
+/**
+ * ---------------------------------------------------------------------------
+ * Re-revision, Hallazgo 1 (HIGH): `reason`/`mutationError` mueren con la cita
+ * ---------------------------------------------------------------------------
+ * `cancel-appointment-dialog.tsx` ya no se reinicia a si mismo por efecto: la
+ * invariante "el estado muere con la cita" la sostiene el `key={appointment.id}`
+ * con el que esta hoja monta el dialogo. Esta prueba reproduce la secuencia
+ * demostrada como fallida en la re-revision: una cancelacion en vuelo cuyo
+ * `onError` no ha llegado todavia, "Volver" (el boton no se deshabilita),
+ * cambio de cita, y solo ENTONCES la respuesta tardia. Sin el `key`, el
+ * `onError` de Ana aterriza en la misma instancia ya reutilizada por Carla.
+ */
+describe("AppointmentDetailSheet · el key mata reason/mutationError al cambiar de cita (hallazgo 1)", () => {
+  it("REGRESION: un fallo de cancelacion en vuelo no debe colarse en la cita siguiente", async () => {
+    const user = userEvent.setup()
+    const ana = makeAppointment({ id: "apt_ana", clientName: "Ana Garcia" })
+    const carla = makeAppointment({ id: "apt_carla", clientName: "Carla Ruiz" })
+
+    let capturedOnError: ((error: unknown) => void) | undefined
+    cancelMutateMock.mockImplementation((_vars: unknown, options: { onError: (error: unknown) => void }) => {
+      // La mutacion queda "en vuelo": no se invoca ni onSuccess ni onError
+      // todavia, como si la respuesta de red no hubiera llegado.
+      capturedOnError = options.onError
+    })
+
+    const { rerender } = render(
+      <AppointmentDetailSheet appointment={ana} open onOpenChange={vi.fn()} />
+    )
+
+    await user.click(screen.getByText("Cancelar"))
+    await user.type(
+      await screen.findByPlaceholderText("Motivo de cancelacion (opcional)"),
+      "no localizable"
+    )
+    await user.click(screen.getByRole("button", { name: "Cancelar cita" }))
+
+    expect(capturedOnError).toBeDefined()
+
+    // "Volver": el usuario no espera a la respuesta (el boton no se
+    // deshabilita en vuelo).
+    await user.click(screen.getByRole("button", { name: "Volver" }))
+
+    // El usuario cambia a la cita de Carla.
+    rerender(<AppointmentDetailSheet appointment={carla} open onOpenChange={vi.fn()} />)
+
+    // La respuesta de la mutacion de Ana llega tarde, ya con Carla en pantalla.
+    capturedOnError?.(new Error("network"))
+
+    // Se reabre el dialogo, ahora para Carla: no debe quedar ni motivo ni error.
+    await user.click(screen.getByText("Cancelar"))
+
+    expect(await screen.findByPlaceholderText("Motivo de cancelacion (opcional)")).toHaveValue("")
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+})
 })

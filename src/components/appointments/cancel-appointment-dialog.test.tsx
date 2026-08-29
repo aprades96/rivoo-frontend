@@ -131,62 +131,17 @@ describe("CancelAppointmentDialog", () => {
     expect(mutateMock).not.toHaveBeenCalled()
   })
 
-  it("REGRESION: el motivo no sobrevive a cerrar con 'Volver' ni a cambiar de cita (HALLAZGO 1)", async () => {
-    const user = userEvent.setup()
-    const onOpenChange = vi.fn()
-
-    const { rerender } = render(
-      <CancelAppointmentDialog
-        appointmentId="apt_ana"
-        clientName="Ana Garcia"
-        open={true}
-        onOpenChange={onOpenChange}
-      />
-    )
-
-    await user.type(
-      screen.getByPlaceholderText("Motivo de cancelacion (opcional)"),
-      "el cliente aviso que no viene"
-    )
-    expect(screen.getByPlaceholderText("Motivo de cancelacion (opcional)")).toHaveValue(
-      "el cliente aviso que no viene"
-    )
-
-    // "Volver": el padre cierra el dialogo (D9: el componente NO se desmonta,
-    // solo cambia `open`).
-    await user.click(screen.getByRole("button", { name: "Volver" }))
-    rerender(
-      <CancelAppointmentDialog
-        appointmentId="apt_ana"
-        clientName="Ana Garcia"
-        open={false}
-        onOpenChange={onOpenChange}
-      />
-    )
-
-    // El panel de detalle cambia de cita SIN desmontar (no lleva `key`,
-    // `appointment-detail-panel.tsx:273`).
-    rerender(
-      <CancelAppointmentDialog
-        appointmentId="apt_carla"
-        clientName="Carla Ruiz"
-        open={false}
-        onOpenChange={onOpenChange}
-      />
-    )
-
-    // Se reabre el dialogo, ahora para Carla.
-    rerender(
-      <CancelAppointmentDialog
-        appointmentId="apt_carla"
-        clientName="Carla Ruiz"
-        open={true}
-        onOpenChange={onOpenChange}
-      />
-    )
-
-    expect(screen.getByPlaceholderText("Motivo de cancelacion (opcional)")).toHaveValue("")
-  })
+  // NOTA (re-revision, HALLAZGO 1): este componente ya NO se reinicia a si
+  // mismo cuando el padre lo re-renderiza con otro `appointmentId` o con
+  // `open=false` -- eso viola las reglas de React (`react-hooks/set-state-in-effect`)
+  // y, sobre todo, no cierra el canal real: un `onError` en vuelo seguia
+  // pudiendo aterrizar sobre la cita siguiente porque la instancia (y su
+  // mutacion) sobrevivia. La invariante "el estado muere con la cita" ahora
+  // la sostiene el CONSUMIDOR montando este dialogo con `key={appointment.id}`
+  // (ver `appointment-detail-sheet.test.tsx`, que reproduce la secuencia
+  // completa con fallo en vuelo + cambio de cita). Verificarla aqui, con un
+  // `rerender` que simula "sin key", ya no tiene sentido: es exactamente el
+  // escenario que el `key` del consumidor existe para evitar.
 
   it("REGRESION: si la mutacion falla, el dialogo no se cierra y muestra el error (HALLAZGO 2)", async () => {
     const user = userEvent.setup()

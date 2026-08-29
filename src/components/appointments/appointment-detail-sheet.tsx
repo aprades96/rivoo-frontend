@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Clock, User, Scissors, Phone, Mail, FileText } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
@@ -41,36 +41,27 @@ export function AppointmentDetailSheet({
   const updateStatus = useUpdateAppointmentStatus()
   const { data: employeesData } = useEmployees()
 
-  /**
-   * Hallazgo 5: `calendar/page.tsx:428-429` pasa `open={selectedAppointment
-   * !== null}` y limpia la cita en el MISMO render en que `open` pasa a
-   * `false`. Sin conservar la ultima cita, el componente devolvia `null` de
-   * golpe, desmontando el `<Sheet>` entero -- y con el su estado interno de
-   * transicion -- antes de que `data-ending-style` llegase a aplicarse. Se
-   * guarda DENTRO del componente para que la animacion no dependa de como lo
-   * conduzca cada pagina (`/today` la conserva ella misma y por eso ahi la
-   * hoja si se desliza).
-   */
-  const lastAppointmentRef = useRef<Appointment | null>(null)
-  if (appointment) lastAppointmentRef.current = appointment
-  const activeAppointment = appointment ?? lastAppointmentRef.current
-
-  if (!activeAppointment) return null
+  // Deuda conocida: no hay animacion de salida cuando `appointment` pasa a
+  // `null` (se probo a retener la ultima cita en un `useRef` escrito durante
+  // el render para conservarla, pero eso violaba las reglas de React --
+  // `react-hooks/refs` -- y dejaba el `<Sheet>` montado para siempre; ningun
+  // artboard exige esa animacion, asi que se descarta esa via.
+  if (!appointment) return null
 
   const employees = employeesData?.content ?? []
-  const employee = employees.find((candidate) => candidate.id === activeAppointment.employeeId) ?? null
+  const employee = employees.find((candidate) => candidate.id === appointment.employeeId) ?? null
   // Hallazgo 2: la posicion en la paleta se calcula sobre empleados ACTIVOS
   // (`employeePaletteIndex`), igual que `groupByEmployee` y `EmployeeFilter`
   // -- no sobre la lista cruda de `useEmployees()`, que desincroniza el color
   // de este punto del de todo lo demas. Empleado ausente o inactivo en la
   // paleta (D11): color de reserva por posicion 0 -- `paletteIndex` normaliza
   // negativos con modulo, y pasarle -1 tal cual caeria en la ULTIMA entrada.
-  const paletteIndex = employeePaletteIndex(employees, activeAppointment.employeeId)
+  const paletteIndex = employeePaletteIndex(employees, appointment.employeeId)
   const pointColor = employeeSolidColor(employee?.colorHex ?? null, paletteIndex >= 0 ? paletteIndex : 0)
 
   const handleStatusChange = (status: AppointmentStatus) => {
     updateStatus.mutate(
-      { id: activeAppointment.id, status },
+      { id: appointment.id, status },
       { onSuccess: () => onOpenChange(false) }
     )
   }
@@ -99,9 +90,11 @@ export function AppointmentDetailSheet({
               Detalle de cita
             </SheetTitle>
             <span
-              className={`inline-flex items-center rounded-full px-[10px] py-1 text-[11px] font-semibold ${statusConfig[activeAppointment.status].className}`}
+              // Hallazgo 1: `DetalleCita.dc.html:44` tampoco declara line-height
+              // (11px/600) -- mismo diagnostico que el resto de la lista.
+              className={`inline-flex items-center rounded-full px-[10px] py-1 text-[11px] leading-tight font-semibold ${statusConfig[appointment.status].className}`}
             >
-              {getAppointmentStatusLabel(activeAppointment, "sheet")}
+              {getAppointmentStatusLabel(appointment, "sheet")}
             </span>
           </div>
 
@@ -110,20 +103,21 @@ export function AppointmentDetailSheet({
             `line-height` en ninguna de estas lineas (`:52,53,60,61,77,78,86`),
             asi que valen `normal` (~1,25); sin `leading-tight` heredan el 1,5
             de la preflight de Tailwind (mismo diagnostico que
-            `appointment-block.tsx:116-126`). El orden importa: `leading-*`
-            SIEMPRE detras del `text-[Npx]`/`text-xs`/`text-sm` que acompana,
-            porque tailwind-merge descarta en silencio un `leading-*` que vaya
-            antes.
+            `appointment-block.tsx:116-126`). Estas cadenas son `className`
+            literales que nunca pasan por `cn()`, asi que aqui el orden
+            `text-*`/`leading-*` es cosmetico; donde SI importa (tailwind-merge
+            descarta el `leading-*` que vaya antes del `text-*`) es dentro de
+            un `cn()`.
           */}
           <div data-testid="detail-sheet-facts" className="flex flex-col gap-3.5">
             <div className="flex items-start gap-3">
               <Clock className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
               <div className="flex flex-col gap-0.5">
                 <span className="text-[15px] leading-tight font-semibold tabular-nums">
-                  {getAppointmentTimeRange(activeAppointment)}
+                  {getAppointmentTimeRange(appointment)}
                 </span>
                 <span className="text-xs leading-tight text-muted-foreground">
-                  {getAppointmentDateAndDuration(activeAppointment)}
+                  {getAppointmentDateAndDuration(appointment)}
                 </span>
               </div>
             </div>
@@ -131,18 +125,18 @@ export function AppointmentDetailSheet({
             <div className="flex items-start gap-3">
               <User className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
               <div className="flex flex-col gap-1">
-                <span className="text-[15px] leading-tight font-semibold">{activeAppointment.clientName}</span>
+                <span className="text-[15px] leading-tight font-semibold">{appointment.clientName}</span>
                 <div className="flex items-center gap-3.5 text-xs leading-tight text-muted-foreground">
-                  {activeAppointment.clientPhone && (
+                  {appointment.clientPhone && (
                     <span className="flex items-center gap-[5px]">
                       <Phone className="size-3" strokeWidth={1.75} />
-                      <span className="tabular-nums">{formatPhone(activeAppointment.clientPhone)}</span>
+                      <span className="tabular-nums">{formatPhone(appointment.clientPhone)}</span>
                     </span>
                   )}
-                  {activeAppointment.clientEmail && (
+                  {appointment.clientEmail && (
                     <span className="flex items-center gap-[5px]">
                       <Mail className="size-3" strokeWidth={1.75} />
-                      {activeAppointment.clientEmail}
+                      {appointment.clientEmail}
                     </span>
                   )}
                 </div>
@@ -152,9 +146,9 @@ export function AppointmentDetailSheet({
             <div className="flex items-start gap-3">
               <Scissors className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
               <div className="flex flex-col gap-0.5">
-                <span className="text-[15px] leading-tight font-semibold">{activeAppointment.serviceName}</span>
+                <span className="text-[15px] leading-tight font-semibold">{appointment.serviceName}</span>
                 <span className="text-xs leading-tight tabular-nums text-muted-foreground">
-                  {getAppointmentServiceSummary(activeAppointment)}
+                  {getAppointmentServiceSummary(appointment)}
                 </span>
               </div>
             </div>
@@ -168,14 +162,14 @@ export function AppointmentDetailSheet({
                   style={{ backgroundColor: pointColor }}
                 />
               </div>
-              <span className="text-sm leading-tight">{activeAppointment.employeeName}</span>
+              <span className="text-sm leading-tight">{appointment.employeeName}</span>
             </div>
 
-            {activeAppointment.notes && (
+            {appointment.notes && (
               <div className="flex items-start gap-3">
                 <FileText className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
                 {/* `:91` SI declara line-height (1.45): se deja tal cual. */}
-                <p className="text-[13px] leading-[1.45] text-muted-foreground">{activeAppointment.notes}</p>
+                <p className="text-[13px] leading-[1.45] text-muted-foreground">{appointment.notes}</p>
               </div>
             )}
           </div>
@@ -183,7 +177,7 @@ export function AppointmentDetailSheet({
           <Separator />
 
           <AppointmentActions
-            status={activeAppointment.status}
+            status={appointment.status}
             variant="sheet"
             onStatusChange={handleStatusChange}
             onCancelRequest={() => setCancelDialogOpen(true)}
@@ -191,14 +185,20 @@ export function AppointmentDetailSheet({
           />
 
           <span className="text-[11px] leading-tight text-muted-foreground-2">
-            {getAppointmentSheetMeta(activeAppointment)}
+            {getAppointmentSheetMeta(appointment)}
           </span>
         </SheetContent>
       </Sheet>
 
       <CancelAppointmentDialog
-        appointmentId={activeAppointment.id}
-        clientName={activeAppointment.clientName}
+        // `key` NO es decorativo: es lo unico que mata el `reason`, el
+        // `mutationError` y la mutacion en vuelo al cambiar de cita -- el
+        // dialogo ya no se resetea a si mismo (ver comentario en
+        // `cancel-appointment-dialog.tsx`). Sin este `key`, un fallo de
+        // cancelacion en vuelo puede aterrizar sobre la cita siguiente.
+        key={appointment.id}
+        appointmentId={appointment.id}
+        clientName={appointment.clientName}
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
         onCancelled={() => onOpenChange(false)}

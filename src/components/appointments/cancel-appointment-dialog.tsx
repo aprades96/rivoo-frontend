@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -44,26 +44,12 @@ export function CancelAppointmentDialog({
   const [mutationError, setMutationError] = useState<string | null>(null)
   const cancelAppointment = useCancelAppointment()
 
-  /**
-   * El panel de detalle NO desmonta este dialogo al cambiar de cita
-   * (`appointment-detail-panel.tsx:273` lo monta sin `key`) ni al cerrarlo con
-   * "Volver": por D9 el panel solo cambia de contenido. Sin este reset, el
-   * `reason` de una cita sobrevivia al cierre y se colaba en la siguiente
-   * `cancelAppointment.mutate` con OTRO `appointmentId`. El estado tiene que
-   * morir con la cita, dentro del propio dialogo -- no depender de que cada
-   * consumidor (hoja/panel/movil) se acuerde de pasar una `key`.
-   */
-  useEffect(() => {
-    setReason("")
-    setMutationError(null)
-  }, [appointmentId])
-
-  useEffect(() => {
-    if (!open) {
-      setReason("")
-      setMutationError(null)
-    }
-  }, [open])
+  // NOTA: este componente NO se resetea a si mismo por efecto. `reason`,
+  // `mutationError` y la mutacion en vuelo mueren cuando el CONSUMIDOR monta
+  // este dialogo con `key={appointment.id}` (ver `appointment-detail-sheet.tsx`
+  // y `appointment-detail-panel.tsx`) -- un efecto no puede cancelar una
+  // mutacion en vuelo ni evitar que su `onError` aterrice tarde sobre la
+  // siguiente cita; el `key` si, porque destruye la instancia entera.
 
   const handleCancel = () => {
     setMutationError(null)
