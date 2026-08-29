@@ -15,6 +15,7 @@ import { useAppointments } from "@/hooks/use-appointments"
 import { useEmployees } from "@/hooks/use-staff"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { capitalizeFirst } from "@/lib/utils/format"
+import { groupByEmployee } from "@/lib/utils/calendar"
 import Link from "next/link"
 import type { Appointment } from "@/types/appointment"
 
@@ -38,13 +39,22 @@ export default function CalendarPage() {
   })
 
   const { data: employeesData } = useEmployees()
-  const employees = employeesData?.content ?? []
+  // Memorizado porque `groupByEmployee` depende de el: sin esto la lista
+  // seria un array nuevo en cada render y el reparto en columnas se recalcularia
+  // siempre.
+  const employees = useMemo(() => employeesData?.content ?? [], [employeesData])
 
   const appointments = useMemo(() => {
     const all = appointmentsData?.content ?? []
     // Filter out cancelled for cleaner calendar
     return all.filter((a) => a.status !== "CANCELLED")
   }, [appointmentsData])
+
+  // Adaptacion MINIMA al nuevo contrato de `DayView`, que ya no recibe citas
+  // sueltas sino columnas por empleado. Lo demas que la vista admite ahora
+  // (descansos, hueco libre, `layout="fill"` para que la rejilla haga su
+  // propio scroll) es del rehilado de esta pantalla, no de aqui.
+  const columns = useMemo(() => groupByEmployee(appointments, employees), [appointments, employees])
 
   const handleAppointmentTap = (apt: Appointment) => {
     setSelectedAppointment(apt)
@@ -157,7 +167,8 @@ export default function CalendarPage() {
           <LoadingSkeleton count={6} />
         ) : (
           <DayView
-            appointments={appointments}
+            variant={isDesktop ? "desktop" : "mobile"}
+            columns={columns}
             onAppointmentTap={handleAppointmentTap}
           />
         )}
