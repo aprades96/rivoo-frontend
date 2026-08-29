@@ -81,6 +81,11 @@
   --color-destructive-soft: var(--destructive-soft);
   --color-destructive-border: var(--destructive-border);
   --color-text-placeholder: var(--text-placeholder);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive-tint: var(--destructive-tint);
+  --color-border-dashed: var(--border-dashed);
 
   /* Tracking de titulos */
   --tracking-display: -0.02em;
@@ -154,6 +159,11 @@
   --destructive-soft: #faefe9; /* ReservaError.dc.html:32 */
   --destructive-border: #edd6d0; /* ReservaError.dc.html:47 */
   --text-placeholder: #c4b5a6; /* ReservaDesktopPaso2.dc.html:106 — valor vacio */
+  --hairline-strong: #e2d6c6; /* CalendarioDesktop.dc.html:21 — linea de la hora en punto en la rejilla (la de media hora es --hairline) */
+  --warning: #c08a2e; /* CalendarioDesktop.dc.html:168 — borde izquierdo de 3px de una cita pendiente */
+  --warning-soft: #fffcf5; /* CalendarioDesktop.dc.html:168 — fondo de una cita pendiente */
+  --destructive-tint: #fdf6f4; /* CalendarioDesktop.dc.html:225 — fondo de una cita cancelada */
+  --border-dashed: #d8c9b8; /* Calendario.dc.html:112 — borde discontinuo del hueco Libre . toca para crear */
 }
 
 @layer base {
