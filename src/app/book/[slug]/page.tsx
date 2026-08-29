@@ -14,6 +14,7 @@ import { PublicDateTimeStep } from "@/components/booking/public-datetime-step"
 import { PublicClientStep } from "@/components/booking/public-client-step"
 import { PublicConfirmStep } from "@/components/booking/public-confirm-step"
 import { PublicSuccessStep } from "@/components/booking/public-success-step"
+import { PublicBookingError } from "@/components/booking/public-booking-error"
 import { formatAddress } from "@/lib/utils/format"
 import type { SalonPublic } from "@/types/salon"
 
@@ -107,25 +108,15 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
     )
   }
 
-  // Un 409 de "hueco ocupado" (public-confirm-step, ver public-booking-store
-  // Paso 7) no consume un septimo `step`: `conflict` es un campo aparte y se
-  // comprueba antes que `step` para no dejar la pantalla de confirmar con
-  // datos que el backend acaba de rechazar.
+  // "Ese hueco se acaba de ocupar" no consume un septimo `step`: `conflict` es
+  // un campo aparte y se comprueba antes que `step`, para no dejar la pantalla
+  // de confirmar con datos que el backend acaba de rechazar.
+  //
+  // Sin `ResponsivePageContainer`, igual que `step === 6`: la pantalla monta su
+  // propio `BookingResultShell`, cabecera incluida, y envolverla duplicaria
+  // contenedores.
   if (conflict) {
-    // TODO(T10): sustituir por la pantalla de error real, montada sobre
-    // BookingResultShell tone="error" (design/ReservaError.dc.html,
-    // design/ReservaErrorDesktop.dc.html). Todavia no existe: se deja el
-    // hueco preparado para que el 409 no caiga en la pantalla de confirmar.
-    return (
-      <ResponsivePageContainer>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <h2 className="text-lg font-semibold">Ese hueco se acaba de ocupar</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Vuelve a elegir hora para tu cita.
-          </p>
-        </div>
-      </ResponsivePageContainer>
-    )
+    return <PublicBookingError salon={salon} />
   }
 
   if (step === 6) {

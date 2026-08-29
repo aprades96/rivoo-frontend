@@ -152,7 +152,15 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
       salon={salon}
       step={2}
       title="Con quien la quieres"
-      subtitle="Si eliges profesional veras solo sus huecos libres."
+      // Solo escritorio: `design/ReservaDesktopPaso2.dc.html:64` lo pone bajo
+      // el titulo, pero el artboard movil lo lleva en el pie
+      // (`design/ReservaPaso2.dc.html:100-102`), donde ya lo pinta `footer`.
+      // Sin esta condicion salia dos veces en movil.
+      subtitle={
+        <span className="hidden lg:inline">
+          Si eliges profesional veras solo sus huecos libres.
+        </span>
+      }
       onBack={prevStep}
       aside={aside}
       footer={footer}

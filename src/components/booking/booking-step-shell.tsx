@@ -23,7 +23,18 @@ export interface BookingStepShellProps {
   salon: SalonPublic
   step: 1 | 2 | 3 | 4 | 5
   title: string
-  subtitle?: string
+  /**
+   * `ReactNode`, no `string`, y es deliberado: los artboards no coinciden entre
+   * breakpoints. El paso 1 lleva subtitulo en movil y en escritorio; el 2 lo
+   * lleva solo en escritorio (en movil ese texto vive en el pie); el 5 igual.
+   * Con `string` el chasis lo pintaba siempre, asi que cada paso invento su
+   * propio apano —uno lo dejo duplicado en movil, otro se lo pinto aparte
+   * perdiendo el espaciado del artboard— y salieron cinco pasos con soluciones
+   * distintas para el mismo problema. Aceptando un nodo, el paso decide su
+   * visibilidad (`<span className="hidden lg:inline">`) sin salirse de su
+   * fichero ni tocar este.
+   */
+  subtitle?: ReactNode
   onBack?: () => void
   aside?: ReactNode
   footer?: ReactNode

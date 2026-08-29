@@ -19,23 +19,16 @@ interface PublicConfirmStepProps {
 }
 
 /**
- * `design/ReservaDesktopPaso5.dc.html:64` carries a subtitle under the title
- * ("Ultimo paso. Revisa que todo esta bien."); `design/ReservaPaso5.dc.html:46`
- * has no such line -- the mobile card goes straight from the title into the
- * booking card. `BookingStepShell`'s `subtitle` prop renders unconditionally
- * (only its font-size varies by breakpoint, not its presence -- see
- * `booking-step-shell.tsx:82`), and the shell is shared by every step, so it
- * cannot gain a "desktop-only" prop for this single step without touching a
- * file outside this task's scope. Resolved by NOT passing `subtitle` to the
- * shell and instead rendering it here, hidden below `lg:` (the same
- * breakpoint the shell itself uses to switch the aside/footer). Trade-off:
- * this loses the artboard's tight 6px title-subtitle gap (design line 65) in
- * favour of the container's normal 18px/26px section gap, since that gap
- * lives inside the shell's own title block and is not reachable from here.
- * Content-per-breakpoint correctness (no subtitle on mobile) wins over that
- * spacing nuance.
+ * `design/ReservaDesktopPaso5.dc.html:64` lleva subtitulo bajo el titulo;
+ * `design/ReservaPaso5.dc.html:46` no: la tarjeta movil pasa del titulo
+ * directamente al bloque de la reserva. Va por la prop `subtitle` del chasis
+ * —que acepta un nodo justamente para esto— con su propia visibilidad, en vez
+ * de pintarse aparte dentro del contenido: asi conserva el espaciado de 6px
+ * del artboard, que vive en el bloque de titulo del chasis.
  */
-const DESKTOP_SUBTITLE = "Ultimo paso. Revisa que todo esta bien."
+const DESKTOP_SUBTITLE = (
+  <span className="hidden lg:inline">Ultimo paso. Revisa que todo esta bien.</span>
+)
 
 export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
   const {
@@ -186,6 +179,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       salon={salon}
       step={5}
       title="Confirma tu reserva"
+      subtitle={DESKTOP_SUBTITLE}
       onBack={prevStep}
       aside={
         <BookingSummaryAside
@@ -211,9 +205,6 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
         </div>
       }
     >
-      {/* Solo en escritorio -- ver el comentario sobre `DESKTOP_SUBTITLE` mas arriba. */}
-      <p className="hidden text-sm text-muted-foreground lg:block">{DESKTOP_SUBTITLE}</p>
-
       <div className="flex flex-col gap-3.5 rounded-[12px] border border-border bg-card p-[18px] lg:gap-[18px] lg:p-6">
         <div className="flex flex-col gap-0.5 border-b border-hairline pb-3.5 lg:gap-[3px] lg:pb-4">
           <span className="font-heading text-[26px] leading-[1.1] font-semibold tracking-display tabular-nums lg:text-[30px] lg:leading-[1.05]">
