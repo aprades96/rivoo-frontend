@@ -1,9 +1,20 @@
 import { Badge } from "@/components/ui/badge"
 import type { AppointmentStatus } from "@/types/appointment"
 
-const statusConfig: Record<AppointmentStatus, { label: string; className: string }> = {
+// Fuente unica de los rotulos de estado y sus tokens. Se exporta porque
+// `appointment-detail-facts.ts` (T4) lo reutiliza para el badge del detalle en
+// vez de forkear el mapa (mismo motivo que D12 evita duplicar la paleta de
+// colores). `longLabel` es la unica adicion: la variante larga de escritorio
+// del artboard ("Pendiente de confirmar", `DetalleCitaDesktop.dc.html:259`).
+// Ningun rotulo EXISTENTE cambia: lo consumen `appointment-card.tsx` y
+// `src/app/dev/preview/page.tsx` ademas de este propio fichero.
+export const statusConfig: Record<
+  AppointmentStatus,
+  { label: string; longLabel?: string; className: string }
+> = {
   PENDING: {
     label: "Pendiente",
+    longLabel: "Pendiente de confirmar",
     className: "bg-(--color-status-pending-bg) text-(--color-status-pending-text) hover:bg-(--color-status-pending-bg)",
   },
   CONFIRMED: {

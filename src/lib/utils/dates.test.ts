@@ -5,6 +5,8 @@ import {
   formatDateShort,
   formatDuration,
   formatTimeRange,
+  formatDateLong,
+  formatRelativeTime,
 } from "./dates"
 
 // Note: date-fns parseISO + format uses local timezone.
@@ -57,5 +59,44 @@ describe("formatTimeRange", () => {
   it("formats start - end", () => {
     const result = formatTimeRange(RANGE_START, RANGE_END)
     expect(result).toBe("09:00 - 09:45")
+  })
+})
+
+describe("formatDateLong", () => {
+  it("formats weekday, day and month, capitalized (artboard: 'Martes, 27 de agosto')", () => {
+    // 2026-03-22 falls on a Sunday.
+    expect(formatDateLong(MORNING)).toBe("Domingo, 22 de marzo")
+  })
+})
+
+describe("formatRelativeTime", () => {
+  it("formats minutes below an hour", () => {
+    const createdAt = "2026-03-22T09:00:00"
+    const now = new Date(2026, 2, 22, 9, 40, 0)
+    expect(formatRelativeTime(createdAt, now)).toBe("hace 40 min")
+  })
+
+  it("formats hours below a day", () => {
+    const createdAt = "2026-03-22T09:00:00"
+    const now = new Date(2026, 2, 22, 11, 0, 0)
+    expect(formatRelativeTime(createdAt, now)).toBe("hace 2 h")
+  })
+
+  it("formats whole days", () => {
+    const createdAt = "2026-03-20T09:00:00"
+    const now = new Date(2026, 2, 23, 9, 0, 0)
+    expect(formatRelativeTime(createdAt, now)).toBe("hace 3 d")
+  })
+
+  it("floors partial hours instead of rounding up", () => {
+    const createdAt = "2026-03-22T09:00:00"
+    const now = new Date(2026, 2, 22, 9, 59, 0)
+    expect(formatRelativeTime(createdAt, now)).toBe("hace 59 min")
+  })
+
+  it("never produces a negative value if now is before the reference date", () => {
+    const createdAt = "2026-03-22T09:00:00"
+    const now = new Date(2026, 2, 22, 8, 0, 0)
+    expect(formatRelativeTime(createdAt, now)).toBe("hace 0 min")
   })
 })

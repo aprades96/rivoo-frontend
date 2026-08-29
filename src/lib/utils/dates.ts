@@ -1,5 +1,6 @@
 import { format, parseISO, isToday, isTomorrow, isYesterday } from "date-fns"
 import { es } from "date-fns/locale"
+import { capitalizeFirst } from "./format"
 
 const TIMEZONE = "Europe/Madrid"
 
@@ -32,6 +33,29 @@ export function formatDuration(minutes: number): string {
 
 export function formatTimeRange(start: string, end: string): string {
   return `${formatTime(start)} - ${formatTime(end)}`
+}
+
+// "Martes, 27 de agosto" (`DetalleCita.dc.html:53`, `DetalleCitaDesktop.dc.html:261`).
+// `formatDate` NO sirve para esto: da "27 ago 2026". date-fns devuelve el dia de la
+// semana en minuscula en castellano, de ahi `capitalizeFirst`.
+export function formatDateLong(isoString: string): string {
+  return capitalizeFirst(format(parseISO(isoString), "EEEE, d 'de' MMMM", { locale: es }))
+}
+
+// Relativo abreviado propio (D15): `formatDistanceToNow` de date-fns con locale `es`
+// da "hace alrededor de 2 horas", que no es lo dibujado ("hace 2 h"). `now` es
+// inyectable para que los tests sean deterministas sin congelar `Date` global.
+export function formatRelativeTime(isoString: string, now: Date = new Date()): string {
+  const date = parseISO(isoString)
+  const diffMinutes = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 60_000))
+
+  if (diffMinutes < 60) return `hace ${diffMinutes} min`
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `hace ${diffHours} h`
+
+  const diffDays = Math.floor(diffHours / 24)
+  return `hace ${diffDays} d`
 }
 
 export { TIMEZONE }
