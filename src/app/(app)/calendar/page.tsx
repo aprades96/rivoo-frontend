@@ -104,11 +104,14 @@ export default function CalendarPage() {
    * El filtro de movil arranca en el PRIMER EMPLEADO ACTIVO, no en "Todos".
    * Lo dice el artboard: la pildora "Todos" va en reposo y la primera empleada
    * SELECCIONADA (`Calendario.dc.html:51-55`), y la rejilla de debajo
-   * (`:97-119`) pinta exactamente los tres bloques de la columna de Laura del
-   * artboard de escritorio (`CalendarioDesktop.dc.html:162,168,177`) y ninguno
-   * de los otros cinco -- con "Todos" esa columna llevaria las ocho citas de
-   * los tres empleados repartidas en carriles. "Todos" sigue existiendo, pero
-   * como eleccion explicita.
+   * (`:97-119`) pinta los tres bloques de la columna de Laura del artboard de
+   * escritorio (`CalendarioDesktop.dc.html:162,168,177`: sus dos citas y el
+   * almuerzo) y ninguno de los otros SEIS -- el canvas tiene nueve `.blk`,
+   * tres por columna, ocho citas (2 + 3 + 3) y un descanso. Lo unico que movil
+   * anade es el recuadro "Libre" (`Calendario.dc.html:112`), que en escritorio
+   * no existe. Con "Todos" esa columna llevaria las ocho citas de los tres
+   * empleados repartidas en carriles. "Todos" sigue existiendo, pero como
+   * eleccion explicita.
    *
    * Se DERIVA en el render y no se fija con un `useEffect`: la lista llega por
    * red, y un efecto pintaria primero un fotograma en "Todos" para corregirlo

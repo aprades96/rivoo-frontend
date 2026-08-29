@@ -60,6 +60,19 @@ export function calculateBlockPosition(
   const startMinutes = start.getHours() * 60 + start.getMinutes()
   const endMinutes = end.getHours() * 60 + end.getMinutes()
 
+  /*
+    Una hora que `parseISO` no sabe leer da `Invalid Date`, y de ahi `NaN`. La
+    guarda de tramo vacio de abajo NO lo caza -- `NaN >= NaN` es `false` --, asi
+    que sin esta linea la funcion devolvia `{top: NaN, height: NaN}` en vez de
+    `null` y el dano salia por dos sitios. Uno, `AppointmentBlock` no se paraba
+    en su `if (!position) return null` y seguia hasta `formatTime`, que revienta
+    con `RangeError: Invalid time value`: no un bloque mal pintado, la pantalla
+    entera abajo. Dos, `isPainted` daba la cita por pintada y la metia en el
+    reparto de carriles, donde `groupEnd = Math.max(groupEnd, NaN)` dejaba el
+    grupo de solape abierto el dia entero -- ver `resolveLaneCounts`.
+  */
+  if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes)) return null
+
   // Clamp to grid bounds
   const clampedStart = Math.max(startMinutes, gridStartMinutes)
   const clampedEnd = Math.min(endMinutes, gridEndMinutes)
@@ -146,9 +159,18 @@ function byStartTime(a: Appointment, b: Appointment): number {
 
 /**
  * Reparte las citas del dia en una columna por empleado ACTIVO, en el orden en
- * que llega `employees` y conservando las columnas vacias: el artboard dibuja
- * la columna aunque el empleado no tenga ninguna cita
- * (`design/CalendarioDesktop.dc.html:210-235`).
+ * que llega `employees` y conservando las columnas vacias.
+ *
+ * El canvas NO decide este caso: sus tres columnas
+ * (`design/CalendarioDesktop.dc.html:152-182`, `:183-209`, `:210-235`) llevan
+ * tres bloques cada una y no hay ninguna vacia dibujada en ningun sitio. Lo
+ * decide la rejilla: las columnas se reparten `repeat(N, minmax(0, 1fr))`
+ * (`day-view.tsx`, `DesktopColumns`), asi que quitar la del empleado sin citas
+ * ensancharia a todas las demas -- la agenda cambiaria de ancho sola segun se
+ * llena y se vacia el dia, y bastaria cancelar la ultima cita de alguien para
+ * que la pantalla se recolocara entera. Ademas la columna vacia es justo la
+ * util: es donde se pulsa una franja para dar hora al que esta libre. Por eso
+ * la cabecera anuncia "Sin citas" (`employeeDaySummary`) en vez de irse.
  *
  * Cierra con una columna "Otros" cuando alguna cita apunta a un empleado que
  * no esta en la lista. No es un caso teorico: `useEmployees` solo trae los
@@ -317,7 +339,12 @@ export function breakOfColumn(
  * UNA empleada. La pildora de fondo #B4522F, texto blanco y peso 600 es la de
  * Laura (`:52-55`); la de "Todos" esta en reposo -- fondo #FFFFFF, peso 500
  * (`:51`) --, y la rejilla movil pinta los tres bloques de la columna de Laura
- * del artboard de escritorio y ninguno de los otros cinco. O sea que el caso
+ * del artboard de escritorio (`CalendarioDesktop.dc.html:162,168,177`: dos
+ * citas y el propio almuerzo) y ninguno de los otros SEIS. Las cuentas del
+ * canvas, que conviene no torcer: nueve `.blk` en total, tres por columna, de
+ * los que ocho son citas -- 2 de Laura + 3 de Sofia + 3 de Marc -- y el noveno
+ * es este descanso. Movil solo anade un cuarto elemento que en escritorio no
+ * existe, el recuadro "Libre" (`Calendario.dc.html:112`). O sea que el caso
  * dibujado es el de una sola columna, donde el descanso que se ve es el suyo.
  *
  * Aun asi la funcion no puede quedarse en "el del unico empleado": "Todos"
@@ -592,8 +619,24 @@ function peakConcurrency(group: PlacedAppointment[], item: PlacedAppointment): n
  * no contiene ningun instante, `peakConcurrency` devuelve 0 y la promesa se
  * rompe -- una cita de duracion cero entre dos que la envuelven salia con
  * `lane 2` y `lanes 0`. Por eso el filtro de `assignLanes` sostiene tambien
- * esta invariante y no solo la geometria: `calculateBlockPosition` descarta
- * todo tramo vacio (`clampedStart >= clampedEnd`), asi que ninguna llega.
+ * esta invariante y no solo la geometria: `calculateBlockPosition` devuelve
+ * `null` tanto para el tramo vacio (`clampedStart >= clampedEnd`) como para la
+ * hora que `parseISO` no sabe leer, asi que ninguna de las dos llega.
+ *
+ * Las DOS guardas hacen falta, y la segunda no se deduce de la primera: con
+ * horas ilegibles los minutos salen `NaN`, `NaN >= NaN` es `false` y el tramo
+ * se colaba entero por debajo de la comparacion. Y no rompia solo su propio
+ * bloque: `isPainted` decia que si se pinta, la cita entraba al reparto y
+ * `groupEnd = Math.max(groupEnd, NaN)` se quedaba en `NaN`, con lo que
+ * `start >= groupEnd` no volvia a cumplirse y el grupo de solape no se cerraba
+ * en todo el dia. Medido: dos pares solapados a horas distintas -- 09:00 y
+ * 15:00, que no se pisan entre si ni pisan a la ilegible -- salian repartidos
+ * como un solo grupo, y la segunda cita del primer par con `lane 2` sobre
+ * `lanes 2`. Ese carril no existe, y `laneGeometry` (`appointment-block.tsx`)
+ * no lo deja fuera de la columna: lo recorta a `lanes - 1`, o sea a la MISMA
+ * banda que su vecina. Por eso la guarda vive en `calculateBlockPosition` y no
+ * en el reparto: ahi cierra a la vez el tramo `NaN` y la contaminacion del
+ * grupo.
  *
  * COSTE, medido y no supuesto: esta funcion llama a `peakConcurrency` -- que
  * es O(k²) -- una vez por cita, o sea O(k³) por grupo de solape. La k es la

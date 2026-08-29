@@ -11,6 +11,21 @@ import {
 import type { Appointment } from "@/types/appointment"
 import type { Employee } from "@/types/employee"
 
+/**
+ * `assignLanes` ESPIADA, delegando en la real: aqui solo se cuentan llamadas.
+ * `ColumnBody` la memoriza porque cuesta O(k³) por grupo de solape, y ese
+ * arreglo no cambia ni un pixel de lo pintado -- sin contar llamadas no hay
+ * prueba que lo sujete y el `useMemo` se cae en el siguiente refactor sin que
+ * nada se ponga rojo.
+ */
+const assignLanesSpy = vi.hoisted(() => vi.fn())
+
+vi.mock("@/lib/utils/calendar", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/utils/calendar")>()
+  assignLanesSpy.mockImplementation(actual.assignLanes)
+  return { ...actual, assignLanes: assignLanesSpy }
+})
+
 const DAY = "2026-08-27"
 
 function makeEmployee(overrides: Partial<Employee> = {}): Employee {
@@ -56,7 +71,10 @@ function makeAppointment(overrides: Partial<Appointment> = {}): Appointment {
 
 /**
  * Las tres columnas del artboard de escritorio. Marc Oliva se queda SIN citas
- * a proposito: `CalendarioDesktop.dc.html` dibuja igualmente su columna.
+ * a proposito -- caso que el canvas NO dibuja, sus tres columnas llevan tres
+ * bloques cada una: la columna se conserva porque la rejilla reparte
+ * `repeat(N, minmax(0, 1fr))` y perder una ensancharia a las demas. Ver
+ * `groupByEmployee`.
  */
 const EMPLOYEES: Employee[] = [
   makeEmployee(),
@@ -108,6 +126,99 @@ function columnOf(employeeId: string): HTMLElement {
   return column
 }
 
+function blockOf(clientName: string): HTMLElement {
+  const block = screen
+    .getByText(clientName)
+    .closest<HTMLElement>('[data-testid="appointment-block"]')
+  if (!block) throw new Error(`No hay bloque para ${clientName}`)
+  return block
+}
+
+/**
+ * El ancho de columna sobre el que se resuelven los `calc()` del bloque. jsdom
+ * no hace layout, asi que el `100%` se resuelve aqui: vale cualquier ancho
+ * mientras sea el mismo para todos los bloques.
+ */
+const COLUMN_WIDTH_PX = 1000
+
+/**
+ * El `calc()` de `laneGeometry` (`appointment-block.tsx`) tal y como lo
+ * SERIALIZA el motor de CSS: `calc(4px + 0.5 * (100% - 8px))` para el `left` y
+ * `calc(0.5 * (100% - 8px))` para el ancho -- la division entre el numero de
+ * carriles ya viene resuelta en la fraccion. Si algun dia deja de tener esta
+ * forma, `paintedRect` avisa con un error en vez de callarse.
+ */
+const LANE_LEFT = /^calc\(([\d.]+)px \+ ([\d.]+) \* \(100% - ([\d.]+)px\)\)$/
+const LANE_WIDTH = /^calc\(([\d.]+) \* \(100% - ([\d.]+)px\)\)$/
+
+interface PaintedRect {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+/**
+ * El RECTANGULO que el bloque ocupa de verdad, leido de su `style`. No los
+ * numeros de carril: el carril es la intencion, y `laneGeometry` recorta el
+ * indice a `lanes - 1`, asi que un `lane` imposible no se ve en el reparto
+ * pero si en el pixel -- dos bloques distintos acaban en la misma banda.
+ */
+function paintedRect(block: HTMLElement): PaintedRect {
+  const top = Number.parseFloat(block.style.top)
+  const height = Number.parseFloat(block.style.height)
+  if (!Number.isFinite(top) || !Number.isFinite(height)) {
+    throw new Error(`Bloque sin alto real: top="${block.style.top}" height="${block.style.height}"`)
+  }
+
+  const { left, width, right } = block.style
+
+  // Carril unico: el bloque va de sangrado a sangrado, sin `calc()`.
+  if (width === "") {
+    return {
+      left: Number.parseFloat(left),
+      right: COLUMN_WIDTH_PX - Number.parseFloat(right),
+      top,
+      bottom: top + height,
+    }
+  }
+
+  const leftParts = LANE_LEFT.exec(left)
+  const widthParts = LANE_WIDTH.exec(width)
+  if (!leftParts || !widthParts) {
+    throw new Error(`Geometria que esta prueba no sabe leer: left="${left}" width="${width}"`)
+  }
+
+  const paintedLeft =
+    Number(leftParts[1]) + Number(leftParts[2]) * (COLUMN_WIDTH_PX - Number(leftParts[3]))
+  const paintedWidth = Number(widthParts[1]) * (COLUMN_WIDTH_PX - Number(widthParts[2]))
+
+  return { left: paintedLeft, right: paintedLeft + paintedWidth, top, bottom: top + height }
+}
+
+/**
+ * El margen es una MILLONESIMA de pixel, y esta para no confundir el redondeo
+ * del binario con una colision: el borde derecho de un carril y el izquierdo
+ * del siguiente son dos expresiones distintas de la misma fraccion (`4 +
+ * 4u/6 + u/6` frente a `4 + 5u/6`), y en coma flotante se separan 1e-13 px.
+ * Un solape de verdad -- dos bloques en la misma banda por el recorte de
+ * `laneGeometry` -- es de media columna, cientos de pixeles.
+ */
+const SUBPIXEL_EPSILON = 1e-6
+
+function overlaps(a: PaintedRect, b: PaintedRect): boolean {
+  return (
+    a.left + SUBPIXEL_EPSILON < b.right &&
+    b.left + SUBPIXEL_EPSILON < a.right &&
+    a.top + SUBPIXEL_EPSILON < b.bottom &&
+    b.top + SUBPIXEL_EPSILON < a.bottom
+  )
+}
+
+function describeRect(rect: PaintedRect): string {
+  return `x[${rect.left}, ${rect.right}] y[${rect.top}, ${rect.bottom}]`
+}
+
 describe("DayView · escritorio", () => {
   it("pinta una cabecera y una columna por empleado, incluida la del que no tiene citas", () => {
     render(<DayView variant="desktop" columns={columnsOf()} />)
@@ -125,9 +236,9 @@ describe("DayView · escritorio", () => {
 
     expect(screen.getAllByTestId("day-view-column")).toHaveLength(3)
 
-    // La columna de Marc existe y esta vacia: es el caso que el artboard
-    // dibuja y el que se pierde en cuanto alguien filtra las columnas sin
-    // citas.
+    // La columna de Marc existe y esta vacia: el caso que se pierde en cuanto
+    // alguien filtra las columnas sin citas, y con el se va el ancho estable
+    // de las demas (ver `groupByEmployee`).
     const empty = columnOf("emp_3")
     expect(within(empty).queryAllByTestId("appointment-block")).toHaveLength(0)
     expect(within(headers[2]).getByText("Sin citas")).toBeInTheDocument()
@@ -521,5 +632,125 @@ describe("DayView · pulsar la rejilla", () => {
     render(<DayView variant="desktop" columns={columnsOf()} />)
 
     expect(screen.queryAllByTestId("slot-target")).toHaveLength(0)
+  })
+})
+
+describe("DayView · dos citas solapadas nunca se pisan en pantalla", () => {
+  /**
+   * La sonda del BLOQUEANTE: una cita con horas que `parseISO` no sabe leer
+   * mas dos pares solapados independientes, a las 09:00 y a las 15:00.
+   *
+   * `calculateBlockPosition` devolvia `{top: NaN, height: NaN}` en vez de
+   * `null` -- la guarda de tramo vacio no lo cazaba, porque `NaN >= NaN` es
+   * `false` --, asi que la ilegible se daba por pintada, entraba al reparto y
+   * dejaba `groupEnd` en `NaN`: el grupo de solape no volvia a cerrarse en
+   * todo el dia y los dos pares salian repartidos como uno solo. La segunda
+   * cita del primer par se llevaba `lane 2` sobre `lanes 2`, y `laneGeometry`
+   * no tira ese carril fuera de la columna: lo recorta a `lanes - 1`, o sea a
+   * la MISMA banda que su vecina.
+   *
+   * Por eso se comprueban rectangulos y no carriles: con los numeros a la
+   * vista la colision no se ve -- 2 de 2 parece caer fuera de la columna --, y
+   * lo que llega al usuario es un bloque tapando a otro.
+   *
+   * Este montaje ademas revienta antes de llegar ahi: `AppointmentBlock` pasa
+   * de largo su `if (!position)` y `formatTime` lanza `RangeError: Invalid
+   * time value`, que se lleva la pantalla entera por delante. Las dos cosas
+   * las cierra la misma guarda.
+   */
+  it("una cita con la hora ilegible no arrastra al resto del dia", () => {
+    const appointments: Appointment[] = [
+      makeAppointment({
+        id: "nan",
+        clientName: "Hora Ilegible",
+        startTime: `${DAY}Tzz:zz:00`,
+        endTime: `${DAY}Tzz:zz:00`,
+      }),
+      makeAppointment({
+        id: "x",
+        clientName: "Cita X",
+        startTime: `${DAY}T09:00:00`,
+        endTime: `${DAY}T10:00:00`,
+      }),
+      makeAppointment({
+        id: "y",
+        clientName: "Cita Y",
+        startTime: `${DAY}T09:30:00`,
+        endTime: `${DAY}T10:30:00`,
+      }),
+      makeAppointment({
+        id: "z",
+        clientName: "Cita Z",
+        startTime: `${DAY}T15:00:00`,
+        endTime: `${DAY}T16:00:00`,
+      }),
+      makeAppointment({
+        id: "w",
+        clientName: "Cita W",
+        startTime: `${DAY}T15:30:00`,
+        endTime: `${DAY}T16:30:00`,
+      }),
+    ]
+
+    render(<DayView variant="mobile" columns={columnsOf(appointments)} />)
+
+    const names = ["Cita X", "Cita Y", "Cita Z", "Cita W"]
+    const rects = names.map((name) => paintedRect(blockOf(name)))
+
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        expect(
+          overlaps(rects[i], rects[j]),
+          `${names[i]} y ${names[j]} se pisan: ` +
+            `${describeRect(rects[i])} vs ${describeRect(rects[j])}`
+        ).toBe(false)
+      }
+    }
+
+    // Y la ilegible ni se monta: no hay bloque con alto NaN en la rejilla.
+    expect(screen.queryByText("Hora Ilegible")).not.toBeInTheDocument()
+    expect(screen.getAllByTestId("appointment-block")).toHaveLength(4)
+  })
+})
+
+describe("DayView · el reparto de carriles va memorizado", () => {
+  /**
+   * `assignLanes` cuesta O(k³) por grupo de solape y corria en el cuerpo del
+   * render, una vez por columna: teclear en el buscador de `/calendar` rehacia
+   * el reparto entero en cada tecla. Borrar el `useMemo` no cambia nada de lo
+   * pintado, asi que la unica forma de fijarlo es contar llamadas.
+   */
+  it("en escritorio no reparte otra vez en un render que no toca las citas", () => {
+    const columns = columnsOf()
+    assignLanesSpy.mockClear()
+
+    const { rerender } = render(<DayView variant="desktop" columns={columns} />)
+
+    // Una llamada por columna, y ni una mas.
+    expect(assignLanesSpy).toHaveBeenCalledTimes(columns.length)
+
+    rerender(<DayView variant="desktop" columns={columns} className="border" />)
+
+    expect(assignLanesSpy).toHaveBeenCalledTimes(columns.length)
+  })
+
+  /**
+   * En movil hace falta ademas el `useMemo` de la UNION de columnas: el
+   * `flatMap` devuelve un array nuevo en cada render, y eso solo basta para
+   * tirar por tierra el `useMemo` de `ColumnBody`, que depende de la identidad
+   * de `appointments`. Con uno cualquiera de los dos borrado, este render de
+   * mas vuelve a repartir.
+   */
+  it("en movil tampoco, aunque la union de columnas se rehaga en cada render", () => {
+    const columns = columnsOf()
+    assignLanesSpy.mockClear()
+
+    const { rerender } = render(<DayView variant="mobile" columns={columns} />)
+
+    expect(assignLanesSpy).toHaveBeenCalledTimes(1)
+
+    rerender(<DayView variant="mobile" columns={columns} className="border" />)
+
+    expect(assignLanesSpy).toHaveBeenCalledTimes(1)
   })
 })

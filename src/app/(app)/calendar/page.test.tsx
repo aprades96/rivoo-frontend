@@ -454,9 +454,12 @@ describe("CalendarPage", () => {
    * `font-weight: 500`) y `:52-55` a Laura SELECCIONADA (`#B4522F`,
    * `font-weight: 600`); y la rejilla de debajo (`:97-119`) lleva los TRES
    * bloques de la columna de Laura del artboard de escritorio
-   * (`CalendarioDesktop.dc.html:162,168,177`) y ninguno de los otros cinco --
-   * con "Todos" esa columna llevaria las ocho citas de los tres empleados
-   * repartidas en carriles.
+   * (`CalendarioDesktop.dc.html:162,168,177`: sus dos citas y el almuerzo) y
+   * ninguno de los otros SEIS -- el canvas tiene nueve `.blk`, tres por
+   * columna, ocho citas (2 + 3 + 3) y un descanso; movil solo suma el recuadro
+   * "Libre" (`Calendario.dc.html:112`), que en escritorio no esta. Con "Todos"
+   * esa columna llevaria las ocho citas de los tres empleados repartidas en
+   * carriles.
    */
   it("en movil el filtro arranca en el primer empleado, no en 'Todos'", () => {
     mockMatchMedia(false)

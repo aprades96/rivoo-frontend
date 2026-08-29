@@ -161,6 +161,17 @@ describe("calculateBlockPosition", () => {
     expect(pos).toBeNull()
   })
 
+  it("devuelve null cuando la hora no se puede leer, no un tramo NaN", () => {
+    // `parseISO` de una hora ilegible da `Invalid Date`, y `getHours()` de ahi
+    // da `NaN`. La guarda de tramo vacio NO lo caza, porque `NaN >= NaN` es
+    // `false`: sin la comprobacion explicita de finitud la funcion devolvia
+    // `{top: NaN, height: NaN}` en vez de `null`, o sea un bloque con un alto
+    // que no existe. Ver el destrozo aguas abajo en `assignLanes`.
+    expect(calculateBlockPosition(`${DAY}Tzz:zz:00`, at("10:00"))).toBeNull()
+    expect(calculateBlockPosition(at("09:00"), `${DAY}Tzz:zz:00`)).toBeNull()
+    expect(calculateBlockPosition("", "")).toBeNull()
+  })
+
   it("clamps appointment that starts before grid", () => {
     const pos = calculateBlockPosition(at("07:30"), at("08:30"))
     expect(pos).not.toBeNull()
@@ -224,7 +235,11 @@ describe("groupByEmployee", () => {
   })
 
   it("keeps the column of an employee with no appointments", () => {
-    // design/CalendarioDesktop.dc.html:210-235 dibuja la columna vacia igual.
+    // El artboard no dibuja ninguna columna vacia -- sus tres columnas llevan
+    // tres bloques cada una --, asi que esto no lo copia del canvas: lo manda
+    // la rejilla `repeat(N, minmax(0, 1fr))`, donde perder una columna
+    // ensancha a las demas y la agenda cambia de ancho sola. Y la columna
+    // vacia es la util: es donde se pulsa para dar hora al que esta libre.
     const appointment = makeAppointment({
       employeeId: "emp-1",
       startTime: at("09:00"),
@@ -879,6 +894,43 @@ describe("assignLanes", () => {
       expect(item.lanes).toBeGreaterThanOrEqual(item.lane + 1)
     }
     expect(lanes.map((item) => item.appointment.id)).toEqual(["larga", "otra"])
+  })
+
+  it("una cita con la hora ilegible no arrastra al dia entero a su grupo", () => {
+    // La sonda del defecto. "nan" tiene horas que `parseISO` no sabe leer, y
+    // antes del arreglo `calculateBlockPosition` le devolvia `{top: NaN,
+    // height: NaN}` en vez de `null`: `isPainted` decia que si se pinta, la
+    // cita entraba al reparto y `groupEnd = Math.max(groupEnd, NaN)` se
+    // quedaba en `NaN`, con lo que `start >= groupEnd` no volvia a cumplirse y
+    // el grupo de solape NO se cerraba en todo el dia. Las cuatro citas de
+    // abajo -- dos pares que no se pisan entre pares -- salian repartidas como
+    // un solo grupo: "y" con `lane 2` sobre `lanes 2`, un carril que no
+    // existe. `laneGeometry` no lo saca de la columna, lo recorta a `lanes - 1`
+    // y lo deja en la misma banda que "x". El rectangulo, en
+    // `day-view.test.tsx`.
+    const appointments = [
+      makeAppointment({ id: "nan", startTime: `${DAY}Tzz:zz:00`, endTime: `${DAY}Tzz:zz:00` }),
+      makeAppointment({ id: "x", startTime: at("09:00"), endTime: at("10:00") }),
+      makeAppointment({ id: "y", startTime: at("09:30"), endTime: at("10:30") }),
+      makeAppointment({ id: "z", startTime: at("15:00"), endTime: at("16:00") }),
+      makeAppointment({ id: "w", startTime: at("15:30"), endTime: at("16:30") }),
+    ]
+
+    const lanes = assignLanes(appointments)
+
+    // La ilegible no se pinta, asi que no reparte: fuera del resultado.
+    expect(lanes.map((item) => item.appointment.id)).toEqual(["x", "y", "z", "w"])
+
+    // Y los dos pares son dos grupos independientes de dos carriles.
+    const byId = new Map(lanes.map((item) => [item.appointment.id, item]))
+    expect(byId.get("x")).toMatchObject({ lane: 0, lanes: 2 })
+    expect(byId.get("y")).toMatchObject({ lane: 1, lanes: 2 })
+    expect(byId.get("z")).toMatchObject({ lane: 0, lanes: 2 })
+    expect(byId.get("w")).toMatchObject({ lane: 1, lanes: 2 })
+
+    for (const item of lanes) {
+      expect(item.lanes).toBeGreaterThanOrEqual(item.lane + 1)
+    }
   })
 
   it("returns nothing for a day with no appointments", () => {
