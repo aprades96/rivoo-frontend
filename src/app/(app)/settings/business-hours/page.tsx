@@ -14,12 +14,19 @@ import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
 import { salonsApi } from "@/lib/api/salons"
 import { useAuth } from "@/hooks/use-auth"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import type { BusinessHoursRequest } from "@/types/salon"
 
 export default function BusinessHoursSettingsPage() {
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
   const editorRef = useRef<WorkingHoursEditorHandle>(null)
+  // Horario.dc.html:37 puts the only "Guardar" in the mobile header;
+  // HorarioDesktop.dc.html:126 puts the only "Guardar cambios" in the
+  // desktop body. Mutually exclusive by design, not a duplicate to merge:
+  // one save action per width, matching PageShell's own breakpoint
+  // ((min-width: 1024px), same query it uses internally).
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
 
   const { data: hours, isError: hoursFetchFailed, refetch: refetchHours } = useQuery({
     queryKey: ["salon-business-hours"],
@@ -54,10 +61,10 @@ export default function BusinessHoursSettingsPage() {
   // Header shortcut for the mobile "Guardar" action (mobileActions, see
   // page-shell.tsx): saves through the same imperative handle the onboarding
   // step uses ((onboarding)/business-hours/page.tsx). The editor's own
-  // "Guardar horarios" button in the body is untouched -- it keeps working
-  // on every width, including desktop, where the artboard leaves the save
-  // action in the body rather than the top bar. Errors are already toasted
-  // by the mutation's onError; nothing else to do here on rejection.
+  // internal button is hidden on mobile via `showSaveButton={isDesktop}`
+  // below -- see the comment on `isDesktop` for why the two are mutually
+  // exclusive. Errors are already toasted by the mutation's onError;
+  // nothing else to do here on rejection.
   const handleSaveFromHeader = async () => {
     try {
       await editorRef.current?.save()
@@ -100,6 +107,7 @@ export default function BusinessHoursSettingsPage() {
           hours={hours}
           onSave={(h) => mutation.mutateAsync(h)}
           isSaving={mutation.isPending}
+          showSaveButton={isDesktop}
         />
       )}
     </PageShell>
