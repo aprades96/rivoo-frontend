@@ -1,27 +1,19 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { ArrowLeft, LogOut, KeyRound, User, Mail, Shield } from "lucide-react"
+import { LogOut, KeyRound, User, Mail, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { PageShell } from "@/components/layout/page-shell"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function AccountSettingsPage() {
-  const router = useRouter()
   const { user, logout } = useAuth()
 
   const keycloakAccountUrl = `${process.env.NEXT_PUBLIC_KEYCLOAK_URL}/realms/rivoo/account`
 
   return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Mi cuenta</h1>
-      </div>
-
+    <PageShell title="Mi cuenta" back contentClassName="space-y-4">
       {/* User info */}
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-3">
@@ -65,6 +57,6 @@ export default function AccountSettingsPage() {
           Cerrar sesion
         </Button>
       </div>
-    </div>
+    </PageShell>
   )
 }

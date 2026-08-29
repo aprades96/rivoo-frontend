@@ -1,20 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, Globe, Copy, Check } from "lucide-react"
+import { Globe, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PageShell } from "@/components/layout/page-shell"
 import { salonsApi } from "@/lib/api/salons"
 import { useSalon } from "@/hooks/use-salon"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function BookingSettingsPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
   const { data: salon } = useSalon()
@@ -45,14 +44,7 @@ export default function BookingSettingsPage() {
   }
 
   return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Reservas online</h1>
-      </div>
-
+    <PageShell title="Reservas online" back>
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-muted-foreground" />
@@ -82,6 +74,6 @@ export default function BookingSettingsPage() {
           </>
         )}
       </Card>
-    </div>
+    </PageShell>
   )
 }

@@ -1,14 +1,14 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, CreditCard, ExternalLink, Loader2 } from "lucide-react"
+import { CreditCard, ExternalLink, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { PageShell } from "@/components/layout/page-shell"
 import { billingApi } from "@/lib/api/billing"
 import { useAuth } from "@/hooks/use-auth"
 import { formatCurrency } from "@/lib/utils/format"
@@ -30,7 +30,6 @@ const STATUS_LABELS: Record<string, { label: string; variant: "secondary" | "out
 }
 
 export default function BillingSettingsPage() {
-  const router = useRouter()
   const { accessToken } = useAuth()
 
   const { data: subscription, isLoading: subLoading } = useQuery<Subscription>({
@@ -61,19 +60,18 @@ export default function BillingSettingsPage() {
     onError: () => toast.error("Error al abrir portal de facturacion"),
   })
 
-  if (subLoading) return <div className="p-4"><LoadingSkeleton count={4} /></div>
+  if (subLoading) {
+    return (
+      <PageShell title="Facturacion y plan" back>
+        <LoadingSkeleton count={4} />
+      </PageShell>
+    )
+  }
 
   const statusInfo = subscription ? STATUS_LABELS[subscription.status] : null
 
   return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Facturacion y plan</h1>
-      </div>
-
+    <PageShell title="Facturacion y plan" back contentClassName="space-y-4">
       {/* Current plan */}
       {subscription && (
         <Card className="p-4 space-y-3">
@@ -159,6 +157,6 @@ export default function BillingSettingsPage() {
           })}
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

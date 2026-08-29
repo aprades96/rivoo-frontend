@@ -1,15 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { PageShell } from "@/components/layout/page-shell"
 import { salonsApi } from "@/lib/api/salons"
 import { useSalon } from "@/hooks/use-salon"
 import { useAuth } from "@/hooks/use-auth"
@@ -31,7 +31,6 @@ function formStateFrom(salon: Salon | undefined) {
 }
 
 export default function SalonSettingsPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
   const { data: salon, isLoading } = useSalon()
@@ -68,17 +67,16 @@ export default function SalonSettingsPage() {
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
-  if (isLoading) return <div className="p-4"><LoadingSkeleton count={4} /></div>
+  if (isLoading) {
+    return (
+      <PageShell title="Perfil del salon" back>
+        <LoadingSkeleton count={4} />
+      </PageShell>
+    )
+  }
 
   return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Perfil del salon</h1>
-      </div>
-
+    <PageShell title="Perfil del salon" back>
       <div className="space-y-3">
         <div>
           <Label className="text-xs">Nombre</Label>
@@ -106,6 +104,6 @@ export default function SalonSettingsPage() {
           Guardar cambios
         </Button>
       </div>
-    </div>
+    </PageShell>
   )
 }

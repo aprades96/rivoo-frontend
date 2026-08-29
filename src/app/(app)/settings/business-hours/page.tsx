@@ -1,11 +1,15 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { ArrowLeft } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
+import { PageShell } from "@/components/layout/page-shell"
+import {
+  WorkingHoursEditor,
+  type WorkingHoursEditorHandle,
+} from "@/components/staff/working-hours-editor"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
 import { salonsApi } from "@/lib/api/salons"
@@ -13,9 +17,9 @@ import { useAuth } from "@/hooks/use-auth"
 import type { BusinessHoursRequest } from "@/types/salon"
 
 export default function BusinessHoursSettingsPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const { accessToken } = useAuth()
+  const editorRef = useRef<WorkingHoursEditorHandle>(null)
 
   const { data: hours, isError: hoursFetchFailed, refetch: refetchHours } = useQuery({
     queryKey: ["salon-business-hours"],
@@ -47,15 +51,37 @@ export default function BusinessHoursSettingsPage() {
   // already lets the owner leave this page regardless.
   const hoursFailed = !!accessToken && hoursFetchFailed
 
-  return (
-    <div className="p-4 md:py-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Horarios del salon</h1>
-      </div>
+  // Header shortcut for the mobile "Guardar" action (mobileActions, see
+  // page-shell.tsx): saves through the same imperative handle the onboarding
+  // step uses ((onboarding)/business-hours/page.tsx). The editor's own
+  // "Guardar horarios" button in the body is untouched -- it keeps working
+  // on every width, including desktop, where the artboard leaves the save
+  // action in the body rather than the top bar. Errors are already toasted
+  // by the mutation's onError; nothing else to do here on rejection.
+  const handleSaveFromHeader = async () => {
+    try {
+      await editorRef.current?.save()
+    } catch {
+      // no-op
+    }
+  }
 
+  return (
+    <PageShell
+      title="Horario de apertura"
+      back
+      contentClassName="space-y-4"
+      mobileActions={
+        <Button
+          size="sm"
+          onClick={handleSaveFromHeader}
+          disabled={hoursNotReady || mutation.isPending}
+        >
+          {mutation.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+          Guardar
+        </Button>
+      }
+    >
       <p className="text-sm text-muted-foreground">
         Configura los dias y horas de apertura de tu salon.
       </p>
@@ -70,11 +96,12 @@ export default function BusinessHoursSettingsPage() {
         <LoadingSkeleton count={7} />
       ) : (
         <WorkingHoursEditor
+          ref={editorRef}
           hours={hours}
           onSave={(h) => mutation.mutateAsync(h)}
           isSaving={mutation.isPending}
         />
       )}
-    </div>
+    </PageShell>
   )
 }

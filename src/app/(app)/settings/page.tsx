@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ChevronRight, Store, Clock, CreditCard, Globe, User, LogOut } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { PageShell } from "@/components/layout/page-shell"
 import { useAuth } from "@/hooks/use-auth"
 
 const menuItems = [
@@ -17,9 +18,8 @@ export default function SettingsPage() {
   const { logout } = useAuth()
 
   return (
-    <div className="p-4 md:py-6">
-      <h1 className="text-lg font-semibold">Ajustes</h1>
-      <div className="mt-4 space-y-1">
+    <PageShell title="Ajustes">
+      <div className="space-y-1">
         {menuItems.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -42,6 +42,6 @@ export default function SettingsPage() {
           <span>Cerrar sesion</span>
         </button>
       </div>
-    </div>
+    </PageShell>
   )
 }
