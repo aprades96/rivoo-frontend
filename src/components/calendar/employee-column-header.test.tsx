@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
 import {
@@ -185,6 +187,75 @@ describe("EmployeeColumnHeader · el avatar toma el color del empleado", () => {
     }
     expect(screen.getByText("Otros")).toBeInTheDocument()
     expect(screen.getByTestId("employee-column-header")).not.toHaveAttribute("data-employee-id")
+  })
+})
+
+/**
+ * ---------------------------------------------------------------------------
+ * La paleta de reserva, ANCLADA
+ * ---------------------------------------------------------------------------
+ * El resto de la suite usa `employeeFallbackAvatarClassName` como oraculo de
+ * si misma: comprueba que la posicion 1 lleva "lo que devuelva la funcion para
+ * la posicion 1". Eso fija el REPARTO -- que dos contiguos no repitan, que dé
+ * la vuelta al quinto -- pero no el CONTENIDO: permutar dos entradas de la
+ * tabla dejaba la suite entera verde, y el mismo empleado cambiaba de color
+ * sin que nada avisase. Aqui se escriben los tokens a mano, uno por uno.
+ */
+describe("EmployeeColumnHeader · la paleta de reserva y sus tokens", () => {
+  it("cada posicion apunta a su token, en orden y sin permutar", () => {
+    expect(employeeFallbackAvatarClassName(0)).toBe("bg-chart-1/12 text-chart-1")
+    expect(employeeFallbackAvatarClassName(1)).toBe("bg-chart-2/12 text-chart-2")
+    expect(employeeFallbackAvatarClassName(2)).toBe("bg-chart-3/12 text-chart-3")
+    expect(employeeFallbackAvatarClassName(3)).toBe("bg-chart-4/12 text-chart-4")
+    expect(employeeFallbackAvatarClassName(4)).toBe("bg-chart-5/12 text-chart-5")
+    // Y el sexto vuelve al primero, sin salirse de la tabla.
+    expect(employeeFallbackAvatarClassName(5)).toBe("bg-chart-1/12 text-chart-1")
+  })
+
+  it("los cinco tokens existen en globals.css con el color del artboard", () => {
+    // La clase sola no prueba nada si el token no esta declarado: en Tailwind
+    // v4 una utilidad sin variable detras se descarta EN SILENCIO. Y el orden
+    // es el del canvas: el segundo empleado del artboard movil (Sofia) lleva
+    // #5C7A5E y el tercero (Marc) #4A6274 (`design/Calendario.dc.html:57,61`),
+    // los mismos que la cabecera de escritorio (`CalendarioDesktop.dc.html:114,121`).
+    // Por ruta desde la raiz del proyecto: bajo Vite `import.meta.url` no es
+    // una URL `file:` y `readFileSync` la rechaza.
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8")
+
+    for (const [token, hex] of [
+      ["--chart-1", "#b4522f"],
+      ["--chart-2", "#5c7a5e"],
+      ["--chart-3", "#4a6274"],
+      ["--chart-4", "#a8762f"],
+      ["--chart-5", "#7a6a5f"],
+    ] as const) {
+      expect(css).toContain(`${token}: ${hex};`)
+    }
+  })
+
+  it("la segunda columna se pinta con el segundo token, no con otro", () => {
+    render(
+      <EmployeeColumnHeader
+        column={makeColumn(
+          makeEmployee({ id: "emp_2", firstName: "Sofia", lastName: "Puig", colorHex: null }),
+          "Sofia Puig"
+        )}
+        index={1}
+      />
+    )
+
+    expect(avatar()).toHaveClass("bg-chart-2/12", "text-chart-2")
+    expect(avatar()).not.toHaveClass("bg-chart-1/12")
+    expect(avatar()).not.toHaveClass("text-chart-1")
+  })
+
+  it("la primera columna se pinta con el primer token", () => {
+    render(
+      <EmployeeColumnHeader column={makeColumn(makeEmployee({ colorHex: null }))} index={0} />
+    )
+
+    expect(avatar()).toHaveClass("bg-chart-1/12", "text-chart-1")
+    expect(avatar()).not.toHaveClass("bg-chart-2/12")
   })
 })
 

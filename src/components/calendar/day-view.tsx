@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { AppointmentBlock } from "./appointment-block"
 import { BreakBlock } from "./break-block"
 import { EmployeeColumnHeader, EMPLOYEE_HEADER_HEIGHT_PX } from "./employee-column-header"
@@ -220,9 +221,19 @@ function DesktopColumns({
 
 /**
  * La columna unica de movil: las citas de TODAS las columnas juntas. De ahi
- * que `assignLanes` sea imprescindible aqui -- con el filtro en "Todos"
- * (`design/Calendario.dc.html:51`) caen en la misma columna las citas de
- * varios empleados y, como bloques absolutos, se taparian entre si.
+ * que `assignLanes` sea imprescindible aqui -- con el filtro en "Todos" caen
+ * en la misma columna las citas de varios empleados y, como bloques absolutos,
+ * se taparian entre si.
+ *
+ * "Todos" no es lo que dibuja el artboard: alli la pildora seleccionada es la
+ * de Laura (`design/Calendario.dc.html:52-55`, #B4522F), la de "Todos" esta en
+ * reposo (`:51`, blanca) y la rejilla pinta solo los bloques de su columna. Es
+ * una eleccion del usuario, no el estado dibujado -- pero llega con un toque,
+ * asi que el reparto tiene que estar.
+ *
+ * La union va MEMORIZADA: `flatMap` devuelve un array nuevo en cada render y
+ * eso solo bastaba para tirar por tierra el `useMemo` de `ColumnBody`, que
+ * depende de la identidad de `appointments`.
  */
 function MobileColumn({
   columns,
@@ -239,7 +250,10 @@ function MobileColumn({
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
   onFreeSlotTap: ((slot: FreeSlot) => void) | undefined
 }) {
-  const appointments = columns.flatMap((column) => column.appointments)
+  const appointments = useMemo(
+    () => columns.flatMap((column) => column.appointments),
+    [columns]
+  )
 
   /**
    * Solo hay un empleado al que atribuir la franja pulsada -- y un nombre que
@@ -265,7 +279,16 @@ function MobileColumn({
   )
 }
 
-/** El contenido de una columna: el fondo de filas mas los bloques absolutos. */
+/**
+ * El contenido de una columna: el fondo de filas mas los bloques absolutos.
+ *
+ * `assignLanes` va MEMORIZADA. Cuesta O(k³) por grupo de solape
+ * (`lib/utils/calendar.ts`, `resolveLaneCounts`) y se llamaba en el cuerpo del
+ * render, una vez POR COLUMNA: escribir en el buscador de `/calendar` rehacia
+ * el reparto entero de las N columnas en cada tecla. Memorizar el `combine` de
+ * `useEmployeesWorkingHours` no evitaba nada de esto -- teclear cambia las
+ * propias `appointments` --, el corte tiene que estar aqui.
+ */
 function ColumnBody({
   variant,
   employeeId,
@@ -287,6 +310,8 @@ function ColumnBody({
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
   onFreeSlotTap?: ((slot: FreeSlot) => void) | undefined
 }) {
+  const lanes = useMemo(() => assignLanes(appointments), [appointments])
+
   return (
     <div data-testid="day-view-column" data-employee-id={employeeId ?? undefined}>
       <GridRows variant={variant}>
@@ -309,13 +334,13 @@ function ColumnBody({
           />
         )}
 
-        {assignLanes(appointments).map(({ appointment, lane, lanes }) => (
+        {lanes.map(({ appointment, lane, lanes: laneCount }) => (
           <AppointmentBlock
             key={appointment.id}
             appointment={appointment}
             variant={variant}
             lane={lane}
-            lanes={lanes}
+            lanes={laneCount}
             onTap={onAppointmentTap}
           />
         ))}

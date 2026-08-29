@@ -582,10 +582,12 @@ describe("el hueco libre y el descanso que se PINTA", () => {
   }
 
   it("no ofrece el hueco encima del almuerzo con el filtro en 'Todos'", () => {
-    // El estado por DEFECTO de movil y el que dibuja el artboard
-    // (`design/Calendario.dc.html:51`): tres empleados activos, todos con el
-    // mismo descanso 13:00-14:00, ninguna cita despues de las 12:00, son las
-    // 12:45. Antes la pantalla no tenia empleado seleccionado, le pasaba
+    // "Todos" es una eleccion del usuario, NO lo que dibuja el artboard: alli
+    // la pildora seleccionada es la de Laura (`design/Calendario.dc.html:52-55`,
+    // #B4522F) y la de "Todos" esta en reposo (`:51`, blanca y de peso 500).
+    // El caso: tres empleados activos, todos con el mismo descanso 13:00-14:00,
+    // ninguna cita despues de las 12:00, son las 12:45. Antes la pantalla no
+    // tenia empleado seleccionado y le pasaba
     // `null` a `nextFreeSlot`, el descanso no entraba en `busy` y el recuadro
     // "Libre" caia en 13:00-13:30 -- justo encima del rayado del almuerzo, que
     // `visibleBreak` si estaba pintando en top 480.
@@ -829,6 +831,54 @@ describe("assignLanes", () => {
     for (const item of assignLanes(appointments)) {
       expect(item.lanes).toBeGreaterThanOrEqual(item.lane + 1)
     }
+  })
+
+  it("no gasta un carril en una cita que la rejilla no va a pintar", () => {
+    // La sonda exacta del defecto. "fuera" cae entera antes de las 08:00, asi
+    // que `calculateBlockPosition` devuelve `null` y `AppointmentBlock` no
+    // monta nada; "dentro" se recorta a 08:00-09:00 y SI se pinta. Repartiendo
+    // por tiempo a secas se solapan, "fuera" se lleva el carril 0 de 2 y el
+    // unico bloque VISIBLE del dia salia a media columna, pegado a la derecha
+    // y con la mitad izquierda vacia.
+    const appointments = [
+      makeAppointment({ id: "fuera", startTime: at("06:00"), endTime: at("07:30") }),
+      makeAppointment({ id: "dentro", startTime: at("06:30"), endTime: at("09:00") }),
+    ]
+
+    expect(calculateBlockPosition(at("06:00"), at("07:30"))).toBeNull()
+
+    const lanes = assignLanes(appointments)
+
+    // El bloque visible se queda la columna ENTERA: un solo carril de uno.
+    const painted = lanes.find((item) => item.appointment.id === "dentro")
+    expect(painted).toMatchObject({ lane: 0, lanes: 1 })
+    // Y la invisible ni siquiera aparece: no hay nada que pintar.
+    expect(lanes.map((item) => item.appointment.id)).toEqual(["dentro"])
+  })
+
+  it("no reparte carril a una cita de duracion cero, que tampoco se pinta", () => {
+    // La invariante escrita en `resolveLaneCounts` es `lanes >= lane + 1`, y
+    // una cita de tramo vacio la rompia: `peakConcurrency` mira los arranques
+    // que caen en `[start, end)`, que con `start === end` no contiene ninguno,
+    // asi que "cero" salia con `lane 2` y `lanes 0`. Tampoco se pinta -- el
+    // mismo `calculateBlockPosition` la descarta --, asi que no llega al
+    // reparto y la invariante se sostiene sobre lo que de verdad se cumple.
+    const appointments = [
+      makeAppointment({ id: "larga", startTime: at("08:30"), endTime: at("10:00") }),
+      makeAppointment({ id: "otra", startTime: at("08:45"), endTime: at("09:30") }),
+      makeAppointment({ id: "cero", startTime: at("09:00"), endTime: at("09:00") }),
+    ]
+
+    expect(calculateBlockPosition(at("09:00"), at("09:00"))).toBeNull()
+
+    const lanes = assignLanes(appointments)
+
+    // Primero la invariante, que es lo que "cero" rompia: sin filtro sale con
+    // `lane 2` y `lanes 0`.
+    for (const item of lanes) {
+      expect(item.lanes).toBeGreaterThanOrEqual(item.lane + 1)
+    }
+    expect(lanes.map((item) => item.appointment.id)).toEqual(["larga", "otra"])
   })
 
   it("returns nothing for a day with no appointments", () => {

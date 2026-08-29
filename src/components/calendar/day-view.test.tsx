@@ -169,6 +169,82 @@ describe("DayView · escritorio", () => {
   })
 })
 
+describe("DayView · el resumen de la cabecera", () => {
+  /**
+   * Dos empleadas distintas con el MISMO nombre y apellido. No es rebuscado en
+   * un salon con dos Lauras Martinez, y es el unico caso que distingue
+   * emparejar por `employeeId` de emparejar por `label`: con la pareja mal
+   * hecha las dos cabeceras anuncian el dia de la primera y la segunda ve la
+   * agenda de otra persona como si fuera la suya.
+   */
+  const HOMONYMS: Employee[] = [
+    makeEmployee({ id: "emp_1", firstName: "Laura", lastName: "Martinez" }),
+    makeEmployee({ id: "emp_2", firstName: "Laura", lastName: "Martinez", colorHex: null }),
+  ]
+
+  it("empareja cada resumen con SU columna por employeeId, no por nombre", () => {
+    // Lo que la vista muestra: las dos columnas recortadas por el buscador, sin
+    // citas. Lo que el resumen tiene que contar: el dia entero de cada una.
+    const trimmed = columnsOf([], HOMONYMS)
+    const full = columnsOf(
+      [
+        makeAppointment({ id: "apt_1", employeeId: "emp_1" }),
+        makeAppointment({
+          id: "apt_2",
+          employeeId: "emp_2",
+          startTime: `${DAY}T11:00:00`,
+          endTime: `${DAY}T11:30:00`,
+        }),
+      ],
+      HOMONYMS
+    )
+
+    render(<DayView variant="desktop" columns={trimmed} summaryColumns={full} />)
+
+    const headers = screen.getAllByTestId("employee-column-header")
+    expect(headers.map((header) => header.dataset.employeeId)).toEqual(["emp_1", "emp_2"])
+    // La premisa del test: los dos rotulos son literalmente el mismo texto.
+    for (const header of headers) {
+      expect(within(header).getByText("Laura Martinez")).toBeInTheDocument()
+    }
+
+    expect(within(headers[0]).getByText("1 cita · 1h")).toBeInTheDocument()
+    expect(within(headers[1]).getByText("1 cita · 30min")).toBeInTheDocument()
+  })
+
+  it("sin summaryColumns cada cabecera resume su propia columna", () => {
+    render(<DayView variant="desktop" columns={columnsOf()} />)
+
+    const headers = screen.getAllByTestId("employee-column-header")
+    expect(within(headers[0]).getByText("1 cita · 1h")).toBeInTheDocument()
+    expect(within(headers[1]).getByText("1 cita · 1h 30min")).toBeInTheDocument()
+    expect(within(headers[2]).getByText("Sin citas")).toBeInTheDocument()
+  })
+
+  it("una columna sin pareja en summaryColumns se resume con la suya", () => {
+    // La columna "Otros" no esta en la lista de empleados, asi que nunca tiene
+    // pareja: sin el respaldo se quedaria muda.
+    const orphan = makeAppointment({
+      id: "apt_orphan",
+      employeeId: "emp_baja",
+      employeeName: "Nuria Vila",
+      clientName: "Pau Serra",
+    })
+
+    render(
+      <DayView
+        variant="desktop"
+        columns={columnsOf([...APPOINTMENTS, orphan])}
+        summaryColumns={columnsOf()}
+      />
+    )
+
+    const headers = screen.getAllByTestId("employee-column-header")
+    expect(within(headers[3]).getByText("Otros")).toBeInTheDocument()
+    expect(within(headers[3]).getByText("1 cita · 1h")).toBeInTheDocument()
+  })
+})
+
 describe("DayView · movil", () => {
   it("pinta una sola columna, sin ninguna cabecera, con las citas de todos", () => {
     render(<DayView variant="mobile" columns={columnsOf()} />)

@@ -89,6 +89,28 @@ describe("EmployeeFilter · la pildora en reposo", () => {
   })
 })
 
+describe("EmployeeFilter · la fila que sostiene las pildoras", () => {
+  it("lleva el padding y la separacion del artboard, no otros cualesquiera", () => {
+    render(<EmployeeFilter employees={employees} selectedId={null} onSelect={vi.fn()} />)
+
+    // `Calendario.dc.html:50`: `display: flex; gap: 6px; padding: 12px 16px`.
+    // Los tres valores estaban sin fijar: cambiarlos a `px-1 py-8` o el gap a
+    // `gap-4` dejaba la suite entera verde y la fila descuadrada respecto al
+    // canvas -- pildoras pegadas al borde y sin aire entre ellas, o al reves.
+    // La fila no lleva testid propio: es el padre de las pildoras.
+    const row = pill("Todos").parentElement!
+
+    expect(row).toHaveClass("flex")
+    expect(row).toHaveClass("gap-1.5") // 6px
+    expect(row).toHaveClass("px-4") // 16px
+    expect(row).toHaveClass("py-3") // 12px
+    // Y las tres pildoras cuelgan de ELLA, o el padding no las alcanzaria.
+    for (const name of ["Todos", "Laura", "Sofia"]) {
+      expect(pill(name).parentElement).toBe(row)
+    }
+  })
+})
+
 describe("EmployeeFilter · el color de reserva tiene que cuadrar con el de escritorio", () => {
   /**
    * El reparto es por POSICION en la lista, y la lista de la que se cuenta es

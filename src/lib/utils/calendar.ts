@@ -312,12 +312,20 @@ export function breakOfColumn(
  * `nextFreeSlot`, que es lo que impide que el recuadro "Libre" se ofrezca
  * encima del rayado del almuerzo.
  *
- * El artboard lo dibuja con el filtro en "Todos" (`design/Calendario.dc.html:51`
- * y `:118`), asi que no basta con pintarlo cuando hay un solo empleado; pero
- * tampoco se pueden apilar N cajas identicas, que es lo que pasaria en un
- * salon donde toda la plantilla almuerza a la vez. Se devuelve el primer tramo
- * que haya: si el descanso es comun -- el caso normal y el del artboard --
- * sale exactamente uno.
+ * QUE DIBUJA EL ARTBOARD, para no atribuirle lo que no: el rayado del almuerzo
+ * (`design/Calendario.dc.html:116-118`) esta pintado con el filtro puesto en
+ * UNA empleada. La pildora de fondo #B4522F, texto blanco y peso 600 es la de
+ * Laura (`:52-55`); la de "Todos" esta en reposo -- fondo #FFFFFF, peso 500
+ * (`:51`) --, y la rejilla movil pinta los tres bloques de la columna de Laura
+ * del artboard de escritorio y ninguno de los otros cinco. O sea que el caso
+ * dibujado es el de una sola columna, donde el descanso que se ve es el suyo.
+ *
+ * Aun asi la funcion no puede quedarse en "el del unico empleado": "Todos"
+ * existe como eleccion explicita del usuario, y ahi la columna unica recibe
+ * los descansos de N empleados. Apilar N cajas identicas -- lo que pasaria en
+ * un salon donde toda la plantilla almuerza a la vez -- no es una opcion. Se
+ * devuelve el primer tramo que haya: con un empleado sale el suyo, y con
+ * descanso comun sale exactamente uno.
  */
 export function visibleBreak(
   columns: EmployeeColumn[],
@@ -359,11 +367,12 @@ export interface FreeSlot {
  * objeto que `DayView` va a pintar, es decir `visibleBreak(columns, breaks)`.
  * Ni los horarios del empleado seleccionado ni nada de lo que haya que deducir
  * el tramo por segunda vez. Antes esta funcion recibia `WorkingHoursResponse[]`
- * y resolvia el descanso por su cuenta, y con el filtro en "Todos" -- el estado
- * INICIAL y el del artboard -- la pantalla no tenia empleado que pasarle: le
- * mandaba `null`, el descanso no entraba en `busy` y el recuadro "Libre" caia
- * a las 13:00, ENCIMA del rayado del almuerzo que `visibleBreak` si estaba
- * pintando. Pintar y calcular tienen que leer el mismo dato; por eso el
+ * y resolvia el descanso por su cuenta, y con el filtro en "Todos" -- que no es
+ * lo que dibuja el artboard, ver `visibleBreak`, pero si esta a un toque -- la
+ * pantalla no tenia empleado que pasarle: le mandaba `null`, el descanso no
+ * entraba en `busy` y el recuadro "Libre" caia a las 13:00, ENCIMA del rayado
+ * del almuerzo que `visibleBreak` si estaba pintando. Pintar y calcular tienen
+ * que leer el mismo dato; por eso el
  * parametro es el bloque ya resuelto y no su materia prima.
  */
 export function nextFreeSlot(
@@ -431,10 +440,25 @@ export interface LaneAssignment {
  * Reparte las citas en carriles para que dos que se solapan compartan el ancho
  * en vez de taparse.
  *
- * Hace falta sobre todo en movil, donde el filtro arranca en "Todos"
- * (`design/Calendario.dc.html:51`) y una sola columna recibe las citas de N
- * empleados: como bloques absolutos, se pintarian unas encima de otras. En
- * escritorio cubre el caso de un empleado con dos citas solapadas.
+ * Hace falta en los dos anchos. En movil, cuando el usuario elige "Todos" en el
+ * filtro: una sola columna recibe entonces las citas de N empleados y, como
+ * bloques absolutos, se pintarian unas encima de otras. "Todos" NO es lo que
+ * dibuja el artboard -- alli la pildora seleccionada es la de Laura (`:52-55`,
+ * #B4522F sobre blanco), la de "Todos" esta en reposo (`:51`) y la rejilla
+ * movil pinta exactamente los tres bloques de la columna de Laura del artboard
+ * de escritorio --, es una eleccion que el usuario tiene a un toque. En
+ * escritorio cubre el caso de un empleado con dos citas solapadas, que no
+ * depende de ningun filtro.
+ *
+ * SOLO ENTRAN LAS CITAS QUE SE VAN A PINTAR. Una que cae fuera de la rejilla
+ * -- `calculateBlockPosition` devuelve `null` y `AppointmentBlock` no monta
+ * nada -- se queda fuera del resultado, asi que el array devuelto puede ser mas
+ * corto que el recibido. Repartiendo por tiempo a secas, una cita invisible
+ * gastaba carril: un dia con `06:00-07:30` (fuera) y `06:30-09:00` (recortada a
+ * 08:00-09:00, esta si se pinta) daba carril 0 de 2 a la primera y 1 de 2 a la
+ * segunda, y el UNICO bloque visible salia a media columna, pegado a la
+ * derecha y con la mitad izquierda vacia. El filtro usa la misma funcion que
+ * consulta el bloque al pintarse, no un criterio paralelo que pueda divergir.
  *
  * El CARRIL se reparte por grupo de solape transitivo -- si A pisa a B y B
  * pisa a C, ninguna reutiliza el carril de otra que siga en curso. Dos citas
@@ -449,7 +473,9 @@ export interface LaneAssignment {
  * el nombre del cliente truncado.
  */
 export function assignLanes(appointments: Appointment[]): LaneAssignment[] {
-  const sorted = [...appointments].sort((a, b) => {
+  // `filter` ya devuelve un array nuevo, asi que ordenarlo no toca el que nos
+  // dieron.
+  const sorted = appointments.filter(isPainted).sort((a, b) => {
     const byStart = parseISO(a.startTime).getTime() - parseISO(b.startTime).getTime()
     if (byStart !== 0) return byStart
     return parseISO(a.endTime).getTime() - parseISO(b.endTime).getTime()
@@ -492,6 +518,16 @@ export function assignLanes(appointments: Appointment[]): LaneAssignment[] {
   return assignments
 }
 
+/**
+ * Si la rejilla va a pintar el bloque de esta cita. Se pregunta con la MISMA
+ * funcion que consulta `AppointmentBlock` antes de devolver `null`: dos
+ * criterios distintos para "esto se ve" acabarian divergiendo, y el que
+ * reparte el ancho es justo el que no puede equivocarse.
+ */
+function isPainted(appointment: Appointment): boolean {
+  return calculateBlockPosition(appointment.startTime, appointment.endTime) !== null
+}
+
 /** Una cita ya colocada en su carril, con su tramo en milisegundos. */
 interface PlacedAppointment extends LaneAssignment {
   start: number
@@ -509,6 +545,9 @@ function overlap(a: PlacedAppointment, b: PlacedAppointment): boolean {
  * Solo se miran los ARRANQUES: entre dos arranques consecutivos el numero de
  * citas activas unicamente puede bajar, asi que el maximo de un tramo se
  * alcanza siempre en el arranque de alguna cita -- o en el del propio `item`.
+ *
+ * COSTE: un recorrido del grupo por cada arranque del grupo, o sea O(k²) con
+ * k = citas del GRUPO de solape. Ver el coste total en `resolveLaneCounts`.
  */
 function peakConcurrency(group: PlacedAppointment[], item: PlacedAppointment): number {
   let peak = 0
@@ -545,9 +584,25 @@ function peakConcurrency(group: PlacedAppointment[], item: PlacedAppointment): n
  * toca a una cita todas las de carril superior ya estan cerradas y una sola
  * pasada alcanza el punto fijo.
  *
- * De regalo, `lanes >= lane + 1` siempre: una cita solo cae en el carril L si
- * en su arranque estaban ocupados los L de debajo, o sea que en ese instante
- * habia al menos L+1 citas activas y su `peakConcurrency` no puede ser menor.
+ * De regalo, `lanes >= lane + 1` para toda cita que llegue hasta aqui: una
+ * cita solo cae en el carril L si en su arranque estaban ocupados los L de
+ * debajo, o sea que en ese instante habia al menos L+1 citas activas, y
+ * `peakConcurrency` evalua ese instante porque cae dentro de `[start, end)`.
+ * La condicion es que el tramo NO sea vacio: con `start === end` ese intervalo
+ * no contiene ningun instante, `peakConcurrency` devuelve 0 y la promesa se
+ * rompe -- una cita de duracion cero entre dos que la envuelven salia con
+ * `lane 2` y `lanes 0`. Por eso el filtro de `assignLanes` sostiene tambien
+ * esta invariante y no solo la geometria: `calculateBlockPosition` descarta
+ * todo tramo vacio (`clampedStart >= clampedEnd`), asi que ninguna llega.
+ *
+ * COSTE, medido y no supuesto: esta funcion llama a `peakConcurrency` -- que
+ * es O(k²) -- una vez por cita, o sea O(k³) por grupo de solape. La k es la
+ * del GRUPO, no la del dia: en cuanto la cadena de solapes se rompe se abre
+ * grupo nuevo, y en una agenda real va en un digito. Los extremos, medidos con
+ * k=200 en una sola llamada a `assignLanes`: ~3 ms con una cadena en la que
+ * cada cita solo pisa a la siguiente, ~20 ms con las 200 a la misma hora. Es
+ * de sobra para que esto no pueda correr en cada render, que es lo que hacia:
+ * ver el `useMemo` de `ColumnBody` en `day-view.tsx`, el unico que lo llama.
  */
 function resolveLaneCounts(group: PlacedAppointment[]): void {
   for (const item of group) item.lanes = peakConcurrency(group, item)
