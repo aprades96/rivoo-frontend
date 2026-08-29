@@ -7,9 +7,12 @@ import { FreeSlotHint } from "./free-slot-hint"
 import { GridRows, TimeGrid, type CalendarGridVariant } from "./time-grid"
 import {
   assignLanes,
+  breakOfColumn,
   generateTimeLabels,
+  visibleBreak,
   SLOT_HEIGHT_PX,
   type BreakBlock as EmployeeBreak,
+  type EmployeeBreaks,
   type EmployeeColumn,
   type FreeSlot,
 } from "@/lib/utils/calendar"
@@ -28,8 +31,13 @@ const FRAME_PADDING_CLASSNAME: Record<CalendarGridVariant, string> = {
   mobile: "px-3",
 }
 
-/** El descanso de un empleado, indexado por su id. */
-export type EmployeeBreaks = Record<string, EmployeeBreak | null | undefined>
+/**
+ * El descanso de un empleado, indexado por su id. Vive en `lib/utils/calendar`
+ * -- donde tambien viven `breakPosition`, que lo produce, y `visibleBreak`,
+ * que decide cual se ve en movil -- y se reexporta aqui porque es una prop de
+ * esta vista.
+ */
+export type { EmployeeBreaks }
 
 export interface DayViewProps {
   variant: CalendarGridVariant
@@ -112,6 +120,7 @@ export function DayView({
           {isDesktop && (
             <div
               aria-hidden="true"
+              data-testid="time-channel-spacer"
               className="sticky top-0 z-10 bg-background"
               style={{ height: EMPLOYEE_HEADER_HEIGHT_PX }}
             />
@@ -183,8 +192,9 @@ function DesktopColumns({
           key={columnKey(column, index)}
           variant="desktop"
           employeeId={column.employeeId}
+          columnLabel={column.label}
           appointments={column.appointments}
-          employeeBreak={breakOf(breaks, column.employeeId)}
+          employeeBreak={breakOfColumn(breaks, column.employeeId)}
           onAppointmentTap={onAppointmentTap}
           onSlotTap={onSlotTap}
         />
@@ -217,18 +227,20 @@ function MobileColumn({
   const appointments = columns.flatMap((column) => column.appointments)
 
   /**
-   * Solo hay un empleado al que atribuir la franja pulsada cuando la vista
-   * muestra a uno solo; en "Todos" se manda `null` y decide quien llama.
+   * Solo hay un empleado al que atribuir la franja pulsada -- y un nombre que
+   * ponerle en el `aria-label` -- cuando la vista muestra a uno solo; en
+   * "Todos" se manda `null` y decide quien llama.
    */
-  const employeeId = columns.length === 1 ? columns[0].employeeId : null
+  const single = columns.length === 1 ? columns[0] : null
 
   return (
     <div className="min-w-0 grow">
       <ColumnBody
         variant="mobile"
-        employeeId={employeeId}
+        employeeId={single ? single.employeeId : null}
+        columnLabel={single ? single.label : undefined}
         appointments={appointments}
-        employeeBreak={mergeBreaks(columns, breaks)}
+        employeeBreak={visibleBreak(columns, breaks)}
         freeSlot={freeSlot}
         onAppointmentTap={onAppointmentTap}
         onSlotTap={onSlotTap}
@@ -242,6 +254,7 @@ function MobileColumn({
 function ColumnBody({
   variant,
   employeeId,
+  columnLabel,
   appointments,
   employeeBreak,
   freeSlot,
@@ -251,6 +264,7 @@ function ColumnBody({
 }: {
   variant: CalendarGridVariant
   employeeId: string | null
+  columnLabel?: string
   appointments: Appointment[]
   employeeBreak: EmployeeBreak | null
   freeSlot?: FreeSlot | null
@@ -267,7 +281,9 @@ function ColumnBody({
           tape a un bloque; el hueco libre al final, que es el que invita a
           actuar.
         */}
-        {onSlotTap && <SlotTargets employeeId={employeeId} onSlotTap={onSlotTap} />}
+        {onSlotTap && (
+          <SlotTargets employeeId={employeeId} columnLabel={columnLabel} onSlotTap={onSlotTap} />
+        )}
 
         {employeeBreak && (
           <BreakBlock
@@ -311,12 +327,29 @@ function ColumnBody({
  *
  * Solo se montan si hay `onSlotTap`: sin manejador serian 26 botones mudos por
  * columna.
+ *
+ * FUERA DEL ORDEN DE TABULACION (`tabIndex={-1}`). En escritorio hay una
+ * columna por empleado, asi que tabular la rejilla eran hasta 26 paradas por
+ * columna ANTES de llegar a la primera cita -- 78 en el artboard de tres
+ * empleados -- solo para atravesar un fondo. Siguen siendo botones de verdad y
+ * siguen en el arbol de accesibilidad, asi que un lector de pantalla los
+ * recorre y los activa en modo exploracion; lo que se les quita es el tabulador
+ * secuencial, donde nunca fueron el destino que nadie buscaba. El alta a mano
+ * tiene ademas su propio boton en la cabecera.
+ *
+ * Y el `aria-label` lleva el nombre de la columna: sin el, las N columnas
+ * anunciaban literalmente lo mismo ("Crear cita a las 09:00", tres veces) y no
+ * habia forma de saber a que profesional pertenecia cada una. En movil solo lo
+ * lleva cuando el filtro ha dejado una sola columna, que es cuando hay un
+ * nombre que decir.
  */
 function SlotTargets({
   employeeId,
+  columnLabel,
   onSlotTap,
 }: {
   employeeId: string | null
+  columnLabel: string | undefined
   onSlotTap: (employeeId: string | null, time: string) => void
 }) {
   return (
@@ -325,9 +358,14 @@ function SlotTargets({
         <button
           key={label}
           type="button"
+          tabIndex={-1}
           data-testid="slot-target"
           data-time={label}
-          aria-label={`Crear cita a las ${label}`}
+          aria-label={
+            columnLabel
+              ? `Crear cita a las ${label} con ${columnLabel}`
+              : `Crear cita a las ${label}`
+          }
           className="block w-full"
           style={{ height: SLOT_HEIGHT_PX }}
           onClick={() => onSlotTap(employeeId, label)}
@@ -340,32 +378,4 @@ function SlotTargets({
 /** La columna "Otros" no tiene id: se distingue por su posicion. */
 function columnKey(column: EmployeeColumn, index: number): string {
   return column.employeeId ?? `orphan-${index}`
-}
-
-function breakOf(
-  breaks: EmployeeBreaks | undefined,
-  employeeId: string | null
-): EmployeeBreak | null {
-  if (!breaks || employeeId === null) return null
-  return breaks[employeeId] ?? null
-}
-
-/**
- * El descanso de la columna unica de movil. El artboard lo dibuja con el
- * filtro en "Todos" (`design/Calendario.dc.html:51` y `:118`), asi que no
- * basta con pintarlo cuando hay un solo empleado; pero tampoco se pueden
- * apilar N cajas identicas, que es lo que pasaria en un salon donde toda la
- * plantilla almuerza a la vez. Se pinta el primer tramo que haya: si el
- * descanso es comun -- el caso normal y el del artboard -- sale exactamente
- * uno.
- */
-function mergeBreaks(
-  columns: EmployeeColumn[],
-  breaks: EmployeeBreaks | undefined
-): EmployeeBreak | null {
-  for (const column of columns) {
-    const rest = breakOf(breaks, column.employeeId)
-    if (rest) return rest
-  }
-  return null
 }

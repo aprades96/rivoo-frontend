@@ -1,0 +1,147 @@
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useEmployeesWorkingHours } from "./use-staff"
+import type { WorkingHoursResponse } from "@/types/employee"
+
+const useAuthMock = vi.fn()
+
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: (...args: unknown[]) => useAuthMock(...args),
+}))
+
+const getWorkingHours = vi.fn()
+
+vi.mock("@/lib/api/staff", () => ({
+  staffApi: {
+    getWorkingHours: (...args: unknown[]) => getWorkingHours(...args),
+  },
+}))
+
+/** El horario de un empleado, distinguible por su hora de apertura. */
+function hoursOpeningAt(openTime: string): WorkingHoursResponse[] {
+  return [
+    {
+      dayOfWeek: 2,
+      isOpen: true,
+      openTime,
+      closeTime: "20:00:00",
+      breakStartTime: "13:00:00",
+      breakEndTime: "14:00:00",
+    },
+  ]
+}
+
+const HOURS: Record<string, WorkingHoursResponse[]> = {
+  emp_1: hoursOpeningAt("09:00:00"),
+  emp_2: hoursOpeningAt("11:00:00"),
+  emp_3: hoursOpeningAt("13:00:00"),
+}
+
+/**
+ * Escribe el mapa que devuelve el hook, una linea por empleado. Es lo que hace
+ * asertable la parte que de verdad importa: QUE horario le toca a QUE
+ * empleado, no cuantos horarios han llegado.
+ */
+function Probe({ employeeIds }: { employeeIds: string[] }) {
+  const { data, isLoading, isError } = useEmployeesWorkingHours(employeeIds)
+
+  return (
+    <ul>
+      {employeeIds.map((employeeId) => (
+        <li key={employeeId}>{`${employeeId} abre a ${data[employeeId]?.[0]?.openTime ?? "-"}`}</li>
+      ))}
+      <li>{`cargando: ${isLoading}`}</li>
+      <li>{`error: ${isError}`}</li>
+    </ul>
+  )
+}
+
+/**
+ * Monta la sonda y devuelve un `show` que la vuelve a renderizar con otra
+ * lista SIN cambiar de `QueryClient`: el caso real es una misma pantalla cuya
+ * plantilla cambia, no una aplicacion nueva.
+ */
+function renderProbe(employeeIds: string[]) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+
+  const tree = (ids: string[]) => (
+    <QueryClientProvider client={client}>
+      <Probe employeeIds={ids} />
+    </QueryClientProvider>
+  )
+
+  const { rerender } = render(tree(employeeIds))
+
+  return { show: (ids: string[]) => rerender(tree(ids)) }
+}
+
+describe("useEmployeesWorkingHours", () => {
+  beforeEach(() => {
+    useAuthMock.mockReset()
+    useAuthMock.mockReturnValue({ accessToken: "token", isAuthenticated: true })
+    getWorkingHours.mockReset()
+    getWorkingHours.mockImplementation((id: string) =>
+      HOURS[id] ? Promise.resolve(HOURS[id]) : Promise.reject(new Error("sin horario"))
+    )
+  })
+
+  it("indexa por id el horario de cada empleado", async () => {
+    renderProbe(["emp_1", "emp_2", "emp_3"])
+
+    expect(await screen.findByText("emp_1 abre a 09:00:00")).toBeInTheDocument()
+    expect(screen.getByText("emp_2 abre a 11:00:00")).toBeInTheDocument()
+    expect(screen.getByText("emp_3 abre a 13:00:00")).toBeInTheDocument()
+    expect(screen.getByText("cargando: false")).toBeInTheDocument()
+    expect(screen.getByText("error: false")).toBeInTheDocument()
+  })
+
+  it("sigue dandole a cada empleado SU horario cuando la lista cambia de orden", async () => {
+    // El mapa se arma POR POSICION (`results[index]`), asi que `combine` tiene
+    // que rehacerse cada vez que cambia `employeeIds`. Con el `combine` viejo
+    // -- memorizado sin esa dependencia -- los resultados llegan en el orden
+    // nuevo y las claves en el viejo: cada empleado recibe el horario de otro
+    // y el descanso se pinta en la columna equivocada.
+    const { show } = renderProbe(["emp_1", "emp_2"])
+
+    expect(await screen.findByText("emp_1 abre a 09:00:00")).toBeInTheDocument()
+
+    show(["emp_2", "emp_1"])
+
+    // `findBy*` y no una asercion sincrona: el aviso de `AGENTS.md`. La
+    // notificacion del observador va en un macrotask, asi que aseverar aqui
+    // mismo leeria el render anterior y pasaria con el fallo reintroducido.
+    expect(await screen.findByText("emp_2 abre a 11:00:00")).toBeInTheDocument()
+    expect(await screen.findByText("emp_1 abre a 09:00:00")).toBeInTheDocument()
+  })
+
+  it("recoge al empleado que se anade despues del primer render", async () => {
+    const { show } = renderProbe(["emp_1"])
+
+    expect(await screen.findByText("emp_1 abre a 09:00:00")).toBeInTheDocument()
+
+    show(["emp_1", "emp_3"])
+
+    expect(await screen.findByText("emp_3 abre a 13:00:00")).toBeInTheDocument()
+  })
+
+  it("deja fuera del mapa al empleado cuya peticion falla, y lo avisa", async () => {
+    // Degrada a columna sin bloque de descanso, no a rejilla en blanco.
+    renderProbe(["emp_1", "emp_roto"])
+
+    expect(await screen.findByText("error: true")).toBeInTheDocument()
+    expect(screen.getByText("emp_1 abre a 09:00:00")).toBeInTheDocument()
+    expect(screen.getByText("emp_roto abre a -")).toBeInTheDocument()
+  })
+
+  it("no pide nada sin sesion", () => {
+    useAuthMock.mockReturnValue({ accessToken: null, isAuthenticated: false })
+
+    renderProbe(["emp_1"])
+
+    expect(getWorkingHours).not.toHaveBeenCalled()
+    expect(screen.getByText("emp_1 abre a -")).toBeInTheDocument()
+  })
+})

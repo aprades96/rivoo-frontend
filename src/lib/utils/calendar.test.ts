@@ -5,6 +5,7 @@ import {
   groupByEmployee,
   employeeDaySummary,
   breakPosition,
+  visibleBreak,
   nextFreeSlot,
   assignLanes,
   BLOCK_GUTTER_PX,
@@ -13,6 +14,8 @@ import {
   SLOT_HEIGHT_PX,
   SLOT_MINUTES,
   TOTAL_SLOTS,
+  type EmployeeBreaks,
+  type LaneAssignment,
 } from "./calendar"
 import type { Appointment, AppointmentStatus } from "@/types/appointment"
 import type { Employee, WorkingHoursResponse } from "@/types/employee"
@@ -179,6 +182,29 @@ describe("calculateBlockPosition", () => {
     expect(pos).not.toBeNull()
     expect(pos!.height).toBe(SLOT_HEIGHT_PX / 2)
     expect(pos!.height).toBe(24)
+  })
+
+  it("no deja que el suelo de 24px invada el bloque siguiente por debajo de 15 min", () => {
+    // Por debajo de 15 minutos el suelo (24px) supera la distancia real al
+    // bloque siguiente (`1.6 * d`), asi que dos citas de 10 minutos
+    // encadenadas se pisaban 8px -- y `assignLanes`, que compara tiempos y no
+    // geometria, les daba el mismo carril y ancho completo, asi que la segunda
+    // tapaba a la primera. El suelo va techado por el alto real del tramo.
+    const first = calculateBlockPosition(at("10:00"), at("10:10"))!
+    const second = calculateBlockPosition(at("10:10"), at("10:20"))!
+
+    expect(first.height).toBe(16) // 10 min = 16px, sin canalon pero sin pisar
+    expect(first.top + first.height).toBeLessThanOrEqual(second.top)
+  })
+
+  it("mantiene el suelo justo en el umbral de 15 minutos", () => {
+    // 15 min = 24px en bruto: el suelo cabe exacto y los dos bloques se tocan
+    // sin solaparse. Es el limite del caso anterior.
+    const first = calculateBlockPosition(at("10:00"), at("10:15"))!
+    const second = calculateBlockPosition(at("10:15"), at("10:30"))!
+
+    expect(first.height).toBe(24)
+    expect(first.top + first.height).toBe(second.top)
   })
 })
 
@@ -358,7 +384,22 @@ describe("breakPosition", () => {
   it("positions the lunch block like the artboard does", () => {
     // design/CalendarioDesktop.dc.html:177 -- top 480px, height 92px.
     const position = breakPosition(makeWorkingHours(), new Date(2026, 7, 25))
-    expect(position).toEqual({ top: 480, height: 92, label: "13:00 - 14:00" })
+    expect(position).toEqual({
+      top: 480,
+      height: 92,
+      start: "13:00",
+      end: "14:00",
+      label: "13:00 - 14:00",
+    })
+  })
+
+  it("lleva dentro el tramo real, que es lo que consume el hueco libre", () => {
+    // `nextFreeSlot` lee `start`/`end` de ESTE objeto en vez de volver a
+    // resolver el descanso por su cuenta: una sola definicion de "el descanso
+    // que se ve".
+    const position = breakPosition(makeWorkingHours(), new Date(2026, 7, 25))
+    expect(position!.start).toBe("13:00")
+    expect(position!.end).toBe("14:00")
   })
 
   it("strips the seconds the backend sends in LocalTime", () => {
@@ -458,16 +499,36 @@ describe("nextFreeSlot", () => {
 
   it("skips the break", () => {
     const now = new Date(2026, 7, 25, 12, 45)
-    const slot = nextFreeSlot([], new Date(2026, 7, 25), now, makeWorkingHours())
+    const lunch = breakPosition(makeWorkingHours(), new Date(2026, 7, 25))
+    const slot = nextFreeSlot([], new Date(2026, 7, 25), now, lunch)
     // El descanso 13:00-14:00 se come los dos slots siguientes.
     expect(slot!.startTime).toBe(at("14:00"))
     expect(slot!.top).toBe(576)
   })
 
-  it("ignores the break on a closed day", () => {
+  it("offers the 13:00 slot when no break is painted", () => {
+    // Dia cerrado: `breakPosition` no devuelve bloque, asi que no hay nada que
+    // esquivar. Quien decide si hay descanso es quien lo PINTA.
     const now = new Date(2026, 7, 25, 12, 45)
-    const hours = makeWorkingHours({ isOpen: false })
-    const slot = nextFreeSlot([], new Date(2026, 7, 25), now, hours)
+    const lunch = breakPosition(makeWorkingHours({ isOpen: false }), new Date(2026, 7, 25))
+    expect(lunch).toBeNull()
+
+    const slot = nextFreeSlot([], new Date(2026, 7, 25), now, lunch)
+    expect(slot!.startTime).toBe(at("13:00"))
+  })
+
+  it("counts a CANCELLED appointment as busy", () => {
+    // La rejilla las sigue pintando (`CalendarioDesktop.dc.html:225-228`):
+    // ofrecer "Libre" encima de un bloque rojo visible seria una
+    // contradiccion, y la franja sigue reservada hasta que alguien la
+    // reasigne.
+    const cancelled = [
+      makeAppointment({ startTime: at("12:00"), endTime: at("13:00"), status: "CANCELLED" }),
+    ]
+    const now = new Date(2026, 7, 25, 11, 45)
+
+    const slot = nextFreeSlot(cancelled, new Date(2026, 7, 25), now)
+
     expect(slot!.startTime).toBe(at("13:00"))
   })
 
@@ -501,6 +562,90 @@ describe("nextFreeSlot", () => {
     const now = new Date(2026, 7, 25, 10, 0)
     const slot = nextFreeSlot([], new Date(2026, 7, 25), now)
     expect(slot!.endTime).toBe(at(`10:${SLOT_MINUTES}`))
+  })
+})
+
+describe("el hueco libre y el descanso que se PINTA", () => {
+  const employees = [
+    makeEmployee({ id: "emp-1", firstName: "Laura", lastName: "Martinez" }),
+    makeEmployee({ id: "emp-2", firstName: "Sofia", lastName: "Puig" }),
+    makeEmployee({ id: "emp-3", firstName: "Marc", lastName: "Oliva" }),
+  ]
+
+  /** El mapa que la pantalla arma con `breakPosition`, uno por empleado. */
+  function breaksOf(date: Date): EmployeeBreaks {
+    const byEmployee: EmployeeBreaks = {}
+    for (const employee of employees) {
+      byEmployee[employee.id] = breakPosition(makeWorkingHours(), date)
+    }
+    return byEmployee
+  }
+
+  it("no ofrece el hueco encima del almuerzo con el filtro en 'Todos'", () => {
+    // El estado por DEFECTO de movil y el que dibuja el artboard
+    // (`design/Calendario.dc.html:51`): tres empleados activos, todos con el
+    // mismo descanso 13:00-14:00, ninguna cita despues de las 12:00, son las
+    // 12:45. Antes la pantalla no tenia empleado seleccionado, le pasaba
+    // `null` a `nextFreeSlot`, el descanso no entraba en `busy` y el recuadro
+    // "Libre" caia en 13:00-13:30 -- justo encima del rayado del almuerzo, que
+    // `visibleBreak` si estaba pintando en top 480.
+    const date = new Date(2026, 7, 25)
+    const now = new Date(2026, 7, 25, 12, 45)
+    const appointments = [makeAppointment({ startTime: at("11:00"), endTime: at("12:00") })]
+
+    const columns = groupByEmployee(appointments, employees)
+    const painted = visibleBreak(columns, breaksOf(date))
+
+    expect(painted).toMatchObject({ top: 480, height: 92, label: "13:00 - 14:00" })
+
+    const slot = nextFreeSlot(appointments, date, now, painted)
+
+    expect(slot!.startTime).toBe(at("14:00"))
+    // Y lo que de verdad importa: el recuadro no cae dentro del rayado.
+    expect(slot!.top).toBeGreaterThanOrEqual(painted!.top + painted!.height)
+  })
+
+  it("respeta el descanso del unico empleado que queda al filtrar por uno", () => {
+    const date = new Date(2026, 7, 25)
+    const now = new Date(2026, 7, 25, 12, 45)
+
+    const columns = groupByEmployee([], employees).filter(
+      (column) => column.employeeId === "emp-2"
+    )
+    const painted = visibleBreak(columns, breaksOf(date))
+
+    expect(nextFreeSlot([], date, now, painted)!.startTime).toBe(at("14:00"))
+  })
+})
+
+describe("visibleBreak", () => {
+  const columns = groupByEmployee(
+    [],
+    [
+      makeEmployee({ id: "emp-1" }),
+      makeEmployee({ id: "emp-2", firstName: "Sofia" }),
+      makeEmployee({ id: "emp-3", firstName: "Marc" }),
+    ]
+  )
+  const lunch = breakPosition(makeWorkingHours(), new Date(2026, 7, 25))!
+
+  it("devuelve un solo tramo aunque toda la plantilla almuerce a la vez", () => {
+    const painted = visibleBreak(columns, {
+      "emp-1": lunch,
+      "emp-2": lunch,
+      "emp-3": lunch,
+    })
+    expect(painted).toEqual(lunch)
+  })
+
+  it("encuentra el descanso aunque solo lo tenga una columna que no es la primera", () => {
+    expect(visibleBreak(columns, { "emp-3": lunch })).toEqual(lunch)
+  })
+
+  it("devuelve null cuando no hay ningun descanso que pintar", () => {
+    expect(visibleBreak(columns, {})).toBeNull()
+    expect(visibleBreak(columns, undefined)).toBeNull()
+    expect(visibleBreak([], { "emp-1": lunch })).toBeNull()
   })
 })
 
@@ -603,7 +748,110 @@ describe("assignLanes", () => {
     expect(appointments.map((item) => item.id)).toEqual(["late", "early"])
   })
 
+  it("no adelgaza el dia entero por una sola cita larga", () => {
+    // Una formacion o un bloqueo de 08:00 a 21:00 mete a TODAS las citas del
+    // dia en su grupo de solape transitivo. Repartiendo el ancho por grupo, la
+    // cita de las 19:00 -- que no pisa ni a "b" ni a "c" -- salia a un tercio
+    // de ancho (~112px de los ~336 utiles en movil) con el nombre truncado.
+    const appointments = [
+      makeAppointment({ id: "long", startTime: at("08:00"), endTime: at("21:00") }),
+      makeAppointment({ id: "b", startTime: at("09:00"), endTime: at("10:00") }),
+      makeAppointment({ id: "c", startTime: at("09:30"), endTime: at("10:30") }),
+      makeAppointment({ id: "evening", startTime: at("19:00"), endTime: at("20:00") }),
+    ]
+
+    const byId = new Map(assignLanes(appointments).map((item) => [item.appointment.id, item]))
+
+    // Por la manana si hay tres simultaneas: tercio de ancho para las tres.
+    expect(byId.get("b")!.lanes).toBe(3)
+    expect(byId.get("c")!.lanes).toBe(3)
+    // Por la tarde solo estan la larga y esta: media columna, no un tercio.
+    expect(byId.get("evening")!.lanes).toBe(2)
+    expect(byId.get("evening")!.lane).toBe(1)
+  })
+
+  it("cuenta los carriles por el maximo de simultaneas de CADA cita", () => {
+    // La de las 10:00 convive con dos a la vez; la de las 12:00, con una sola.
+    const appointments = [
+      makeAppointment({ id: "a", startTime: at("10:00"), endTime: at("13:00") }),
+      makeAppointment({ id: "b", startTime: at("10:15"), endTime: at("10:45") }),
+      makeAppointment({ id: "c", startTime: at("10:30"), endTime: at("11:00") }),
+      makeAppointment({ id: "d", startTime: at("12:00"), endTime: at("12:30") }),
+    ]
+
+    const byId = new Map(assignLanes(appointments).map((item) => [item.appointment.id, item]))
+
+    expect(byId.get("b")!.lanes).toBe(3)
+    expect(byId.get("c")!.lanes).toBe(3)
+    expect(byId.get("d")!.lanes).toBe(2)
+  })
+
+  it("nunca pinta dos citas solapadas una encima de la otra", () => {
+    // La invariante que justifica todo este reparto. Un `lanes` por cita no la
+    // sostiene por si solo -- 1/4..2/4 y 2/5..3/5 se solapan --, la sostiene la
+    // regla de que entre dos citas que se pisan la del carril mas bajo nunca
+    // tenga menos carriles. Esta forma la ejercita: sin esa segunda pasada,
+    // "i" (carril 1 de 4) y "j" (carril 2 de 5) se pintan una sobre otra.
+    const appointments = [
+      makeAppointment({ id: "A", startTime: at("09:00"), endTime: at("11:00") }),
+      makeAppointment({ id: "i", startTime: at("10:00"), endTime: at("11:00") }),
+      makeAppointment({ id: "j", startTime: at("10:30"), endTime: at("13:00") }),
+      makeAppointment({ id: "D", startTime: at("10:45"), endTime: at("10:55") }),
+      makeAppointment({ id: "m", startTime: at("11:15"), endTime: at("12:00") }),
+      makeAppointment({ id: "E", startTime: at("12:00"), endTime: at("12:30") }),
+      makeAppointment({ id: "F", startTime: at("12:00"), endTime: at("12:30") }),
+      makeAppointment({ id: "G", startTime: at("12:00"), endTime: at("12:30") }),
+      makeAppointment({ id: "H", startTime: at("12:00"), endTime: at("12:30") }),
+    ]
+
+    const lanes = assignLanes(appointments)
+
+    for (const [first, second] of overlappingPairs(lanes)) {
+      const a = horizontalBand(first)
+      const b = horizontalBand(second)
+      expect(
+        a.right <= b.left || b.right <= a.left,
+        `${first.appointment.id} y ${second.appointment.id} se pisan: ` +
+          `[${a.left}, ${a.right}] vs [${b.left}, ${b.right}]`
+      ).toBe(true)
+    }
+  })
+
+  it("da a cada cita al menos un carril mas que su indice", () => {
+    // `lanes >= lane + 1`: sin ello el bloque se saldria de la columna.
+    const appointments = [
+      makeAppointment({ id: "a", startTime: at("09:00"), endTime: at("21:00") }),
+      makeAppointment({ id: "b", startTime: at("10:00"), endTime: at("11:00") }),
+      makeAppointment({ id: "c", startTime: at("10:30"), endTime: at("11:30") }),
+      makeAppointment({ id: "d", startTime: at("10:45"), endTime: at("11:45") }),
+    ]
+
+    for (const item of assignLanes(appointments)) {
+      expect(item.lanes).toBeGreaterThanOrEqual(item.lane + 1)
+    }
+  })
+
   it("returns nothing for a day with no appointments", () => {
     expect(assignLanes([])).toEqual([])
   })
 })
+
+/** Los pares de citas que comparten alguna franja de tiempo. */
+function overlappingPairs(lanes: LaneAssignment[]): [LaneAssignment, LaneAssignment][] {
+  const pairs: [LaneAssignment, LaneAssignment][] = []
+
+  for (let i = 0; i < lanes.length; i++) {
+    for (let j = i + 1; j < lanes.length; j++) {
+      const a = lanes[i].appointment
+      const b = lanes[j].appointment
+      if (a.startTime < b.endTime && b.startTime < a.endTime) pairs.push([lanes[i], lanes[j]])
+    }
+  }
+
+  return pairs
+}
+
+/** La banda horizontal que ocupa el bloque, en fraccion de columna. */
+function horizontalBand(item: LaneAssignment): { left: number; right: number } {
+  return { left: item.lane / item.lanes, right: (item.lane + 1) / item.lanes }
+}

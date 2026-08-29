@@ -20,6 +20,13 @@ export const SLOT_HEIGHT_PX = 48
 export const BLOCK_GUTTER_PX = 4
 
 /**
+ * El alto minimo de un bloque: medio slot, lo justo para que quepa el nombre
+ * del cliente. Es un SUELO, no un alto garantizado -- ver
+ * `calculateBlockPosition`.
+ */
+export const MIN_BLOCK_HEIGHT_PX = SLOT_HEIGHT_PX / 2
+
+/**
  * Generate time labels for the grid: ["08:00", "08:30", "09:00", ...]
  */
 export function generateTimeLabels(): string[] {
@@ -37,7 +44,8 @@ export function generateTimeLabels(): string[] {
  *
  * El alto lleva descontado `BLOCK_GUTTER_PX`, salvo cuando eso lo dejaria por
  * debajo del suelo de medio slot (24px), que es lo que necesita el bloque
- * para que quepa el nombre del cliente.
+ * para que quepa el nombre del cliente. Ese suelo va a su vez TECHADO por el
+ * alto real del tramo: ver abajo.
  */
 export function calculateBlockPosition(
   startTime: string,
@@ -60,9 +68,21 @@ export function calculateBlockPosition(
 
   const pixelsPerMinute = SLOT_HEIGHT_PX / SLOT_MINUTES
   const top = (clampedStart - gridStartMinutes) * pixelsPerMinute
-  const height = (clampedEnd - clampedStart) * pixelsPerMinute - BLOCK_GUTTER_PX
+  const span = (clampedEnd - clampedStart) * pixelsPerMinute
 
-  return { top, height: Math.max(height, SLOT_HEIGHT_PX / 2) } // min height = half slot
+  /*
+    El suelo va TECHADO por `span`, el alto real del tramo. Sin ese techo, por
+    debajo de 15 minutos el suelo (24px) supera la distancia al bloque
+    siguiente (`1.6 * d`, o sea 24px justos a los 15 minutos) y dos citas
+    encadenadas se pisan -- 8px con dos de 10 minutos. Y no lo arregla nadie
+    aguas abajo: `assignLanes` compara TIEMPOS, no geometria, asi que dice con
+    razon que no se solapan, les da el mismo carril y ancho completo, y la
+    segunda tapa a la primera. Con el techo, un tramo de 10 minutos se pinta de
+    16px: pierde el canalon, pero no invade a su vecina.
+  */
+  const height = Math.min(Math.max(span - BLOCK_GUTTER_PX, MIN_BLOCK_HEIGHT_PX), span)
+
+  return { top, height }
 }
 
 /**
@@ -217,6 +237,14 @@ export function employeeDaySummary(appointments: Appointment[]): string {
 export interface BreakBlock {
   top: number
   height: number
+  /**
+   * El tramo real, como par "HH:mm". Viaja DENTRO del bloque a proposito: es
+   * lo que permite que quien pinta el descanso y quien calcula el hueco libre
+   * lean el mismo dato en vez de deducirlo cada uno por su cuenta -- ver
+   * `nextFreeSlot`.
+   */
+  start: string
+  end: string
   /** "13:00 - 14:00", tal y como lo escribe el artboard. */
   label: string
 }
@@ -260,7 +288,46 @@ export function breakPosition(
   const position = calculateBlockPosition(localIso(date, rest.start), localIso(date, rest.end))
   if (!position) return null
 
-  return { ...position, label: `${rest.start} - ${rest.end}` }
+  return { ...position, start: rest.start, end: rest.end, label: `${rest.start} - ${rest.end}` }
+}
+
+/** El descanso de un empleado, indexado por su id. */
+export type EmployeeBreaks = Record<string, BreakBlock | null | undefined>
+
+/**
+ * El descanso que le toca a una columna. La columna "Otros" (`employeeId ===
+ * null`) no es de nadie, asi que nunca lleva descanso.
+ */
+export function breakOfColumn(
+  breaks: EmployeeBreaks | undefined,
+  employeeId: string | null
+): BreakBlock | null {
+  if (!breaks || employeeId === null) return null
+  return breaks[employeeId] ?? null
+}
+
+/**
+ * EL descanso que se ve en la columna unica de movil. Definicion UNICA: la
+ * usan tanto `DayView` para pintarlo como la pantalla para pasarselo a
+ * `nextFreeSlot`, que es lo que impide que el recuadro "Libre" se ofrezca
+ * encima del rayado del almuerzo.
+ *
+ * El artboard lo dibuja con el filtro en "Todos" (`design/Calendario.dc.html:51`
+ * y `:118`), asi que no basta con pintarlo cuando hay un solo empleado; pero
+ * tampoco se pueden apilar N cajas identicas, que es lo que pasaria en un
+ * salon donde toda la plantilla almuerza a la vez. Se devuelve el primer tramo
+ * que haya: si el descanso es comun -- el caso normal y el del artboard --
+ * sale exactamente uno.
+ */
+export function visibleBreak(
+  columns: EmployeeColumn[],
+  breaks: EmployeeBreaks | undefined
+): BreakBlock | null {
+  for (const column of columns) {
+    const rest = breakOfColumn(breaks, column.employeeId)
+    if (rest) return rest
+  }
+  return null
 }
 
 // --- Hueco libre -----------------------------------------------------------
@@ -287,12 +354,23 @@ export interface FreeSlot {
  * Cuenta como ocupada cualquier cita, tambien las canceladas: ofrecer como
  * libre el hueco de una cita anulada que sigue pintada en pantalla seria una
  * contradiccion visual, y el alta siempre esta disponible desde el boton.
+ *
+ * CONTRATO DE `paintedBreak` -- lo que tiene que pasarle la pantalla: EL MISMO
+ * objeto que `DayView` va a pintar, es decir `visibleBreak(columns, breaks)`.
+ * Ni los horarios del empleado seleccionado ni nada de lo que haya que deducir
+ * el tramo por segunda vez. Antes esta funcion recibia `WorkingHoursResponse[]`
+ * y resolvia el descanso por su cuenta, y con el filtro en "Todos" -- el estado
+ * INICIAL y el del artboard -- la pantalla no tenia empleado que pasarle: le
+ * mandaba `null`, el descanso no entraba en `busy` y el recuadro "Libre" caia
+ * a las 13:00, ENCIMA del rayado del almuerzo que `visibleBreak` si estaba
+ * pintando. Pintar y calcular tienen que leer el mismo dato; por eso el
+ * parametro es el bloque ya resuelto y no su materia prima.
  */
 export function nextFreeSlot(
   appointments: Appointment[],
   visibleDate: Date,
   now: Date,
-  workingHours?: WorkingHoursResponse[] | null
+  paintedBreak?: BreakBlock | null
 ): FreeSlot | null {
   if (!isSameDay(visibleDate, now)) return null
 
@@ -306,8 +384,12 @@ export function nextFreeSlot(
       end: minutesOfDay(parseISO(appointment.endTime)),
     }))
 
-  const rest = resolveBreak(workingHours, now)
-  if (rest) busy.push({ start: timeToMinutes(rest.start), end: timeToMinutes(rest.end) })
+  if (paintedBreak) {
+    busy.push({
+      start: timeToMinutes(paintedBreak.start),
+      end: timeToMinutes(paintedBreak.end),
+    })
+  }
 
   const roundedNow = Math.ceil(minutesOfDay(now) / SLOT_MINUTES) * SLOT_MINUTES
 
@@ -323,7 +405,11 @@ export function nextFreeSlot(
     const startTime = localIso(now, minutesToTime(start))
     const endTime = localIso(now, minutesToTime(end))
     const position = calculateBlockPosition(startTime, endTime)
-    if (!position) return null
+    // `continue`, no `return`: que un candidato no quepa en la rejilla no dice
+    // nada del siguiente. Hoy es inalcanzable -- el bucle ya se para en
+    // `gridEnd` --, pero mover `GRID_START_HOUR`/`GRID_END_HOUR` lo volveria
+    // alcanzable y abandonar la busqueda entera dejaria el dia sin hueco.
+    if (!position) continue
 
     return { startTime, endTime, ...position }
   }
@@ -350,10 +436,17 @@ export interface LaneAssignment {
  * empleados: como bloques absolutos, se pintarian unas encima de otras. En
  * escritorio cubre el caso de un empleado con dos citas solapadas.
  *
- * El numero de carriles se calcula por GRUPO de solape transitivo, no por
- * cita: si A pisa a B y B pisa a C, las tres comparten el mismo ancho y
- * ninguna cambia de anchura a mitad de bloque. Dos citas que solo se tocan
- * (una acaba justo cuando empieza la otra) NO se solapan.
+ * El CARRIL se reparte por grupo de solape transitivo -- si A pisa a B y B
+ * pisa a C, ninguna reutiliza el carril de otra que siga en curso. Dos citas
+ * que solo se tocan (una acaba justo cuando empieza la otra) NO se solapan.
+ *
+ * El NUMERO de carriles, en cambio, es por cita y no por grupo: es el maximo
+ * de citas simultaneas DENTRO de su propio tramo. Repartirlo por grupo hacia
+ * que una sola cita larga adelgazase el dia entero -- una formacion de
+ * 08:00 a 21:00 mas dos citas solapadas por la manana metia a todo el dia en
+ * un grupo de 3 carriles, y el bloque de las 19:00, que no pisa a ninguna de
+ * las dos, salia a un tercio de ancho (~112px de los ~336 utiles en movil) con
+ * el nombre del cliente truncado.
  */
 export function assignLanes(appointments: Appointment[]): LaneAssignment[] {
   const sorted = [...appointments].sort((a, b) => {
@@ -363,13 +456,15 @@ export function assignLanes(appointments: Appointment[]): LaneAssignment[] {
   })
 
   const assignments: LaneAssignment[] = []
-  let group: LaneAssignment[] = []
+  let group: PlacedAppointment[] = []
   let laneEnds: number[] = []
   let groupEnd = Number.NEGATIVE_INFINITY
 
   const closeGroup = () => {
-    for (const item of group) item.lanes = laneEnds.length
-    assignments.push(...group)
+    resolveLaneCounts(group)
+    for (const item of group) {
+      assignments.push({ appointment: item.appointment, lane: item.lane, lanes: item.lanes })
+    }
     group = []
     laneEnds = []
     groupEnd = Number.NEGATIVE_INFINITY
@@ -379,17 +474,90 @@ export function assignLanes(appointments: Appointment[]): LaneAssignment[] {
     const start = parseISO(appointment.startTime).getTime()
     const end = parseISO(appointment.endTime).getTime()
 
+    // El grupo se cierra por el final MAS TARDIO, no por el ultimo carril
+    // ocupado: mientras quede una cita en curso, la siguiente no puede
+    // reutilizar su carril.
     if (group.length > 0 && start >= groupEnd) closeGroup()
 
     let lane = laneEnds.findIndex((laneEnd) => laneEnd <= start)
     if (lane === -1) lane = laneEnds.length
     laneEnds[lane] = end
 
-    group.push({ appointment, lane, lanes: 0 })
+    group.push({ appointment, lane, lanes: 0, start, end })
     groupEnd = Math.max(groupEnd, end)
   }
 
   if (group.length > 0) closeGroup()
 
   return assignments
+}
+
+/** Una cita ya colocada en su carril, con su tramo en milisegundos. */
+interface PlacedAppointment extends LaneAssignment {
+  start: number
+  end: number
+}
+
+function overlap(a: PlacedAppointment, b: PlacedAppointment): boolean {
+  return a.start < b.end && b.start < a.end
+}
+
+/**
+ * El maximo de citas simultaneas dentro del tramo de `item`, el propio `item`
+ * incluido (asi que nunca baja de 1).
+ *
+ * Solo se miran los ARRANQUES: entre dos arranques consecutivos el numero de
+ * citas activas unicamente puede bajar, asi que el maximo de un tramo se
+ * alcanza siempre en el arranque de alguna cita -- o en el del propio `item`.
+ */
+function peakConcurrency(group: PlacedAppointment[], item: PlacedAppointment): number {
+  let peak = 0
+
+  for (const candidate of group) {
+    const instant = candidate.start
+    if (instant < item.start || instant >= item.end) continue
+
+    let active = 0
+    for (const other of group) {
+      if (other.start <= instant && instant < other.end) active++
+    }
+    if (active > peak) peak = active
+  }
+
+  return peak
+}
+
+/**
+ * Fija el `lanes` de cada cita del grupo.
+ *
+ * La INVARIANTE que hay que sostener es que dos citas solapadas nunca se pisen
+ * en pantalla. Con `left = lane / lanes` y `width = 1 / lanes`
+ * (`appointment-block.tsx`), un `lanes` distinto por cita no basta por si
+ * solo: 1/4..2/4 y 2/5..3/5 se solapan. Se sostiene con esta regla, aplicada
+ * en la segunda pasada -- entre dos citas que se solapan, la del carril MAS
+ * BAJO nunca tiene menos carriles que la del carril mas alto. Con
+ * `lanes(i) >= lanes(j)` y `lane(i) < lane(j)`:
+ *
+ *   borde derecho de i = (lane(i)+1)/lanes(i) <= lane(j)/lanes(i)
+ *                                             <= lane(j)/lanes(j) = borde izquierdo de j
+ *
+ * La segunda pasada recorre de carril mas alto a mas bajo, asi que cuando le
+ * toca a una cita todas las de carril superior ya estan cerradas y una sola
+ * pasada alcanza el punto fijo.
+ *
+ * De regalo, `lanes >= lane + 1` siempre: una cita solo cae en el carril L si
+ * en su arranque estaban ocupados los L de debajo, o sea que en ese instante
+ * habia al menos L+1 citas activas y su `peakConcurrency` no puede ser menor.
+ */
+function resolveLaneCounts(group: PlacedAppointment[]): void {
+  for (const item of group) item.lanes = peakConcurrency(group, item)
+
+  const byLaneDesc = [...group].sort((a, b) => b.lane - a.lane)
+  for (const item of byLaneDesc) {
+    for (const other of group) {
+      if (other.lane <= item.lane) continue
+      if (!overlap(item, other)) continue
+      if (other.lanes > item.lanes) item.lanes = other.lanes
+    }
+  }
 }

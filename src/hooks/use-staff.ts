@@ -1,6 +1,7 @@
 "use client"
 
-import { useQueries, useQuery } from "@tanstack/react-query"
+import { useCallback } from "react"
+import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query"
 import { staffApi } from "@/lib/api/staff"
 import { useAuth } from "@/hooks/use-auth"
 import type { Employee, WorkingHoursResponse } from "@/types/employee"
@@ -45,18 +46,23 @@ export function useServices() {
  * columna se pinta sin bloque de descanso, que degrada mucho mejor que dejar
  * la rejilla entera en blanco. `isError` queda expuesto por si la pantalla
  * quiere avisar.
+ *
+ * `combine` va MEMORIZADO. `useQueries` cachea su resultado por
+ * `[results, combine]`, asi que con una flecha inline -- nueva en cada
+ * render -- ese memo fallaba SIEMPRE y `data` era un `Record` nuevo cada vez.
+ * Aguas abajo eso anulaba los `useMemo` del calendario: cada tecla del
+ * buscador rehacia el reparto en carriles del dia entero y volvia a montar las
+ * 26 franjas pulsables de cada columna. `employeeIds` esta en las dependencias
+ * porque el mapa se indexa POR POSICION (`results[index]`): con una lista
+ * distinta y el `combine` viejo, cada empleado recibiria el horario de otro y
+ * el descanso se pintaria en la columna equivocada.
  */
 export function useEmployeesWorkingHours(employeeIds: string[]) {
   const { accessToken, isAuthenticated } = useAuth()
   const enabled = isAuthenticated && !!accessToken
 
-  return useQueries({
-    queries: employeeIds.map((employeeId) => ({
-      queryKey: ["employee-working-hours", employeeId],
-      queryFn: () => staffApi.getWorkingHours(employeeId, accessToken!),
-      enabled,
-    })),
-    combine: (results) => ({
+  const combine = useCallback(
+    (results: UseQueryResult<WorkingHoursResponse[], Error>[]) => ({
       data: employeeIds.reduce<Record<string, WorkingHoursResponse[]>>(
         (byEmployee, employeeId, index) => {
           const hours = results[index]?.data
@@ -68,6 +74,16 @@ export function useEmployeesWorkingHours(employeeIds: string[]) {
       isLoading: results.some((result) => result.isLoading),
       isError: results.some((result) => result.isError),
     }),
+    [employeeIds]
+  )
+
+  return useQueries({
+    queries: employeeIds.map((employeeId) => ({
+      queryKey: ["employee-working-hours", employeeId],
+      queryFn: () => staffApi.getWorkingHours(employeeId, accessToken!),
+      enabled,
+    })),
+    combine,
   })
 }
 

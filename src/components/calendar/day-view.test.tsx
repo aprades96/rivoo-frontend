@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { DayView } from "./day-view"
-import { groupByEmployee, type EmployeeColumn, type FreeSlot } from "@/lib/utils/calendar"
+import {
+  groupByEmployee,
+  SLOT_HEIGHT_PX,
+  type EmployeeColumn,
+  type FreeSlot,
+} from "@/lib/utils/calendar"
 import type { Appointment } from "@/types/appointment"
 import type { Employee } from "@/types/employee"
 
@@ -72,7 +77,13 @@ const APPOINTMENTS: Appointment[] = [
 ]
 
 /** El "Almuerzo" del artboard: 13:00-14:00 -> top 480, alto 92. */
-const LUNCH = { top: 480, height: 92, label: "13:00 - 14:00" }
+const LUNCH = {
+  top: 480,
+  height: 92,
+  start: "13:00",
+  end: "14:00",
+  label: "13:00 - 14:00",
+}
 
 /** El recuadro "Libre" del artboard movil (`Calendario.dc.html:112`). */
 const FREE_SLOT: FreeSlot = {
@@ -288,6 +299,59 @@ describe("DayView · alto, scroll y alineacion de cabeceras", () => {
       expect(header.className).toContain("top-0")
     }
   })
+
+  it("el canal de horas reserva el alto exacto de la cabecera en escritorio", () => {
+    // Sin ese espaciador el 08:00 del canal arranca 60px por encima del 08:00
+    // de las columnas y TODA la rejilla queda desfasada media hora larga: la
+    // alineacion que el docblock de la vista defiende en veinte lineas.
+    render(<DayView variant="desktop" columns={columnsOf()} />)
+
+    const spacer = screen.getByTestId("time-channel-spacer")
+    const header = screen.getAllByTestId("employee-column-header")[0]
+
+    expect(spacer.style.height).toBe(header.style.height)
+    expect(spacer.style.height).not.toBe("")
+    // Tambien `sticky`, o al bajar asomaria por debajo de las cabeceras.
+    expect(spacer.className).toContain("sticky")
+  })
+
+  it("en movil no hay cabeceras, asi que tampoco espaciador", () => {
+    render(<DayView variant="mobile" columns={columnsOf()} />)
+
+    expect(screen.queryByTestId("time-channel-spacer")).not.toBeInTheDocument()
+  })
+})
+
+describe("DayView · orden de apilado", () => {
+  it("apila franjas, descanso, bloques y hueco libre en ese orden", () => {
+    // Son todos hermanos ABSOLUTOS dentro de la misma rejilla, asi que el
+    // ultimo del DOM queda encima. Las franjas pulsables abajo del todo, para
+    // que ninguna tape a un bloque; el hueco libre arriba del todo, que es el
+    // que invita a actuar. En jsdom no hay pintado, pero el orden del DOM si
+    // es asertable -- y es exactamente lo que decide quien tapa a quien.
+    render(
+      <DayView
+        variant="mobile"
+        columns={columnsOf()}
+        breaks={{ emp_1: LUNCH }}
+        freeSlot={FREE_SLOT}
+        onSlotTap={vi.fn()}
+      />
+    )
+
+    const slotLayer = screen.getAllByTestId("slot-target")[0].parentElement!
+    const lunch = screen.getByTestId("break-block")
+    const block = screen.getAllByTestId("appointment-block")[0]
+    const hint = screen.getByTestId("free-slot-hint")
+
+    const siblings = Array.from(slotLayer.parentElement!.children)
+    const at = (element: Element) => siblings.indexOf(element)
+
+    expect(at(slotLayer)).toBeGreaterThanOrEqual(0)
+    expect(at(slotLayer)).toBeLessThan(at(lunch))
+    expect(at(lunch)).toBeLessThan(at(block))
+    expect(at(block)).toBeLessThan(at(hint))
+  })
 })
 
 describe("DayView · pulsar la rejilla", () => {
@@ -300,6 +364,61 @@ describe("DayView · pulsar la rejilla", () => {
 
     await userEvent.click(target)
     expect(onSlotTap).toHaveBeenCalledExactlyOnceWith("emp_2", "09:00")
+  })
+
+  it("en movil con una sola columna la franja lleva su empleado", async () => {
+    // El caso que el filtro de pildoras produce a diario: elegida Sofia, la
+    // pantalla deja una sola columna y el alta tiene que heredar SU id. El
+    // otro test de franjas corre en escritorio, que es donde esta logica no
+    // aplica -- alli cada columna trae el suyo por construccion.
+    const onSlotTap = vi.fn()
+    const only = columnsOf().filter((column) => column.employeeId === "emp_2")
+    render(<DayView variant="mobile" columns={only} onSlotTap={onSlotTap} />)
+
+    const target = screen.getAllByTestId("slot-target")[2]
+    expect(target.dataset.time).toBe("09:00")
+
+    await userEvent.click(target)
+    expect(onSlotTap).toHaveBeenCalledExactlyOnceWith("emp_2", "09:00")
+  })
+
+  it("en movil con el filtro en 'Todos' la franja no atribuye empleado", async () => {
+    // Tres columnas fundidas en una: no hay un empleado al que atribuir la
+    // franja, y adivinarlo seria peor que dejarlo abierto.
+    const onSlotTap = vi.fn()
+    render(<DayView variant="mobile" columns={columnsOf()} onSlotTap={onSlotTap} />)
+
+    await userEvent.click(screen.getAllByTestId("slot-target")[2])
+    expect(onSlotTap).toHaveBeenCalledExactlyOnceWith(null, "09:00")
+  })
+
+  it("cada franja mide un slot entero, o pulsar la tarde apuntaria a otra hora", async () => {
+    // El alto es lo que hace que la franja de las 17:00 caiga sobre las 17:00.
+    // Con la mitad, las 26 franjas cubririan medio dia y el resto quedaria
+    // muerto: el test solo miraba `data-time`, que no se entera.
+    const onSlotTap = vi.fn()
+    render(<DayView variant="desktop" columns={columnsOf()} onSlotTap={onSlotTap} />)
+
+    const targets = within(columnOf("emp_1")).getAllByTestId("slot-target")
+    expect(targets).toHaveLength(26)
+    for (const target of targets) {
+      expect(target.style.height).toBe(`${SLOT_HEIGHT_PX}px`)
+    }
+  })
+
+  it("distingue las franjas de cada columna y las saca del orden de tabulacion", async () => {
+    // Con tres columnas el lector de pantalla anunciaba "Crear cita a las
+    // 09:00" tres veces, identicas; y tabular la rejilla eran hasta 26 paradas
+    // mudas por columna antes de llegar a la primera cita.
+    render(<DayView variant="desktop" columns={columnsOf()} onSlotTap={vi.fn()} />)
+
+    const laura = within(columnOf("emp_1")).getAllByTestId("slot-target")[2]
+    const sofia = within(columnOf("emp_2")).getAllByTestId("slot-target")[2]
+
+    expect(laura).toHaveAccessibleName("Crear cita a las 09:00 con Laura Martinez")
+    expect(sofia).toHaveAccessibleName("Crear cita a las 09:00 con Sofia Puig")
+    expect(laura.tabIndex).toBe(-1)
+    expect(sofia.tabIndex).toBe(-1)
   })
 
   it("pulsar una cita abre la cita, no la franja que tiene debajo", async () => {

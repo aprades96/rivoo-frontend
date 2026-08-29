@@ -325,12 +325,16 @@ describe("CalendarPage", () => {
 
     const { container } = render(<CalendarPage />)
 
-    // Hay una franja de cada hora POR columna: sin acotar a la de Laura la
-    // consulta seria ambigua, y ademas el `employeeId` esperado es el suyo.
+    // Hay una franja de cada hora POR columna, y el `employeeId` esperado es
+    // el de Laura: se acota a su columna. El nombre accesible tambien lleva el
+    // de la columna -- sin el, las tres franjas de las 15:30 se anunciaban
+    // exactamente igual.
     const column = container.querySelector(
       '[data-testid="day-view-column"][data-employee-id="emp_1"]'
     ) as HTMLElement
-    fireEvent.click(within(column).getByRole("button", { name: "Crear cita a las 15:30" }))
+    fireEvent.click(
+      within(column).getByRole("button", { name: "Crear cita a las 15:30 con Laura Martinez" })
+    )
 
     expect(pushMock).toHaveBeenCalledTimes(1)
     const url = new URL(pushMock.mock.calls[0][0] as string, "http://localhost")
