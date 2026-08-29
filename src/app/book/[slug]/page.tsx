@@ -129,22 +129,22 @@ export default function PublicBookingPage({ params }: { params: Promise<{ slug: 
   }
 
   if (step === 6) {
-    // TODO: montar sobre BookingResultShell tone="success" cuando la tarea de
-    // este paso retire el icono/titulo que PublicSuccessStep ya pinta por su
-    // cuenta.
+    // Terminal screen: it mounts `BookingResultShell` itself, like every other
+    // step mounts its own chassis.
     return <PublicSuccessStep salon={salon} />
   }
 
   // Pure dispatcher: each `Public*Step` mounts its own `BookingStepShell`
   // (title, subtitle, aside, footer are its own business, not this page's --
-  // see PublicServiceStep for the pattern). Steps 2-5 have no chassis yet
-  // until their own tasks wrap them; that gap is expected here, not a bug.
+  // see PublicServiceStep for the pattern). Keeping the chassis here instead
+  // would force all six steps to edit this one file to pass their aside and
+  // footer, which is both a merge hazard and the wrong owner for the data.
   return (
     <>
       {step === 1 && <PublicServiceStep salon={salon} />}
       {step === 2 && <PublicEmployeeStep salon={salon} />}
       {step === 3 && <PublicDateTimeStep salon={salon} />}
-      {step === 4 && <PublicClientStep />}
+      {step === 4 && <PublicClientStep salon={salon} />}
       {step === 5 && <PublicConfirmStep salon={salon} />}
     </>
   )
