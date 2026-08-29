@@ -44,7 +44,9 @@ export default function BookingSettingsPage() {
   }
 
   return (
-    <PageShell title="Reservas online" back>
+    // `max-w-[554px]` = `AjustesReservaDesktop.dc.html:114`; sin ella
+    // `PageShell` estira la tarjeta a los 1084px de listas/tablas.
+    <PageShell title="Reservas online" back contentClassName="max-w-[554px]">
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-muted-foreground" />

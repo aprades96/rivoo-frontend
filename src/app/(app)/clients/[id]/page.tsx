@@ -48,12 +48,13 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       titleAdjacent={<span className="text-xs text-muted-foreground">{clientSince}</span>}
       actions={
         isOwner && (
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Button variant="outline" size="action" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-1.5 h-4 w-4" />
             Editar
           </Button>
         )
       }
+      mobileActions={null}
     >
       <div className="space-y-4">
         {/* Profile */}
@@ -67,6 +68,22 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             <p className="text-base font-semibold">{fullName}</p>
             <p className="text-xs text-muted-foreground lg:hidden">{clientSince}</p>
           </div>
+          {/* `mobileActions={null}` vacia la cabecera movil (igual que en
+              /staff/[id]): en movil, Editar vive aqui como boton-icono 36x36
+              (`DetalleCliente.dc.html:47-49`), con `lg:hidden` porque en
+              escritorio ese mismo destino ya esta en la barra superior con
+              etiqueta (`actions` arriba). */}
+          {isOwner && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9 lg:hidden"
+              aria-label="Editar"
+              onClick={() => setEditOpen(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Stats */}

@@ -69,7 +69,7 @@ function StaffPageContent() {
   // un solo boton que se adapta a la pestana activa, no dos apilados.
   const addAction = (
     <Button
-      size="sm"
+      size="action"
       onClick={() => {
         if (tab === "services") {
           setEditingService(null)
@@ -81,7 +81,7 @@ function StaffPageContent() {
       }}
     >
       <Plus className="mr-1 h-4 w-4" />
-      Anadir
+      {tab === "services" ? "Anadir servicio" : "Anadir empleado"}
     </Button>
   )
 
@@ -108,7 +108,7 @@ function StaffPageContent() {
             </p>
             {/* Duplicaria el `addAction` de la cabecera de escritorio: solo movil. */}
             <Button
-              size="sm"
+              size="action"
               className="lg:hidden"
               onClick={() => {
                 setEditingEmployee(null)
@@ -146,7 +146,7 @@ function StaffPageContent() {
             </p>
             {/* Duplicaria el `addAction` de la cabecera de escritorio: solo movil. */}
             <Button
-              size="sm"
+              size="action"
               className="lg:hidden"
               onClick={() => {
                 setEditingService(null)

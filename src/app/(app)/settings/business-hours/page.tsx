@@ -77,10 +77,15 @@ export default function BusinessHoursSettingsPage() {
     <PageShell
       title="Horario de apertura"
       back
-      contentClassName="space-y-4"
+      // `max-w-[860px]` = `HorarioDesktop.dc.html:114`; sin ella `PageShell`
+      // estira el contenido a los 1084px de listas/tablas.
+      contentClassName="max-w-[860px] space-y-4"
       mobileActions={
         <Button
-          size="sm"
+          // `size="lg"` (h-9, 36px) = `Horario.dc.html:37`: este "Guardar" es
+          // 36px, no los 38px del resto de controles de cabecera (esos usan
+          // `size="action"`).
+          size="lg"
           onClick={handleSaveFromHeader}
           disabled={hoursNotReady || mutation.isPending}
         >

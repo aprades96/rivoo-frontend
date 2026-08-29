@@ -18,7 +18,9 @@ export default function SettingsPage() {
   const { logout } = useAuth()
 
   return (
-    <PageShell title="Ajustes">
+    // `max-w-[800px]` = `AjustesDesktop.dc.html:110`; sin ella `PageShell`
+    // estira las filas del menu a los 1084px de listas/tablas.
+    <PageShell title="Ajustes" contentClassName="max-w-[800px]">
       <div className="space-y-1">
         {menuItems.map(({ href, label, icon: Icon }) => (
           <Link

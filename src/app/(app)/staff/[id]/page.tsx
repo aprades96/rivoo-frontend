@@ -128,11 +128,11 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
   // nombre del empleado por coherencia con la ficha de cliente. No reabrir.
   const headerActions = isOwner ? (
     <>
-      <Button variant="outline" size="sm" onClick={() => setEditSheetOpen(true)}>
+      <Button variant="outline" size="action" onClick={() => setEditSheetOpen(true)}>
         <Pencil className="mr-1 h-4 w-4" />
         Editar
       </Button>
-      <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+      <Button variant="outline" size="action" onClick={() => setDeleteDialogOpen(true)}>
         <Trash2 className="mr-1 h-4 w-4 text-destructive" />
         Desactivar
       </Button>

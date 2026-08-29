@@ -39,7 +39,13 @@ export default function ClientsPage() {
     <PageShell
       title="Clientes"
       actions={
-        <Button size="sm" onClick={() => setFormOpen(true)}>
+        <Button size="action" onClick={() => setFormOpen(true)}>
+          <Plus className="mr-1 h-4 w-4" />
+          Anadir cliente
+        </Button>
+      }
+      mobileActions={
+        <Button size="action" onClick={() => setFormOpen(true)}>
           <Plus className="mr-1 h-4 w-4" />
           Anadir
         </Button>

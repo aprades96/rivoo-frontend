@@ -13,7 +13,10 @@ export default function AccountSettingsPage() {
   const keycloakAccountUrl = `${process.env.NEXT_PUBLIC_KEYCLOAK_URL}/realms/rivoo/account`
 
   return (
-    <PageShell title="Mi cuenta" back contentClassName="space-y-4">
+    // `max-w-[860px]` = `AjustesCuentaDesktop.dc.html:113`; sin ella
+    // `PageShell` estira el contenido a los 1084px de listas/tablas y los
+    // botones `w-full` de mas abajo quedan igual de anchos.
+    <PageShell title="Mi cuenta" back contentClassName="max-w-[860px] space-y-4">
       {/* User info */}
       <Card className="p-4 space-y-3">
         <div className="flex items-center gap-3">

@@ -60,9 +60,13 @@ export default function BillingSettingsPage() {
     onError: () => toast.error("Error al abrir portal de facturacion"),
   })
 
+  // `max-w-[554px]` = `AjustesFacturacionDesktop.dc.html:112`; se repite en
+  // el estado de carga para que el ancho no salte al terminar de cargar
+  // (antes, esta rama no llevaba `contentClassName` y la cargada si, asi que
+  // el espaciado interno cambiaba al terminar).
   if (subLoading) {
     return (
-      <PageShell title="Facturacion y plan" back>
+      <PageShell title="Facturacion y plan" back contentClassName="max-w-[554px] space-y-4">
         <LoadingSkeleton count={4} />
       </PageShell>
     )
@@ -71,7 +75,7 @@ export default function BillingSettingsPage() {
   const statusInfo = subscription ? STATUS_LABELS[subscription.status] : null
 
   return (
-    <PageShell title="Facturacion y plan" back contentClassName="space-y-4">
+    <PageShell title="Facturacion y plan" back contentClassName="max-w-[554px] space-y-4">
       {/* Current plan */}
       {subscription && (
         <Card className="p-4 space-y-3">

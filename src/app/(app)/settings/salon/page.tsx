@@ -67,16 +67,22 @@ export default function SalonSettingsPage() {
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
+  // `contentClassName` fija el ancho a `AjustesDesktop.dc.html:110` (tarjeta
+  // de 800px): sin ella, `PageShell` la estira a los 1084px que reserva para
+  // listas/tablas, y el boton "Guardar cambios" (`w-full` mas abajo) queda
+  // absurdamente ancho. Se repite en el estado de carga para que no cambien
+  // de ancho entre si al terminar de cargar (mismo defecto que se arreglo en
+  // `settings/billing`).
   if (isLoading) {
     return (
-      <PageShell title="Perfil del salon" back>
+      <PageShell title="Perfil del salon" back contentClassName="max-w-[800px]">
         <LoadingSkeleton count={4} />
       </PageShell>
     )
   }
 
   return (
-    <PageShell title="Perfil del salon" back>
+    <PageShell title="Perfil del salon" back contentClassName="max-w-[800px]">
       <div className="space-y-3">
         <div>
           <Label className="text-xs">Nombre</Label>
