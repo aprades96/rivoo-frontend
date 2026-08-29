@@ -87,3 +87,20 @@ export function getTodayBusinessHours(
   const dayOfWeek = jsDay === 0 ? 7 : jsDay
   return hours.find((h) => h.dayOfWeek === dayOfWeek)
 }
+
+/**
+ * `09:00:00` -> `09:00`.
+ *
+ * El backend serializa `LocalTime` con segundos, y los artboards escriben la
+ * hora sin ellos (`design/ReservaDesktopPaso1.dc.html:138-140`). Pintarlos en
+ * crudo dejaba "Lun - Vie 09:00:00 - 20:00:00" y "Abierto hoy hasta las
+ * 14:00:00" en la columna del salon. No lo caza ningun test de tipos ni de
+ * unidad: solo se ve mirando la pantalla, que es para lo que existe la
+ * comparacion visual.
+ *
+ * Tolerante a que algun dia llegue ya sin segundos, o vacio.
+ */
+export function formatTimeOfDay(time: string | null | undefined): string {
+  if (!time) return ""
+  return time.slice(0, 5)
+}

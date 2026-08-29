@@ -1,5 +1,5 @@
 import { Phone } from "lucide-react"
-import { getTodayBusinessHours, groupBusinessHours } from "@/lib/utils/business-hours"
+import { formatTimeOfDay, getTodayBusinessHours, groupBusinessHours } from "@/lib/utils/business-hours"
 import { formatPhone } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import type { SalonPublic } from "@/types/salon"
@@ -44,7 +44,7 @@ export function SalonInfoAside({ salon }: SalonInfoAsideProps) {
         */}
         <div className={cn("size-[7px] shrink-0 rounded-full", isOpenNow ? "bg-[#5C7A5E]" : "bg-text-subtle")} />
         <span className={cn("text-[13px] font-medium", isOpenNow ? "text-success" : "text-text-subtle")}>
-          {isOpenNow ? `Abierto hoy hasta las ${today?.closeTime}` : "Cerrado hoy"}
+          {isOpenNow ? `Abierto hoy hasta las ${formatTimeOfDay(today?.closeTime)}` : "Cerrado hoy"}
         </span>
       </div>
 
@@ -54,7 +54,7 @@ export function SalonInfoAside({ salon }: SalonInfoAsideProps) {
             <span className="text-xs text-muted-foreground-2">{group.label}</span>
             {group.isOpen ? (
               <span className="text-[13px] tabular-nums">
-                {group.openTime} - {group.closeTime}
+                {formatTimeOfDay(group.openTime)} - {formatTimeOfDay(group.closeTime)}
               </span>
             ) : (
               <span className="text-[13px] text-text-subtle">Cerrado</span>

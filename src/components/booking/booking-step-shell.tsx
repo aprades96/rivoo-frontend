@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { BookingStepper } from "@/components/booking/booking-stepper"
 import { BookingDesktopHeader, SalonMark } from "@/components/booking/booking-salon-header"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { getTodayBusinessHours } from "@/lib/utils/business-hours"
+import { formatTimeOfDay, getTodayBusinessHours } from "@/lib/utils/business-hours"
 import { formatAddress } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import type { SalonPublic } from "@/types/salon"
@@ -203,7 +203,7 @@ function MobileStepOneHeader({ salon }: { salon: SalonPublic }) {
       <div className="flex items-center gap-[7px]">
         <div className={cn("size-[7px] rounded-full", isOpenNow ? "bg-[#5C7A5E]" : "bg-text-subtle")} />
         <span className={cn("text-xs font-medium", isOpenNow ? "text-success" : "text-text-subtle")}>
-          {isOpenNow ? `Abierto hoy hasta las ${today?.closeTime}` : "Cerrado hoy"}
+          {isOpenNow ? `Abierto hoy hasta las ${formatTimeOfDay(today?.closeTime)}` : "Cerrado hoy"}
         </span>
       </div>
     </div>

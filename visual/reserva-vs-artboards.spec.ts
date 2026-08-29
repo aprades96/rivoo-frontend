@@ -91,11 +91,29 @@ async function avanzarHasta(page: Page, hasta: number) {
   ).toBeVisible({ timeout: 30_000 })
   if (hasta === 3) return
 
-  const hueco = page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first()
-  if ((await hueco.count()) === 0) {
-    test.skip(true, "el salon de pruebas no tiene huecos libres hoy: pasos 4 y 5 no alcanzables")
+  // Hoy puede no quedar ningun hueco -- la reserva publica exige una hora de
+  // antelacion, asi que a partir de una hora antes del cierre el dia esta
+  // vacio por diseno. Se avanzan dias hasta encontrar uno con huecos en vez de
+  // rendirse: si el recorrido se salta los pasos 4 y 5 segun la hora a la que
+  // se lance, la comparacion visual deja de ser reproducible.
+  const huecos = page.getByRole("button", { name: /^\d{2}:\d{2}$/ })
+  // Solo dias HABILITADOS: los cerrados salen `disabled` y Playwright se
+  // quedaria esperando a que fueran pulsables hasta agotar el tiempo.
+  const diasAbiertos = page.locator(
+    '[data-testid^="mobile-day-"]:not([disabled]), [data-testid^="desktop-day-"]:not([disabled])'
+  )
+  const abiertos = await diasAbiertos.count()
+  for (let i = 0; i < Math.min(abiertos, 8) && (await huecos.count()) === 0; i++) {
+    await diasAbiertos.nth(i).click()
+    await expect(async () => {
+      expect(await page.getByText(/manana|tarde|no hay huecos/i).count()).toBeGreaterThan(0)
+    }).toPass({ timeout: 15_000 })
   }
-  await hueco.click()
+  expect(
+    await huecos.count(),
+    "ninguno de los primeros dias abiertos tiene huecos libres"
+  ).toBeGreaterThan(0)
+  await huecos.first().click()
   await page.getByRole("button", { name: /continuar/i }).first().click()
 
   // Paso 4: datos.

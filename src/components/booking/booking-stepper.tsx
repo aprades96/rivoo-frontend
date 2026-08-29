@@ -18,18 +18,23 @@ interface BookingStepperProps {
  */
 export function BookingStepper({ step }: BookingStepperProps) {
   return (
-    <div className="hidden items-center gap-3.5 md:flex">
+    // `gap` y conectores mas cortos hasta `xl:`, y las etiquetas sin partir.
+    // A 1024 —donde el aside ya ocupa 320px de los 1024— los cinco nodos no
+    // caben: "Fecha y hora" y "Tus datos" partian en dos lineas y "Confirmar"
+    // quedaba cortado contra el aside. Lo vio la comparacion visual; ningun
+    // test lo habria visto, porque jsdom no hace layout.
+    <div className="hidden items-center gap-2 md:flex xl:gap-3.5">
       {STEP_LABELS.map((label, index) => {
         const stepNumber = index + 1
         const isActive = stepNumber === step
         const isCompleted = stepNumber < step
 
         return (
-          <div key={label} className="flex items-center gap-3.5">
+          <div key={label} className="flex items-center gap-2 xl:gap-3.5">
             {index > 0 && (
               <div
                 className={cn(
-                  "h-px w-[26px]",
+                  "h-px w-3 xl:w-[26px]",
                   // Completado = el paso a su izquierda ya se supero.
                   index < step ? "bg-[#D8C9B8]" : "bg-border"
                 )}
@@ -37,7 +42,7 @@ export function BookingStepper({ step }: BookingStepperProps) {
             )}
             <div
               className={cn(
-                "flex items-center gap-1.5 text-[13px]",
+                "flex items-center gap-1.5 text-[13px] whitespace-nowrap",
                 isActive
                   ? "font-semibold text-foreground"
                   : isCompleted
