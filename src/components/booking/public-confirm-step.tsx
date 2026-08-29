@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Info } from "lucide-react"
 import { addMinutes, format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
@@ -48,9 +48,18 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
     honeypot,
     nextStep,
     prevStep,
+    setConflict,
   } = usePublicBookingStore()
 
+  const queryClient = useQueryClient()
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // Ventana entre "la reserva ha fallado" y "sabemos si es el conflicto de
+  // hueco o cualquier otro fallo": `mutation.isPending` ya se apaga en cuanto
+  // `mutationFn` rechaza (antes de que este `onError` ni empiece), asi que sin
+  // este estado propio el CTA parpadearia a "Confirmar reserva" -- clicable de
+  // nuevo -- durante la re-consulta de disponibilidad de mas abajo.
+  const [isCheckingConflict, setIsCheckingConflict] = useState(false)
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -77,19 +86,66 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       nextStep() // → step 6 (success)
     },
     // -----------------------------------------------------------------
-    // TODO(T10): the backend cannot tell "the slot was just taken by
-    // someone else" apart from any other business-rule failure here.
-    // AppointmentConflictException extends BusinessValidationException,
-    // which always answers 422 with the same RFC7807 `type`/title as every
-    // other business error -- there is no 409 and no discriminator to
-    // branch on by status code. Do NOT try to detect the conflict from
-    // `err` in this handler: it would silently never fire. The next task
-    // resolves it by re-querying availability after a failure and routing
-    // to the dedicated conflict screen (`usePublicBookingStore.setConflict`,
-    // `BookingResultShell` tone="error") when the slot is confirmed gone.
-    // Until then this preserves today's behaviour: any mutation failure
-    // paints the generic banner below unchanged.
-    onError: (err) => {
+    // T10: the backend cannot tell "the slot was just taken by someone
+    // else" apart from any other business-rule failure -- AppointmentConflictException
+    // extends BusinessValidationException, which always answers 422 with the
+    // same RFC7807 `type`/title as every other business error. There is no
+    // 409 and no discriminator to branch on by status code (verified, not
+    // reopening it), so `err` itself is useless here. Instead, re-query
+    // public availability for the same day/employee: if the slot the visitor
+    // picked is confirmed gone from that response, it is the conflict --
+    // `setConflict` routes `page.tsx` to the dedicated error screen, and this
+    // same response becomes its "already loaded" alternatives because it is
+    // cached under the exact query key `PublicBookingError` reads
+    // (`["public-availability", employeeId, serviceId, date]`, same shape
+    // `public-datetime-step.tsx` already uses). If the slot is still there,
+    // it is a different business failure -- fall through to the banner.
+    onError: async (err) => {
+      const conflictSlot = selectedSlot
+      const conflictDate = selectedDate
+
+      if (conflictSlot && conflictDate && selectedEmployeeId) {
+        setIsCheckingConflict(true)
+        try {
+          const availability = await queryClient.fetchQuery({
+            queryKey: ["public-availability", selectedEmployeeId, selectedService?.id, conflictDate],
+            queryFn: () =>
+              appointmentsApi.getPublicAvailability({
+                salonSlug,
+                employeeId: selectedEmployeeId,
+                date: conflictDate,
+                serviceId: selectedService?.id,
+              }),
+            // Load-bearing, and it is not a tuning knob. `fetchQuery` honours
+            // `staleTime`, and this app sets it globally to five minutes
+            // (`query-provider.tsx:13`). Step 3 read this exact key seconds
+            // ago to paint the slot the visitor then picked, so without this
+            // the "re-query" is served from that cache -- the very response
+            // that listed the slot as free -- `stillAvailable` is always true,
+            // the conflict is never detected, and the whole error screen is
+            // unreachable. The tests cannot catch it either unless they set the
+            // real staleTime: with the default 0, a cache hit and a network
+            // call look identical. `public-confirm-step.test.tsx` pins it.
+            staleTime: 0,
+          })
+
+          const stillAvailable = availability.slots.some(
+            (slot) => `${availability.date}T${slot.startTime}` === conflictSlot
+          )
+
+          if (!stillAvailable) {
+            setConflict({ slot: conflictSlot, date: conflictDate })
+            return
+          }
+        } catch {
+          // The re-check itself failed (network blip, etc.) -- fall through
+          // to the generic banner with the *original* booking error instead
+          // of masking it with an unrelated re-query failure.
+        } finally {
+          setIsCheckingConflict(false)
+        }
+      }
+
       const message = err instanceof Error ? err.message : "Error al crear la reserva"
       setErrorMessage(message)
     },
@@ -117,7 +173,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
   const priceDisplay = selectedService ? formatCurrency(selectedService.price, selectedService.currency) : ""
   const durationDisplay = selectedService ? formatDuration(selectedService.durationMinutes) : ""
 
-  const isSending = mutation.isPending
+  const isSending = mutation.isPending || isCheckingConflict
 
   const asideRows: BookingSummaryRow[] = [
     { label: "Servicio", value: selectedService?.name, detail: selectedService ? `${durationDisplay} · ${priceDisplay}` : undefined },
