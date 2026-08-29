@@ -66,13 +66,59 @@ export default function CalendarPage() {
    * lo que se pulsa no seria lo que se vio.
    */
   const [now] = useState(() => new Date())
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
+  /**
+   * Lo que el usuario ha ELEGIDO en el filtro de pildoras, o `null` mientras
+   * no haya tocado ninguna. No es lo mismo que haber elegido "Todos": eso es
+   * `{ id: null }`. Distinguirlos es lo que permite que el estado inicial
+   * dependa de una lista que llega por red sin pisar despues una eleccion ya
+   * hecha.
+   */
+  const [employeeChoice, setEmployeeChoice] = useState<{ id: string | null } | null>(null)
   const [search, setSearch] = useState("")
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
 
   const dateStr = format(currentDate, "yyyy-MM-dd")
+
+  // La lista de empleados va ANTES de la consulta de citas porque el filtro de
+  // movil arranca sobre ella: sin saber quien hay no se sabe a quien pedir.
+  const { data: employeesData } = useEmployees()
+  // Memorizado porque `groupByEmployee` depende de el: sin esto la lista
+  // seria un array nuevo en cada render y el reparto en columnas se
+  // recalcularia siempre.
+  const employees = useMemo(() => employeesData?.content ?? [], [employeesData])
+
+  // Solo los activos: son los que `groupByEmployee` convierte en columna, y
+  // pedir los horarios de un empleado que no se pinta seria una peticion por
+  // un bloque que nadie va a ver. Tambien son los unicos elegibles en el
+  // filtro (`EmployeeFilter` filtra por `isActive`), asi que el primero de
+  // esta lista es el que arranca seleccionado en movil.
+  const employeeIds = useMemo(
+    () => employees.filter((employee) => employee.isActive).map((employee) => employee.id),
+    [employees]
+  )
+  const { data: workingHours } = useEmployeesWorkingHours(employeeIds)
+
+  /**
+   * El filtro de movil arranca en el PRIMER EMPLEADO ACTIVO, no en "Todos".
+   * Lo dice el artboard: la pildora "Todos" va en reposo y la primera empleada
+   * SELECCIONADA (`Calendario.dc.html:51-55`), y la rejilla de debajo
+   * (`:97-119`) pinta exactamente los tres bloques de la columna de Laura del
+   * artboard de escritorio (`CalendarioDesktop.dc.html:162,168,177`) y ninguno
+   * de los otros cinco -- con "Todos" esa columna llevaria las ocho citas de
+   * los tres empleados repartidas en carriles. "Todos" sigue existiendo, pero
+   * como eleccion explicita.
+   *
+   * Se DERIVA en el render y no se fija con un `useEffect`: la lista llega por
+   * red, y un efecto pintaria primero un fotograma en "Todos" para corregirlo
+   * despues. Y como solo manda cuando `employeeChoice` es `null`, una recarga
+   * de la lista no puede pisar la pildora que el usuario ya haya pulsado.
+   *
+   * Salon recien creado, sin empleados activos: no hay a quien seleccionar y
+   * se queda en "Todos" hasta que exista alguien.
+   */
+  const selectedEmployeeId = employeeChoice ? employeeChoice.id : (employeeIds[0] ?? null)
 
   const { data: appointmentsData, isLoading: aptsLoading } = useAppointments({
     date: dateStr,
@@ -85,21 +131,6 @@ export default function CalendarPage() {
     page: 0,
     size: 200,
   })
-
-  const { data: employeesData } = useEmployees()
-  // Memorizado porque `groupByEmployee` depende de el: sin esto la lista
-  // seria un array nuevo en cada render y el reparto en columnas se
-  // recalcularia siempre.
-  const employees = useMemo(() => employeesData?.content ?? [], [employeesData])
-
-  // Solo los activos: son los que `groupByEmployee` convierte en columna, y
-  // pedir los horarios de un empleado que no se pinta seria una peticion por
-  // un bloque que nadie va a ver.
-  const employeeIds = useMemo(
-    () => employees.filter((employee) => employee.isActive).map((employee) => employee.id),
-    [employees]
-  )
-  const { data: workingHours } = useEmployeesWorkingHours(employeeIds)
 
   /**
    * TODAS las citas del dia, canceladas incluidas. El artboard las dibuja con
@@ -165,11 +196,16 @@ export default function CalendarPage() {
    *
    * El descanso que se le pasa es EXACTAMENTE el mismo objeto que `DayView`
    * pinta en la columna de movil -- `visibleBreak(columns, breaks)` --, no los
-   * horarios del empleado seleccionado. Con el filtro en "Todos" (el estado
-   * inicial y el del artboard) no hay empleado elegido, asi que antes se
-   * mandaba `null`: el descanso no entraba en la lista de ocupados y el
-   * recuadro "Libre · toca para crear" se ofrecia ENCIMA del rayado del
-   * almuerzo. Pintar y calcular tienen que leer el mismo dato.
+   * horarios del empleado seleccionado. Pintar y calcular tienen que leer el
+   * MISMO dato: cuando se mandaba `null`, el descanso no entraba en la lista
+   * de ocupados y el recuadro "Libre · toca para crear" se ofrecia ENCIMA del
+   * rayado del almuerzo.
+   *
+   * Con el filtro arrancando en un empleado, el caso normal es el limpio:
+   * `columns` trae UNA columna, asi que el descanso pintado y el que entra en
+   * el calculo son los de ESE empleado. La eleccion explicita de "Todos" sigue
+   * pasando por aqui -- alli `visibleBreak` resuelve el primero que tenga uno,
+   * y sigue siendo el mismo que se pinta.
    */
   const freeSlot = useMemo(
     () => nextFreeSlot(dayAppointments, currentDate, now, visibleBreak(columns, breaks)),
@@ -272,7 +308,7 @@ export default function CalendarPage() {
           <EmployeeFilter
             employees={employees}
             selectedId={selectedEmployeeId}
-            onSelect={setSelectedEmployeeId}
+            onSelect={(id) => setEmployeeChoice({ id })}
           />
         </>
       )}

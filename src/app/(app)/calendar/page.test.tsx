@@ -180,6 +180,17 @@ function topOf(hours: number, minutes = 0): string {
   return `${(hours * 60 + minutes - 8 * 60) * 1.6}px`
 }
 
+/**
+ * Una pildora del filtro de empleado por su NOMBRE, anclado al final. En la
+ * pildora el empleado es solo su nombre ("Laura"), pero las franjas vacias de
+ * la rejilla se anuncian con nombre y apellido ("Crear cita a las 08:00 con
+ * Laura Martinez"): sin el ancla, `/Laura/` casa tambien con las dos docenas
+ * de franjas de su columna.
+ */
+function pill(firstName: string): HTMLElement {
+  return screen.getByRole("button", { name: new RegExp(`${firstName}$`) })
+}
+
 /** Los parametros de la ULTIMA llamada a `useAppointments`. */
 function lastQueryParams(): Record<string, unknown> {
   const calls = useAppointmentsMock.mock.calls
@@ -359,6 +370,9 @@ describe("CalendarPage", () => {
     mockMatchMedia(false)
 
     render(<CalendarPage />)
+    // "Manicura" es de Sofia y el filtro arranca en Laura: aqui interesa el
+    // buscador sobre el dia ENTERO, asi que se pide "Todos" a proposito.
+    fireEvent.click(pill("Todos"))
     fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
     // "Manicura" es el servicio de Ana Garcia y no aparece en ningun otro
     // campo: si el filtro solo mirase el cliente, esto vaciaria la rejilla.
@@ -373,6 +387,9 @@ describe("CalendarPage", () => {
     mockMatchMedia(false)
 
     render(<CalendarPage />)
+    // "Todos" para que "todas las citas" sean las del dia y no las de la
+    // empleada con la que arranca el filtro.
+    fireEvent.click(pill("Todos"))
     fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
     const field = screen.getByRole("textbox", { name: "Buscar citas" })
     fireEvent.change(field, { target: { value: "carla" } })
@@ -429,15 +446,126 @@ describe("CalendarPage", () => {
     expect(within(header).getByText("1 cita · 1h 30min")).toBeInTheDocument()
   })
 
+  // --- Filtro de empleado en movil -----------------------------------------
+
+  /**
+   * BLOQUEANTE cerrado: el filtro arrancaba en "Todos" y el artboard dice otra
+   * cosa. `Calendario.dc.html:51` pinta la pildora "Todos" en REPOSO (blanco,
+   * `font-weight: 500`) y `:52-55` a Laura SELECCIONADA (`#B4522F`,
+   * `font-weight: 600`); y la rejilla de debajo (`:97-119`) lleva los TRES
+   * bloques de la columna de Laura del artboard de escritorio
+   * (`CalendarioDesktop.dc.html:162,168,177`) y ninguno de los otros cinco --
+   * con "Todos" esa columna llevaria las ocho citas de los tres empleados
+   * repartidas en carriles.
+   */
+  it("en movil el filtro arranca en el primer empleado, no en 'Todos'", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+
+    expect(pill("Laura")).toHaveClass("bg-primary")
+    expect(pill("Todos")).not.toHaveClass("bg-primary")
+    expect(lastQueryParams()).toMatchObject({ date: TODAY_ISO, employeeId: "emp_1" })
+    // Y lo que se PINTA es su columna: sus dos citas, ninguna de Sofia.
+    expect(clientNames()).toHaveLength(2)
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
+  })
+
+  /**
+   * El primero ACTIVO, no el primero de la lista: un empleado dado de baja no
+   * tiene columna (`groupByEmployee` filtra por `isActive`) ni pildora
+   * (`employee-filter.tsx:48`), asi que arrancar en el dejaria la agenda vacia
+   * y sin ninguna pildora marcada.
+   */
+  it("si el primero de la lista esta de baja, arranca en el primero activo", () => {
+    mockMatchMedia(false)
+    useEmployeesMock.mockReturnValue({
+      data: {
+        content: [
+          makeEmployee({ id: "emp_0", firstName: "Marc", lastName: "Oliva", isActive: false }),
+          ...EMPLOYEES,
+        ],
+      },
+    })
+
+    render(<CalendarPage />)
+
+    expect(lastQueryParams()).toMatchObject({ employeeId: "emp_1" })
+    expect(pill("Laura")).toHaveClass("bg-primary")
+  })
+
+  /**
+   * Salon recien creado: no hay a quien seleccionar, asi que el filtro se
+   * queda en "Todos". Es el unico caso en que "Todos" es el arranque.
+   */
+  it("sin empleados activos el filtro se queda en 'Todos'", () => {
+    mockMatchMedia(false)
+    useEmployeesMock.mockReturnValue({ data: { content: [] } })
+
+    render(<CalendarPage />)
+
+    expect(pill("Todos")).toHaveClass("bg-primary")
+    expect(lastQueryParams().employeeId).toBeUndefined()
+  })
+
+  /**
+   * "Todos" sigue existiendo como ELECCION del usuario, y una vez elegida
+   * manda sobre el arranque. Por eso el estado guarda la eleccion (que puede
+   * ser `null` = "Todos") y no el id: sin esa distincion, elegir "Todos"
+   * volveria a caer en el primer empleado en el render siguiente.
+   */
+  it("elegir 'Todos' a mano devuelve el dia entero y se queda puesto", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+    expect(lastQueryParams().employeeId).toBe("emp_1")
+
+    fireEvent.click(pill("Todos"))
+
+    expect(pill("Todos")).toHaveClass("bg-primary")
+    expect(pill("Laura")).not.toHaveClass("bg-primary")
+    expect(lastQueryParams().employeeId).toBeUndefined()
+    expect(clientNames()).toHaveLength(APPOINTMENTS.length)
+  })
+
+  /**
+   * El arranque depende de una lista que llega POR RED, y esa lista puede
+   * volver a llegar (refetch, alta de empleado) despues de que el usuario haya
+   * elegido. Recalcular el arranque entonces le pisaria la pildora: aqui la
+   * lista vuelve con alguien NUEVO por delante y la eleccion tiene que
+   * aguantar.
+   */
+  it("una recarga de la lista de empleados no pisa la pildora ya elegida", () => {
+    mockMatchMedia(false)
+
+    const { rerender } = render(<CalendarPage />)
+    fireEvent.click(pill("Sofia"))
+    expect(lastQueryParams().employeeId).toBe("emp_2")
+
+    useEmployeesMock.mockReturnValue({
+      data: {
+        content: [
+          makeEmployee({ id: "emp_0", firstName: "Marc", lastName: "Oliva" }),
+          ...EMPLOYEES,
+        ],
+      },
+    })
+    rerender(<CalendarPage />)
+
+    expect(pill("Sofia")).toHaveClass("bg-primary")
+    expect(pill("Marc")).not.toHaveClass("bg-primary")
+    expect(lastQueryParams().employeeId).toBe("emp_2")
+  })
+
   // --- La consulta cambia por ancho ----------------------------------------
 
   it("en movil la consulta lleva el employeeId del filtro de pildoras", () => {
     mockMatchMedia(false)
 
     render(<CalendarPage />)
-    expect(lastQueryParams().employeeId).toBeUndefined()
+    expect(lastQueryParams().employeeId).toBe("emp_1")
 
-    fireEvent.click(screen.getByRole("button", { name: /Sofia/ }))
+    fireEvent.click(pill("Sofia"))
 
     expect(lastQueryParams()).toMatchObject({ date: TODAY_ISO, employeeId: "emp_2" })
   })
@@ -453,7 +581,7 @@ describe("CalendarPage", () => {
     mockMatchMedia(false)
 
     const { rerender } = render(<CalendarPage />)
-    fireEvent.click(screen.getByRole("button", { name: /Sofia/ }))
+    fireEvent.click(pill("Sofia"))
     expect(lastQueryParams().employeeId).toBe("emp_2")
 
     mockMatchMedia(true)
@@ -501,7 +629,7 @@ describe("CalendarPage", () => {
     mockMatchMedia(false)
 
     const { container } = render(<CalendarPage />)
-    fireEvent.click(screen.getByRole("button", { name: /Sofia/ }))
+    fireEvent.click(pill("Sofia"))
 
     const slot = container.querySelector(
       '[data-testid="slot-target"][data-time="15:30"]'
@@ -566,11 +694,14 @@ describe("CalendarPage", () => {
   // --- Hueco libre ---------------------------------------------------------
 
   /**
-   * BLOQUEANTE cerrado: en movil con "Todos" -- el estado inicial y el que
-   * dibuja el artboard -- la pantalla pintaba el descanso pero calculaba el
-   * hueco sin el, asi que el recuadro "Libre · toca para crear" caia ENCIMA
-   * del rayado del almuerzo e invitaba a crear una cita a la hora de comer.
-   * Pintar y calcular tienen que leer el MISMO dato.
+   * BLOQUEANTE cerrado: en movil con "Todos" la pantalla pintaba el descanso
+   * pero calculaba el hueco sin el, asi que el recuadro "Libre · toca para
+   * crear" caia ENCIMA del rayado del almuerzo e invitaba a crear una cita a
+   * la hora de comer. Pintar y calcular tienen que leer el MISMO dato.
+   *
+   * "Todos" ya no es el arranque sino una eleccion, y por eso se pulsa: es el
+   * caso en que `visibleBreak` tiene que resolver el descanso entre VARIAS
+   * columnas, que es donde el hueco se descolgaba de lo pintado.
    */
   it("en movil y en 'Todos' el hueco libre no se ofrece encima del almuerzo", () => {
     mockMatchMedia(false)
@@ -593,6 +724,7 @@ describe("CalendarPage", () => {
     })
 
     render(<CalendarPage />)
+    fireEvent.click(pill("Todos"))
 
     expect(screen.getByTestId("break-block")).toHaveStyle({ top: topOf(13), height: "92px" })
     // 14:00, el primer tramo DESPUES del almuerzo -- no las 13:00.
@@ -623,6 +755,9 @@ describe("CalendarPage", () => {
     vi.setSystemTime(new Date(2026, 7, 27, 9, 0))
 
     render(<CalendarPage />)
+    // El dia entero: la cita que el buscador dejara ver es de Sofia, y el
+    // filtro arranca en Laura.
+    fireEvent.click(pill("Todos"))
     expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
 
     // "manicura" deja fuera la cita de las 09:00-10:00, que es justo la que
@@ -659,7 +794,7 @@ describe("CalendarPage", () => {
     expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
   })
 
-  it("pulsar el hueco libre lleva al alta a esa HORA", () => {
+  it("pulsar el hueco libre lleva al alta a esa HORA y con el empleado del filtro", () => {
     mockMatchMedia(false)
 
     render(<CalendarPage />)
@@ -670,6 +805,9 @@ describe("CalendarPage", () => {
     expect(url.searchParams.get("date")).toBe(TODAY_ISO)
     // La hora, no los cinco primeros caracteres del ISO ("2026-").
     expect(url.searchParams.get("time")).toBe("10:00")
+    // Con el filtro arrancando en un empleado, el hueco ya no llega al alta
+    // sin profesional: es el que esta seleccionado.
+    expect(url.searchParams.get("employeeId")).toBe("emp_1")
   })
 
   // --- Navegacion de dia ---------------------------------------------------
