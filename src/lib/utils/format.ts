@@ -29,3 +29,13 @@ export function initials(firstName: string, lastName?: string): string {
 export function formatAddress(street: string, city: string, postalCode: string): string {
   return `${street}, ${city} ${postalCode}`
 }
+
+// Capitaliza solo la primera letra de la cadena. Distinto de la clase CSS
+// `capitalize`, que mayusculiza la primera letra de CADA palabra -- en una
+// fecha tipo "martes, 27 de agosto" eso tambien mayusculiza "de" y el mes
+// ("Martes, 27 De Agosto"), que no es lo que dibujan los artboards
+// ("Martes, 27 de agosto"). Usar siempre este helper para textos de fecha en
+// castellano ya formateados por date-fns (que devuelve dia/mes en minuscula).
+export function capitalizeFirst(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}

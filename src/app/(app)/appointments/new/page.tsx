@@ -48,7 +48,13 @@ export default function NewAppointmentPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 p-4">
+      {/*
+        `mx-auto max-w-3xl` propio: esta pantalla no monta `PageShell` (tiene
+        cabecera de asistente a pantalla completa), asi que perdio el
+        centrado en tablet (768-1023px) cuando ese ancho maximo salio del
+        `<main>` de `layout.tsx` hacia dentro de cada pantalla.
+      */}
+      <div className="mx-auto w-full max-w-3xl flex-1 p-4">
         {step === 1 && <EmployeeStep />}
         {step === 2 && <ServiceStep />}
         {step === 3 && <DateTimeStep />}

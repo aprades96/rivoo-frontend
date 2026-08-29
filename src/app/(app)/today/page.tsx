@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarCheck, Clock, RefreshCw } from "lucide-react"
+import { CalendarCheck, Clock, Plus, RefreshCw } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { PageShell } from "@/components/layout/page-shell"
 import { AppointmentCard } from "@/components/appointments/appointment-card"
 import { AppointmentDetailSheet } from "@/components/appointments/appointment-detail-sheet"
@@ -15,6 +15,7 @@ import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { useTodayAppointments } from "@/hooks/use-appointments"
 import { useServices } from "@/hooks/use-staff"
 import { useAuth } from "@/hooks/use-auth"
+import { capitalizeFirst } from "@/lib/utils/format"
 import Link from "next/link"
 import type { Appointment } from "@/types/appointment"
 
@@ -75,21 +76,42 @@ export default function TodayPage() {
   )
 
   const greetingTitle = `${getGreeting()}${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`
-  const todayLabel = format(new Date(), "EEEE, d MMMM", { locale: es })
+  // `capitalizeFirst`, no la clase CSS `capitalize`: esta ultima mayusculiza
+  // tambien "de" y el mes ("Martes, 27 De Agosto"), distinto de lo que dibuja
+  // el artboard ("Martes, 27 de agosto") -- mismo criterio que `/calendar`
+  // (`calendar/page.tsx`), de donde viene este helper compartido.
+  const todayLabel = capitalizeFirst(format(new Date(), "EEEE, d 'de' MMMM", { locale: es }))
 
   return (
     <PageShell
       title={greetingTitle}
       subtitle={`${todayLabel} · ${format(new Date(), "HH:mm")}`}
       actions={
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => refetch()}
-          disabled={isRefetching}
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-        </Button>
+        <>
+          {/*
+            HoyDesktop.dc.html:80-81: 38x38, borde #E7DCCF, fondo blanco,
+            radio 8px, icono de 17px en #7A6A5F -- es un boton `outline`, no
+            `ghost` (que es transparente y sin borde).
+          */}
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Actualizar"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="size-[38px] text-muted-foreground"
+          >
+            <RefreshCw className={`size-[17px] ${isRefetching ? "animate-spin" : ""}`} />
+          </Button>
+          {/*
+            HoyDesktop.dc.html:83-86: unico CTA de creacion en escritorio
+            desde que el boton flotante se retiro de esa rama.
+          */}
+          <Link href="/appointments/new" className={buttonVariants({ size: "action" })}>
+            <Plus className="size-[17px]" />
+            Nueva cita
+          </Link>
+        </>
       }
       mobileActions={user ? <UserBadge name={user.name} /> : null}
     >
@@ -101,7 +123,7 @@ export default function TodayPage() {
           fecha (con hora) ya sale en el `subtitle` de la cabecera.
         */}
         <div className="flex items-center justify-between gap-3 lg:hidden">
-          <p className="text-sm text-muted-foreground capitalize">{todayLabel}</p>
+          <p className="text-sm text-muted-foreground">{todayLabel}</p>
           <Button
             variant="outline"
             size="icon"

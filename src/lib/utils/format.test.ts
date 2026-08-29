@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { formatCurrency, formatPhone, initials } from "./format"
+import { formatCurrency, formatPhone, initials, capitalizeFirst } from "./format"
 
 describe("formatCurrency", () => {
   it("formats as EUR with Spanish locale", () => {
@@ -76,5 +76,19 @@ describe("initials", () => {
 
   it("uppercases", () => {
     expect(initials("ana", "lopez")).toBe("AL")
+  })
+})
+
+describe("capitalizeFirst", () => {
+  it("uppercases only the first letter, leaving the rest untouched", () => {
+    expect(capitalizeFirst("martes, 27 de agosto")).toBe("Martes, 27 de agosto")
+  })
+
+  it("does not uppercase words after the first, unlike CSS capitalize", () => {
+    expect(capitalizeFirst("miercoles, 28 de septiembre")).not.toContain("De")
+  })
+
+  it("returns an empty string unchanged", () => {
+    expect(capitalizeFirst("")).toBe("")
   })
 })

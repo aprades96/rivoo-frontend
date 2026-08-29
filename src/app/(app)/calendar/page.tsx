@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react"
 import { format, addDays, subDays } from "date-fns"
 import { es } from "date-fns/locale"
-import { AlignCenter, ChevronLeft, ChevronRight, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { AlignCenter, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { PageShell } from "@/components/layout/page-shell"
 import { DayView } from "@/components/calendar/day-view"
 import { DateNavigator } from "@/components/calendar/date-navigator"
@@ -13,21 +13,20 @@ import { AppointmentDetailSheet } from "@/components/appointments/appointment-de
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { useAppointments } from "@/hooks/use-appointments"
 import { useEmployees } from "@/hooks/use-staff"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { capitalizeFirst } from "@/lib/utils/format"
+import Link from "next/link"
 import type { Appointment } from "@/types/appointment"
 
-// El titulo es la fecha visible ("Martes, 27 de agosto"); date-fns/es
-// devuelve el dia de la semana en minuscula, y aqui solo se capitaliza la
-// primera letra de la cadena (nunca con CSS `capitalize`, que tambien
-// mayusculizaria "de" y el mes).
-function capitalizeFirst(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1)
-}
+// Tailwind's `lg:` breakpoint (1024px), igual que `page-shell.tsx`.
+const DESKTOP_QUERY = "(min-width: 1024px)"
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const isDesktop = useMediaQuery(DESKTOP_QUERY)
 
   const dateStr = format(currentDate, "yyyy-MM-dd")
 
@@ -56,9 +55,18 @@ export default function CalendarPage() {
   const goToNextDay = () => setCurrentDate((d) => addDays(d, 1))
   const goToToday = () => setCurrentDate(new Date())
 
+  // El titulo es la fecha completa (decision de producto, no se reabre aqui).
+  // En movil no hay sitio: a 390px quedan ~270px libres tras el padding y
+  // los dos botones de 36x36 de `mobileActions`, y "Miercoles, 28 de
+  // septiembre" no cabe a 21px (se truncaba). En vez de tocar el tamano de
+  // fuente del `h1` de `PageShell` (chasis, fuera de alcance), aqui se
+  // recorta el propio dato a un formato corto ("Mie, 28 sep") por debajo de
+  // 1024px -- cabe siempre, para cualquier dia/mes, sin truncar.
+  const titleFormat = isDesktop ? "EEEE, d 'de' MMMM" : "EEE, d MMM"
+
   return (
     <PageShell
-      title={capitalizeFirst(format(currentDate, "EEEE, d 'de' MMMM", { locale: es }))}
+      title={capitalizeFirst(format(currentDate, titleFormat, { locale: es }))}
       titleSize="lg"
       // El navegador de fecha va pegado al titulo (CalendarioDesktop:75-84),
       // no es una flecha de volver -- por eso esta pantalla no lleva `back`
@@ -92,10 +100,17 @@ export default function CalendarPage() {
           </Button>
         </div>
       }
-      // El segmentado Dia/Semana, el buscador y el CTA de escritorio
+      // El segmentado Dia/Semana y el buscador de escritorio
       // (CalendarioDesktop:88-100) son del bloque del calendario: no existen
-      // en el codigo y no se inventan aqui, asi que `actions` de escritorio
-      // se queda vacio.
+      // en el codigo y no se inventan aqui. El CTA "Nueva cita" si es de esta
+      // tarea (unica via de creacion en escritorio tras retirarse el boton
+      // flotante de esa rama).
+      actions={
+        <Link href="/appointments/new" className={buttonVariants({ size: "action" })}>
+          <Plus className="size-[17px]" />
+          Nueva cita
+        </Link>
+      }
       mobileActions={
         <div className="flex items-center gap-2">
           {/*
