@@ -1,41 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
+import { Clock, User, Scissors, Phone, Mail, FileText } from "lucide-react"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import { AppointmentActions } from "./appointment-actions"
+import { CancelAppointmentDialog } from "./cancel-appointment-dialog"
+import { statusConfig } from "./status-badge"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { StatusBadge } from "./status-badge"
-import { useUpdateAppointmentStatus, useCancelAppointment } from "@/hooks/use-appointments"
-import { formatTime, formatTimeRange, formatDate, formatDuration } from "@/lib/utils/dates"
-import { formatCurrency } from "@/lib/utils/format"
-import {
-  Clock,
-  User,
-  Scissors,
-  Phone,
-  Mail,
-  FileText,
-  Check,
-  Play,
-  CircleCheck,
-  X,
-  UserX,
-  Loader2,
-} from "lucide-react"
+  getAppointmentTimeRange,
+  getAppointmentDateAndDuration,
+  getAppointmentServiceSummary,
+  getAppointmentStatusLabel,
+  getAppointmentSheetMeta,
+} from "./appointment-detail-facts"
+import { useUpdateAppointmentStatus } from "@/hooks/use-appointments"
+import { useEmployees } from "@/hooks/use-staff"
+import { employeeSolidColor } from "@/lib/utils/avatar"
+import { formatPhone } from "@/lib/utils/format"
 import type { Appointment, AppointmentStatus } from "@/types/appointment"
 
 interface AppointmentDetailSheetProps {
@@ -44,18 +26,29 @@ interface AppointmentDetailSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+/**
+ * Hoja inferior de movil (`design/DetalleCita.dc.html`, 390x844), T8. Chasis y
+ * valores propios de este ancho (D3); el escritorio vive en
+ * `appointment-detail-panel.tsx` (T9) con sus propias diferencias (§1.2).
+ */
 export function AppointmentDetailSheet({
   appointment,
   open,
   onOpenChange,
 }: AppointmentDetailSheetProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
-  const [cancelReason, setCancelReason] = useState("")
 
   const updateStatus = useUpdateAppointmentStatus()
-  const cancelAppointment = useCancelAppointment()
+  const { data: employeesData } = useEmployees()
 
   if (!appointment) return null
+
+  const employees = employeesData?.content ?? []
+  const employeeIndex = employees.findIndex((employee) => employee.id === appointment.employeeId)
+  const employee = employeeIndex >= 0 ? employees[employeeIndex] : null
+  // Empleado borrado (D11): color de reserva por posicion 0, sin cargo -- no
+  // hay cargo que pintar en esta fila, la hoja no lo dibuja (§1.1).
+  const pointColor = employeeSolidColor(employee?.colorHex ?? null, employeeIndex >= 0 ? employeeIndex : 0)
 
   const handleStatusChange = (status: AppointmentStatus) => {
     updateStatus.mutate(
@@ -64,61 +57,60 @@ export function AppointmentDetailSheet({
     )
   }
 
-  const handleCancel = () => {
-    cancelAppointment.mutate(
-      { id: appointment.id, reason: cancelReason || undefined, cancelledBy: "SALON" },
-      {
-        onSuccess: () => {
-          setCancelDialogOpen(false)
-          setCancelReason("")
-          onOpenChange(false)
-        },
-      }
-    )
-  }
-
-  const isLoading = updateStatus.isPending || cancelAppointment.isPending
-
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader className="text-left">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-base">Detalle de cita</SheetTitle>
-              <StatusBadge status={appointment.status} />
-            </div>
-          </SheetHeader>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          overlayClassName="bg-[rgba(42,35,32,0.42)]"
+          className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-4 pt-[10px] pb-5 shadow-[0_-8px_30px_rgba(42,35,32,0.2)] data-[side=bottom]:border-t-0"
+        >
+          {/* Asa (`DetalleCita.dc.html:38-40`) -- sin boton de cerrar (§1.1). */}
+          <div className="flex justify-center">
+            <div data-testid="detail-sheet-grabber" className="h-1 w-9 rounded-full bg-grabber" />
+          </div>
 
-          <div className="space-y-4 px-4 pb-4">
-            {/* Time & Date */}
-            <div className="flex items-center gap-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">
-                  {formatTimeRange(appointment.startTime, appointment.endTime)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(appointment.startTime)} · {formatDuration(appointment.serviceDurationMinutes)}
-                </p>
+          {/* Cabecera (`:42-45`) */}
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="text-[23px] leading-[1.1] font-semibold tracking-display">
+              Detalle de cita
+            </SheetTitle>
+            <span
+              className={`inline-flex items-center rounded-full px-[10px] py-1 text-[11px] font-semibold ${statusConfig[appointment.status].className}`}
+            >
+              {getAppointmentStatusLabel(appointment, "sheet")}
+            </span>
+          </div>
+
+          {/* Lista de hechos (`:47-93`) */}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-start gap-3">
+              <Clock className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[15px] font-semibold tabular-nums">
+                  {getAppointmentTimeRange(appointment)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {getAppointmentDateAndDuration(appointment)}
+                </span>
               </div>
             </div>
 
-            {/* Client */}
-            <div className="flex items-center gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{appointment.clientName}</p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-start gap-3">
+              <User className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+              <div className="flex flex-col gap-1">
+                <span className="text-[15px] font-semibold">{appointment.clientName}</span>
+                <div className="flex items-center gap-3.5 text-xs text-muted-foreground">
                   {appointment.clientPhone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {appointment.clientPhone}
+                    <span className="flex items-center gap-[5px]">
+                      <Phone className="size-3" strokeWidth={1.75} />
+                      <span className="tabular-nums">{formatPhone(appointment.clientPhone)}</span>
                     </span>
                   )}
                   {appointment.clientEmail && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
+                    <span className="flex items-center gap-[5px]">
+                      <Mail className="size-3" strokeWidth={1.75} />
                       {appointment.clientEmail}
                     </span>
                   )}
@@ -126,152 +118,59 @@ export function AppointmentDetailSheet({
               </div>
             </div>
 
-            {/* Service */}
-            <div className="flex items-center gap-3">
-              <Scissors className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{appointment.serviceName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDuration(appointment.serviceDurationMinutes)} · {formatCurrency(appointment.servicePrice)}
-                </p>
+            <div className="flex items-start gap-3">
+              <Scissors className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[15px] font-semibold">{appointment.serviceName}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {getAppointmentServiceSummary(appointment)}
+                </span>
               </div>
             </div>
 
-            {/* Employee */}
+            {/* Empleado: PUNTO solido, no icono (`:82-87`, D12). */}
             <div className="flex items-center gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm">{appointment.employeeName}</p>
+              <div className="flex size-[18px] shrink-0 items-center justify-center">
+                <div
+                  data-testid="employee-color-dot"
+                  className="size-[10px] rounded-full"
+                  style={{ backgroundColor: pointColor }}
+                />
+              </div>
+              <span className="text-sm">{appointment.employeeName}</span>
             </div>
 
-            {/* Notes */}
             {appointment.notes && (
               <div className="flex items-start gap-3">
-                <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+                <FileText className="mt-px size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+                <p className="text-[13px] leading-[1.45] text-muted-foreground">{appointment.notes}</p>
               </div>
             )}
-
-            <Separator />
-
-            {/* Actions */}
-            <div className="space-y-2">
-              <StatusActions
-                status={appointment.status}
-                onStatusChange={handleStatusChange}
-                onCancelRequest={() => setCancelDialogOpen(true)}
-                isLoading={isLoading}
-              />
-            </div>
-
-            {/* Meta */}
-            <div className="text-[10px] text-muted-foreground">
-              <span>Fuente: {sourceLabel(appointment.source)}</span>
-              {appointment.reminderSent && <span> · Recordatorio enviado</span>}
-            </div>
           </div>
+
+          <Separator />
+
+          <AppointmentActions
+            status={appointment.status}
+            variant="sheet"
+            onStatusChange={handleStatusChange}
+            onCancelRequest={() => setCancelDialogOpen(true)}
+            isPending={updateStatus.isPending}
+          />
+
+          <span className="text-[11px] text-muted-foreground-2">
+            {getAppointmentSheetMeta(appointment)}
+          </span>
         </SheetContent>
       </Sheet>
 
-      {/* Cancel confirmation dialog */}
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancelar cita</DialogTitle>
-            <DialogDescription>
-              Esta accion cancelara la cita de {appointment.clientName}.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Motivo de cancelacion (opcional)"
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
-              Volver
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancel}
-              disabled={cancelAppointment.isPending}
-            >
-              {cancelAppointment.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Cancelar cita
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CancelAppointmentDialog
+        appointmentId={appointment.id}
+        clientName={appointment.clientName}
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onCancelled={() => onOpenChange(false)}
+      />
     </>
   )
-}
-
-function StatusActions({
-  status,
-  onStatusChange,
-  onCancelRequest,
-  isLoading,
-}: {
-  status: AppointmentStatus
-  onStatusChange: (status: AppointmentStatus) => void
-  onCancelRequest: () => void
-  isLoading: boolean
-}) {
-  const actions: { label: string; status?: AppointmentStatus; icon: typeof Check; variant?: "default" | "outline" | "destructive"; cancel?: boolean }[] = []
-
-  switch (status) {
-    case "PENDING":
-      actions.push({ label: "Confirmar", status: "CONFIRMED", icon: Check })
-      actions.push({ label: "Cancelar", icon: X, variant: "destructive", cancel: true })
-      break
-    case "CONFIRMED":
-      actions.push({ label: "Iniciar", status: "IN_PROGRESS", icon: Play })
-      actions.push({ label: "No asistio", status: "NO_SHOW", icon: UserX, variant: "outline" })
-      actions.push({ label: "Cancelar", icon: X, variant: "destructive", cancel: true })
-      break
-    case "IN_PROGRESS":
-      actions.push({ label: "Completar", status: "COMPLETED", icon: CircleCheck })
-      actions.push({ label: "Cancelar", icon: X, variant: "destructive", cancel: true })
-      break
-    // COMPLETED, CANCELLED, NO_SHOW — no actions
-    default:
-      return null
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {actions.map((action) => {
-        const Icon = action.icon
-        return (
-          <Button
-            key={action.label}
-            variant={action.variant ?? "default"}
-            className="w-full justify-start"
-            disabled={isLoading}
-            onClick={() =>
-              action.cancel ? onCancelRequest() : onStatusChange(action.status!)
-            }
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Icon className="mr-2 h-4 w-4" />
-            )}
-            {action.label}
-          </Button>
-        )
-      })}
-    </div>
-  )
-}
-
-function sourceLabel(source: string): string {
-  switch (source) {
-    case "ONLINE": return "Reserva online"
-    case "PHONE": return "Telefono"
-    case "WALK_IN": return "Sin cita"
-    case "MANUAL": return "Manual"
-    default: return source
-  }
 }

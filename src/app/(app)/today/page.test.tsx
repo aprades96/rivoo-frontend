@@ -17,8 +17,18 @@ vi.mock("@/hooks/use-appointments", () => ({
   useCancelAppointment: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
+// La hoja de detalle (T8) llama a `useEmployees()` (D11) para el punto de
+// color del empleado. Sin este export, en cuanto se abriera la hoja
+// `useEmployees()` valdria `undefined` y `.data` reventaria con un
+// `TypeError` -- pero de hecho ya revienta ANTES de abrir nada: `use-staff`
+// es un modulo entero sustituido por esta factoria (D14), asi que toda
+// importacion de `useEmployees` desde cualquier componente montado por esta
+// pagina resuelve a `undefined` sin este export, se abra la hoja o no.
+const useEmployeesMock = vi.fn()
+
 vi.mock("@/hooks/use-staff", () => ({
   useServices: (...args: unknown[]) => useServicesMock(...args),
+  useEmployees: (...args: unknown[]) => useEmployeesMock(...args),
 }))
 
 vi.mock("@/hooks/use-auth", () => ({
@@ -76,6 +86,8 @@ describe("TodayPage", () => {
     useServicesMock.mockReset()
     useAuthMock.mockReset()
     useAuthMock.mockReturnValue({ user: { name: "Ana Garcia" } })
+    useEmployeesMock.mockReset()
+    useEmployeesMock.mockReturnValue({ data: { content: [] } })
   })
 
   it("muestra el aviso de servicios cuando el salon no tiene ninguno, en vez del vacio de citas", () => {
