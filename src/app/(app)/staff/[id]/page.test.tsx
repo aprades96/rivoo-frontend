@@ -1,13 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import EmployeeDetailPage from "./page"
 import type { Employee } from "@/types/employee"
 
+// `push`/`back` estables via `vi.hoisted`: un `useRouter: () => ({ push: vi.fn(), ... })`
+// inline crea un espia NUEVO en cada llamada al hook, y aqui hace falta aseverar
+// sobre el mismo espia entre el render y el click (mismo patron que page-shell.test.tsx).
+const { pushMock, backMock } = vi.hoisted(() => ({ pushMock: vi.fn(), backMock: vi.fn() }))
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useRouter: () => ({ push: pushMock, replace: vi.fn(), back: backMock }),
 }))
+
+/** `matches: desktop` para simular `(min-width: 1024px)`; jsdom no tiene layout real. */
+function mockMatchMedia(desktop: boolean) {
+  window.matchMedia = ((query: string) => ({
+    matches: desktop,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
 
 const useAuthMock = vi.fn()
 
@@ -78,6 +97,12 @@ describe("EmployeeDetailPage", () => {
     useAuthMock.mockReturnValue({ accessToken: "token", isOwner: true })
     useEmployeeServicesMock.mockReset()
     useEmployeeServicesMock.mockReturnValue({ data: undefined })
+    pushMock.mockClear()
+    backMock.mockClear()
+  })
+
+  afterEach(() => {
+    mockMatchMedia(false)
   })
 
   it("does not mount the working-hours editor for the 'Horarios' tab while the schedule is still loading, even though the employee record has already arrived", async () => {
@@ -131,5 +156,41 @@ describe("EmployeeDetailPage", () => {
     // macrotask, per AGENTS.md), not just that the error text disappeared.
     expect(await screen.findByDisplayValue("10:30")).toBeInTheDocument()
     expect(screen.queryByText(/no se ha podido cargar el horario/i)).not.toBeInTheDocument()
+  })
+
+  it("the mobile back control calls router.push('/staff') and not router.back()", async () => {
+    // This screen is reachable without having passed through /staff (e.g. a
+    // direct link to /staff/emp_1), so the fixed destination is that list,
+    // not "whatever is in the history stack". `router.back()` here would
+    // leave the arrow going nowhere for that entry path.
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Volver" }))
+
+    expect(pushMock).toHaveBeenCalledWith("/staff")
+    expect(backMock).not.toHaveBeenCalled()
+  })
+
+  it("the desktop back control (desktopBack) calls router.push('/staff') and not router.back()", async () => {
+    mockMatchMedia(true)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Volver" }))
+
+    expect(pushMock).toHaveBeenCalledWith("/staff")
+    expect(backMock).not.toHaveBeenCalled()
   })
 })

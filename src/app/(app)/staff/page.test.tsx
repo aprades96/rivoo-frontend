@@ -158,4 +158,26 @@ describe("StaffPage", () => {
     const servicesPanel = await screen.findByRole("tabpanel")
     expect(servicesPanel).toHaveTextContent("Corte de pelo")
   })
+
+  it("sigue a la query cuando cambia sin remontar (navegacion de cliente desde la barra lateral)", async () => {
+    // A diferencia de los dos tests anteriores, aqui no hay clic sobre las
+    // propias Tabs ni remontaje con la query ya puesta: se monta en /staff
+    // (sin query), la query cambia por debajo -- como hace el <Link> de la
+    // barra lateral hacia /staff?tab=services, que es navegacion de cliente
+    // dentro de la MISMA ruta, no un remount -- y solo entonces se
+    // re-renderiza. Con `value={tab}` el panel visible sigue a la query; con
+    // `defaultValue={tab}` (el defecto que este test existe para atrapar) las
+    // Tabs se quedarian ancladas al valor leido en el primer render y el
+    // panel seguiria mostrando Empleados.
+    const { rerenderPage } = renderPage()
+
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Ana Garcia")
+
+    replaceMock("/staff?tab=services")
+    rerenderPage()
+
+    const servicesPanel = await screen.findByRole("tabpanel")
+    expect(servicesPanel).toHaveTextContent("Corte de pelo")
+    expect(servicesPanel).not.toHaveTextContent("Ana Garcia")
+  })
 })
