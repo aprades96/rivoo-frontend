@@ -86,6 +86,8 @@
   --color-warning-soft: var(--warning-soft);
   --color-destructive-tint: var(--destructive-tint);
   --color-border-dashed: var(--border-dashed);
+  --color-warning-text: var(--warning-text);
+  --color-grabber: var(--grabber);
 
   /* Tracking de titulos */
   --tracking-display: -0.02em;
@@ -164,6 +166,8 @@
   --warning-soft: #fffcf5; /* CalendarioDesktop.dc.html:168 — fondo de una cita pendiente */
   --destructive-tint: #fdf6f4; /* CalendarioDesktop.dc.html:225 — fondo de una cita cancelada */
   --border-dashed: #d8c9b8; /* Calendario.dc.html:112 — borde discontinuo del hueco Libre . toca para crear */
+  --warning-text: #5f4a28; /* DetalleCitaDesktop.dc.html:305 — cuerpo del recuadro de nota */
+  --grabber: #d8c9b8; /* DetalleCita.dc.html:39 — asa de la hoja inferior */
 }
 
 @layer base {
