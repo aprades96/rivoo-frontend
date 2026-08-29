@@ -18,15 +18,22 @@ export interface PageShellProps {
    * Las cinco subpaginas de ajustes llevan flecha en movil y no en escritorio
    * porque alli la salida es la subnav lateral de 210px -- fusionar ambas en
    * una sola prop rompe ese caso.
+   *
+   * `true` hace `router.back()`. Pasar una funcion la sustituye: seis de las
+   * siete pantallas con flecha vuelven al historial, pero `staff/[id]` navega
+   * a una ruta fija (`router.push("/staff")`), y `router.back()` no sirve ahi.
    */
-  back?: boolean
+  back?: boolean | (() => void)
   /**
    * Flecha 38x38 en la barra superior de escritorio. No es booleano porque
    * los dos artboards que la llevan no la dibujan igual: `DetalleCliente`
    * (`plain`) no lleva borde; `DetalleEmpleado` (`bordered`) si, y ademas su
    * titulo lleva `padding-left:8px` que `plain` no lleva.
+   *
+   * La variante a secas hace `router.back()`; `{ variant, onBack }` sustituye
+   * la navegacion por defecto -- mismo motivo que en `back`.
    */
-  desktopBack?: "plain" | "bordered"
+  desktopBack?: "plain" | "bordered" | { variant: "plain" | "bordered"; onBack: () => void }
   /** Cluster de acciones a la derecha, en los DOS anchos. */
   actions?: ReactNode
   /**
@@ -60,6 +67,20 @@ export function PageShell({
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
   const router = useRouter()
 
+  const desktopBackResolved =
+    desktopBack === undefined
+      ? undefined
+      : typeof desktopBack === "string"
+        ? { variant: desktopBack, onBack: () => router.back() }
+        : desktopBack
+
+  const mobileBackResolved =
+    back === false || back === undefined
+      ? undefined
+      : typeof back === "function"
+        ? back
+        : () => router.back()
+
   // Montaje condicional, no CSS: jsdom no aplica CSS, asi que un arbol
   // duplicado escondido con `hidden` seguiria rompiendo `getByRole` por
   // ambiguedad -- y peor, dejaria pasar defectos.
@@ -68,12 +89,11 @@ export function PageShell({
       <div className="flex flex-1 flex-col">
         <DesktopHeader
           title={title}
-          desktopBack={desktopBack}
+          desktopBack={desktopBackResolved}
           actions={actions}
           subtitle={subtitle}
           titleAdjacent={titleAdjacent}
           titleSize={titleSize}
-          onBack={() => router.back()}
         />
         <div className="flex flex-col px-7 py-6">
           <div
@@ -93,9 +113,8 @@ export function PageShell({
     <div className="flex flex-1 flex-col">
       <MobileHeader
         title={title}
-        back={back}
+        onBack={mobileBackResolved}
         actions={mobileActionsContent}
-        onBack={() => router.back()}
       />
       <div className="p-4 md:py-6">
         <div data-slot="page-shell-content" className={cn(contentClassName)}>
@@ -108,12 +127,11 @@ export function PageShell({
 
 interface DesktopHeaderProps {
   title: string
-  desktopBack?: "plain" | "bordered"
+  desktopBack?: { variant: "plain" | "bordered"; onBack: () => void }
   actions?: ReactNode
   subtitle?: ReactNode
   titleAdjacent?: ReactNode
   titleSize: "default" | "lg"
-  onBack: () => void
 }
 
 function DesktopHeader({
@@ -123,7 +141,6 @@ function DesktopHeader({
   subtitle,
   titleAdjacent,
   titleSize,
-  onBack,
 }: DesktopHeaderProps) {
   return (
     <div
@@ -135,16 +152,16 @@ function DesktopHeader({
       <div className="flex items-center gap-1.5 min-w-0">
         {desktopBack && (
           <Button
-            variant={desktopBack === "bordered" ? "outline" : "ghost"}
+            variant={desktopBack.variant === "bordered" ? "outline" : "ghost"}
             size="icon"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={desktopBack.onBack}
             className="size-[38px] shrink-0"
           >
             <ChevronLeft className="size-[18px]" />
           </Button>
         )}
-        <div className={cn("flex min-w-0 flex-col", desktopBack === "bordered" && "pl-2")}>
+        <div className={cn("flex min-w-0 flex-col", desktopBack?.variant === "bordered" && "pl-2")}>
           <div className="flex items-center gap-4 min-w-0">
             <h1
               className={cn(
@@ -166,21 +183,21 @@ function DesktopHeader({
 
 interface MobileHeaderProps {
   title: string
-  back: boolean
+  onBack?: () => void
   actions?: ReactNode
-  onBack: () => void
 }
 
-function MobileHeader({ title, back, actions, onBack }: MobileHeaderProps) {
+function MobileHeader({ title, onBack, actions }: MobileHeaderProps) {
+  const hasBack = onBack !== undefined
   return (
     <div
       className={cn(
         "flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border",
-        back ? "pl-2 pr-3.5" : "px-4"
+        hasBack ? "pl-2 pr-3.5" : "px-4"
       )}
     >
       <div className="flex min-w-0 items-center gap-1">
-        {back && (
+        {hasBack && (
           <Button
             variant="ghost"
             size="icon"
@@ -194,7 +211,7 @@ function MobileHeader({ title, back, actions, onBack }: MobileHeaderProps) {
         <h1
           className={cn(
             "truncate font-heading font-semibold tracking-display",
-            back ? "text-[15px]" : "text-[21px] tracking-[-0.01em]"
+            hasBack ? "text-[15px]" : "text-[21px] tracking-[-0.01em]"
           )}
         >
           {title}

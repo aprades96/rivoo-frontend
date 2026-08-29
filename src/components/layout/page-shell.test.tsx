@@ -1,9 +1,12 @@
 import { describe, it, expect, afterEach, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { PageShell } from "./page-shell"
 
+const { routerBackMock } = vi.hoisted(() => ({ routerBackMock: vi.fn() }))
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ back: vi.fn() }),
+  useRouter: () => ({ back: routerBackMock }),
 }))
 
 /** `matches: desktop` para simular `(min-width: 1024px)`; jsdom no tiene layout real. */
@@ -23,6 +26,7 @@ function mockMatchMedia(desktop: boolean) {
 describe("PageShell", () => {
   afterEach(() => {
     mockMatchMedia(false)
+    routerBackMock.mockClear()
   })
 
   it("pinta el mismo titulo en movil y en escritorio", () => {
@@ -171,5 +175,65 @@ describe("PageShell", () => {
       </PageShell>
     )
     expect(container.querySelectorAll('[data-slot="page-shell-content"]')).toHaveLength(1)
+  })
+
+  it("`back={true}` en movil llama a router.back() al pulsar la flecha", async () => {
+    mockMatchMedia(false)
+    const user = userEvent.setup()
+    render(
+      <PageShell title="Ajustes de reserva" back>
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    await user.click(screen.getByRole("button", { name: /volver/i }))
+
+    expect(routerBackMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("`back` con funcion en movil llama al callback y NO a router.back()", async () => {
+    mockMatchMedia(false)
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    render(
+      <PageShell title="Detalle empleado" back={onBack}>
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    await user.click(screen.getByRole("button", { name: /volver/i }))
+
+    expect(onBack).toHaveBeenCalledTimes(1)
+    expect(routerBackMock).not.toHaveBeenCalled()
+  })
+
+  it("`desktopBack=\"bordered\"` (a secas) llama a router.back() al pulsar la flecha", async () => {
+    mockMatchMedia(true)
+    const user = userEvent.setup()
+    render(
+      <PageShell title="Detalle empleado" desktopBack="bordered">
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    await user.click(screen.getByRole("button", { name: /volver/i }))
+
+    expect(routerBackMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("`desktopBack` con `{ variant, onBack }` llama al callback y NO a router.back()", async () => {
+    mockMatchMedia(true)
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    render(
+      <PageShell title="Staff" desktopBack={{ variant: "plain", onBack }}>
+        <p>contenido</p>
+      </PageShell>
+    )
+
+    await user.click(screen.getByRole("button", { name: /volver/i }))
+
+    expect(onBack).toHaveBeenCalledTimes(1)
+    expect(routerBackMock).not.toHaveBeenCalled()
   })
 })
