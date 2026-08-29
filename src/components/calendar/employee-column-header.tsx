@@ -12,14 +12,6 @@ import { employeeAvatarAlphaStyle, employeeFallbackAvatarClassName } from "@/lib
  */
 export const EMPLOYEE_HEADER_HEIGHT_PX = 60
 
-/**
- * Re-exportada por compatibilidad: la paleta de reserva vive ahora en
- * `lib/utils/avatar.ts` (D12), porque tiene un tercer consumidor
- * (`employee-filter.tsx`) y ademas un punto de color SOLIDO que este fichero
- * no necesita. `employee-filter.tsx` sigue importando de aqui.
- */
-export { employeeFallbackAvatarClassName }
-
 export interface EmployeeColumnHeaderProps {
   column: EmployeeColumn
   /** Posicion de la columna en la rejilla: decide el color de reserva. */

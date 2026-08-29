@@ -2,11 +2,8 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
-import {
-  EmployeeColumnHeader,
-  employeeFallbackAvatarClassName,
-  EMPLOYEE_HEADER_HEIGHT_PX,
-} from "./employee-column-header"
+import { EmployeeColumnHeader, EMPLOYEE_HEADER_HEIGHT_PX } from "./employee-column-header"
+import { employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
 import type { EmployeeColumn } from "@/lib/utils/calendar"
 import type { Appointment, AppointmentStatus } from "@/types/appointment"
 import type { Employee } from "@/types/employee"
