@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { initials } from "@/lib/utils/format"
-import { employeeFallbackAvatarClassName } from "./employee-column-header"
+import { employeeAvatarAlphaStyle, employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
 import type { Employee } from "@/types/employee"
 
 interface EmployeeFilterProps {
@@ -74,9 +74,7 @@ export function EmployeeFilter({ employees, selectedId, onSelect }: EmployeeFilt
                     isSelected && "bg-white/22 text-primary-foreground"
                   )}
                   style={
-                    emp.colorHex && !isSelected
-                      ? { backgroundColor: emp.colorHex + "20", color: emp.colorHex }
-                      : undefined
+                    emp.colorHex && !isSelected ? employeeAvatarAlphaStyle(emp.colorHex) : undefined
                   }
                 >
                   {initials(emp.firstName, emp.lastName)}

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { initials } from "@/lib/utils/format"
 import { employeeDaySummary, type EmployeeColumn } from "@/lib/utils/calendar"
+import { employeeAvatarAlphaStyle, employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
 
 /**
  * El alto de la tarjeta de cabecera (`design/CalendarioDesktop.dc.html:106`).
@@ -12,43 +13,24 @@ import { employeeDaySummary, type EmployeeColumn } from "@/lib/utils/calendar"
 export const EMPLOYEE_HEADER_HEIGHT_PX = 60
 
 /**
- * Paleta de reserva para el avatar cuando el empleado no tiene `colorHex`.
- * Los cinco tokens viven en `globals.css` (`--chart-1..5`, bajo el comentario
- * "Colores de empleado en la agenda") justamente para esto.
- *
- * Las clases van escritas enteras a proposito -- Tailwind escanea el fuente y
- * no veria `bg-chart-${n}/12` construido en ejecucion.
+ * Re-exportada por compatibilidad: la paleta de reserva vive ahora en
+ * `lib/utils/avatar.ts` (D12), porque tiene un tercer consumidor
+ * (`employee-filter.tsx`) y ademas un punto de color SOLIDO que este fichero
+ * no necesita. `employee-filter.tsx` sigue importando de aqui.
  */
-const FALLBACK_AVATAR_CLASSNAMES = [
-  "bg-chart-1/12 text-chart-1",
-  "bg-chart-2/12 text-chart-2",
-  "bg-chart-3/12 text-chart-3",
-  "bg-chart-4/12 text-chart-4",
-  "bg-chart-5/12 text-chart-5",
-]
-
-/**
- * El color de reserva de un empleado sin `colorHex`, por POSICION en la lista
- * y no por id: asi dos empleados contiguos nunca comparten color y el reparto
- * es estable mientras no cambie el orden.
- *
- * Vive aqui y se exporta porque el artboard dibuja el MISMO avatar de color en
- * los dos anchos -- cabecera de columna en escritorio
- * (`design/CalendarioDesktop.dc.html:107,114,121`) y pildora de filtro en movil
- * (`design/Calendario.dc.html:53,57,61`), con valores identicos --, asi que las
- * dos pantallas tienen que leer la misma paleta. Con una copia por componente,
- * el mismo empleado salia de color arriba y gris abajo.
- */
-export function employeeFallbackAvatarClassName(index: number): string {
-  const total = FALLBACK_AVATAR_CLASSNAMES.length
-  return FALLBACK_AVATAR_CLASSNAMES[((index % total) + total) % total]
-}
+export { employeeFallbackAvatarClassName }
 
 export interface EmployeeColumnHeaderProps {
   column: EmployeeColumn
   /** Posicion de la columna en la rejilla: decide el color de reserva. */
   index: number
   className?: string
+  /**
+   * Contrato fijado en D17: "hay un panel abierto a la derecha; comprime".
+   * Solo tiene efecto en escritorio -- este componente no se monta en movil.
+   * Opcional, por defecto `false`, sin efecto en el comportamiento actual.
+   */
+  narrow?: boolean
 }
 
 /**
@@ -62,7 +44,12 @@ export interface EmployeeColumnHeaderProps {
  * del que sacar color ni iniciales. Sin ella, las citas huerfanas quedarian en
  * una columna sin encabezado.
  */
-export function EmployeeColumnHeader({ column, index, className }: EmployeeColumnHeaderProps) {
+export function EmployeeColumnHeader({
+  column,
+  index,
+  className,
+  narrow = false,
+}: EmployeeColumnHeaderProps) {
   const { employee, label, appointments } = column
   const colorHex = employee?.colorHex ?? null
 
@@ -70,11 +57,17 @@ export function EmployeeColumnHeader({ column, index, className }: EmployeeColum
     ? initials(employee.firstName, employee.lastName)
     : initials(label)
 
+  // Modo estrecho (D17, §1.3.4): la meta pierde el tramo de duracion --
+  // "4 citas · 5h 30min" -> "4 citas". El caso vacio ("Sin citas") no lleva
+  // separador, asi que el recorte lo deja intacto.
+  const fullSummary = employeeDaySummary(appointments)
+  const summary = narrow ? fullSummary.split(" · ")[0] : fullSummary
+
   return (
     <div
       data-testid="employee-column-header"
       data-employee-id={column.employeeId ?? undefined}
-      className={cn("flex items-center gap-2.5 px-3", className)}
+      className={cn("flex items-center gap-2.5 px-3", narrow && "gap-[9px] px-2.5", className)}
       style={{ height: EMPLOYEE_HEADER_HEIGHT_PX }}
     >
       <div
@@ -90,7 +83,7 @@ export function EmployeeColumnHeader({ column, index, className }: EmployeeColum
         // Mismo patron que el filtro de pildoras (`employee-filter.tsx`):
         // fondo al color del empleado con alfa "20" (12,5%) y texto al color
         // pleno. Es lo que dibuja el artboard (#F6E7E0 sobre #B4522F).
-        style={colorHex ? { backgroundColor: colorHex + "20", color: colorHex } : undefined}
+        style={colorHex ? employeeAvatarAlphaStyle(colorHex) : undefined}
       >
         {avatarText}
       </div>
@@ -100,9 +93,21 @@ export function EmployeeColumnHeader({ column, index, className }: EmployeeColum
             (`design/CalendarioDesktop.dc.html:108-110`, que no declara
             `line-height`). Con el 1.5 de la preflight de Tailwind la pareja
             nombre + resumen mide 37,5px en vez de los 31,25px dibujados. */}
-        <span className="truncate text-[14px] leading-tight font-semibold">{label}</span>
+        <span
+          className={cn(
+            "truncate",
+            // Orden a proposito: tailwind-merge trata el tamano de fuente
+            // como conflictivo con `leading` (atajo `text-lg/6`). Un
+            // `leading-*` escrito ANTES de un `text-[Npx]` se borra en
+            // silencio; aqui el tamano va primero.
+            narrow ? "text-[13px]" : "text-[14px]",
+            "leading-tight font-semibold"
+          )}
+        >
+          {label}
+        </span>
         <span className="truncate text-[11px] leading-tight text-muted-foreground-2">
-          {employeeDaySummary(appointments)}
+          {summary}
         </span>
       </div>
     </div>

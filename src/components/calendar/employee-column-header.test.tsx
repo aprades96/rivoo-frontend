@@ -389,3 +389,82 @@ describe("EmployeeColumnHeader · la tarjeta que dibuja el artboard", () => {
     expect(header).toHaveClass("border-b", "border-hairline", "flex", "items-center")
   })
 })
+
+/**
+ * ---------------------------------------------------------------------------
+ * Modo estrecho (D17, §1.3.4)
+ * ---------------------------------------------------------------------------
+ * Contrato compartido con T6 (`DayView`): la prop es opcional, por defecto
+ * `false`, y sin ella el componente se queda EXACTAMENTE como hoy -- ya
+ * comprobado en las suites de arriba, que no pasan `narrow`.
+ */
+describe("EmployeeColumnHeader · modo estrecho", () => {
+  it("sin narrow, el gap/padding/tamano de hoy: 10px, 12px y 14px", () => {
+    render(<EmployeeColumnHeader column={makeColumn(makeEmployee())} index={0} />)
+
+    const header = screen.getByTestId("employee-column-header")
+    expect(header).toHaveClass("gap-2.5", "px-3")
+    expect(header).not.toHaveClass("gap-[9px]", "px-2.5")
+
+    const name = screen.getByText("Laura Martinez")
+    expect(name).toHaveClass("text-[14px]")
+    expect(name).not.toHaveClass("text-[13px]")
+  })
+
+  it("con narrow: gap 9px, padding 10px y nombre a 13px", () => {
+    render(<EmployeeColumnHeader column={makeColumn(makeEmployee())} index={0} narrow />)
+
+    const header = screen.getByTestId("employee-column-header")
+    expect(header).toHaveClass("gap-[9px]", "px-2.5")
+    expect(header).not.toHaveClass("gap-2.5", "px-3")
+
+    const name = screen.getByText("Laura Martinez")
+    expect(name).toHaveClass("text-[13px]")
+    expect(name).not.toHaveClass("text-[14px]")
+    // El `leading-tight` no puede haberse borrado por el orden de clases
+    // (tailwind-merge trata tamano y `leading` como conflictivos).
+    expect(name).toHaveClass("leading-tight")
+  })
+
+  it("con narrow, el avatar y el alto de fila NO cambian (§1.3.4: solo 4 valores)", () => {
+    render(<EmployeeColumnHeader column={makeColumn(makeEmployee())} index={0} narrow />)
+
+    const header = screen.getByTestId("employee-column-header")
+    expect(header).toHaveStyle({ height: "60px" })
+    expect(avatar()).toHaveClass("size-[30px]")
+  })
+
+  it("con narrow, la meta pierde la duracion: '4 citas · 5h 30min' -> '4 citas'", () => {
+    render(
+      <EmployeeColumnHeader
+        column={makeColumn(makeEmployee(), "Laura Martinez", [
+          makeAppointment({ startTime: `${DAY}T09:00:00`, endTime: `${DAY}T10:00:00` }),
+          makeAppointment({ id: "apt_2", startTime: `${DAY}T10:30:00`, endTime: `${DAY}T12:00:00` }),
+          makeAppointment({ id: "apt_3", startTime: `${DAY}T14:00:00`, endTime: `${DAY}T14:30:00` }),
+        ])}
+        index={0}
+        narrow
+      />
+    )
+
+    expect(screen.getByText("3 citas")).toBeInTheDocument()
+    expect(screen.queryByText(/3 citas · /)).not.toBeInTheDocument()
+  })
+
+  it("sin narrow, la meta conserva la duracion completa", () => {
+    render(
+      <EmployeeColumnHeader
+        column={makeColumn(makeEmployee(), "Laura Martinez", [makeAppointment()])}
+        index={0}
+      />
+    )
+
+    expect(screen.getByText("1 cita · 1h")).toBeInTheDocument()
+  })
+
+  it("el caso vacio ('Sin citas') no lleva separador: el recorte lo deja intacto", () => {
+    render(<EmployeeColumnHeader column={makeColumn(makeEmployee())} index={0} narrow />)
+
+    expect(screen.getByText("Sin citas")).toBeInTheDocument()
+  })
+})

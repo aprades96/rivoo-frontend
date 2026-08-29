@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { EmployeeFilter } from "./employee-filter"
-import { employeeFallbackAvatarClassName } from "./employee-column-header"
+import { employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
 import type { Employee } from "@/types/employee"
 
 const DAY = "2026-08-27"
