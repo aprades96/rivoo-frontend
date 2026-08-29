@@ -196,38 +196,30 @@ describe("AppointmentActions", () => {
       expect(spinners.length).toBeGreaterThan(0)
     })
 
-    it("al pulsar 'No asistio' y pasar isPending a true, el spinner sale solo en ese boton -- no en Confirmar ni en Cancelar", async () => {
-      const user = userEvent.setup()
-      const onStatusChange = vi.fn()
-      const onCancelRequest = vi.fn()
-      const { rerender } = renderActions("CONFIRMED", "sheet", { onStatusChange, onCancelRequest })
+    /**
+     * El spinner es GLOBAL (todos los botones a la vez), no "solo en el
+     * boton pulsado": `useUpdateAppointmentStatus` es OPTIMISTA
+     * (`src/hooks/use-appointments.ts:93-114`), la cache cambia de estado
+     * antes de que conteste la peticion, y `actionsFor` puede devolver otros
+     * rotulos a mitad de vuelo (p.ej. CONFIRMED -> "Iniciar" tras pulsar
+     * "Confirmar cita" en PENDING). No hay ningun boton estable sobre el que
+     * "recordar" cual se pulso, asi que todos deben mostrar el spinner y
+     * quedar deshabilitados mientras `isPending` sea true, sin importar cual
+     * se pulso.
+     */
+    it("con isPending=true, TODOS los botones (CTA y secundarias) muestran el spinner y quedan deshabilitados", () => {
+      renderActions("CONFIRMED", "sheet", { isPending: true })
 
       const ctaButton = screen.getByTestId("appointment-cta")
       const secondaryButtons = screen.getAllByTestId("appointment-secondary-action")
-      const noShowButton = secondaryButtons.find((button) => button.textContent?.includes("No asistio"))
-      const cancelButton = secondaryButtons.find((button) => button.textContent?.includes("Cancelar"))
-      if (!noShowButton || !cancelButton) throw new Error("botones esperados no encontrados")
 
-      await user.click(noShowButton)
-      expect(onStatusChange).toHaveBeenCalledWith("NO_SHOW")
-
-      rerender(
-        <AppointmentActions
-          status="CONFIRMED"
-          variant="sheet"
-          onStatusChange={onStatusChange}
-          onCancelRequest={onCancelRequest}
-          isPending={true}
-        />
-      )
-
-      expect(noShowButton.querySelector(".animate-spin")).not.toBeNull()
-      expect(cancelButton.querySelector(".animate-spin")).toBeNull()
-      expect(ctaButton.querySelector(".animate-spin")).toBeNull()
-
-      expect(noShowButton).toBeDisabled()
-      expect(cancelButton).toBeDisabled()
+      expect(ctaButton.querySelector(".animate-spin")).not.toBeNull()
       expect(ctaButton).toBeDisabled()
+
+      for (const button of secondaryButtons) {
+        expect(button.querySelector(".animate-spin")).not.toBeNull()
+        expect(button).toBeDisabled()
+      }
     })
   })
 })
