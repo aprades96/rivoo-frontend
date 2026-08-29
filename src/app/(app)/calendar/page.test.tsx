@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, within } from "@testing-library/react"
 import CalendarPage from "./page"
 import type { Appointment } from "@/types/appointment"
-import type { Employee } from "@/types/employee"
+import type { Employee, WorkingHoursResponse } from "@/types/employee"
 
 /**
  * La pantalla se conduce por HOOKS MOCKEADOS, nunca por un `QueryClient` vivo:
@@ -123,6 +123,63 @@ const APPOINTMENTS: Appointment[] = [
   }),
 ]
 
+/**
+ * `TODAY` cae en JUEVES, asi que el dia siguiente es VIERNES. Los dos numeros
+ * son los de `WorkingHoursResponse.dayOfWeek` (1 = lunes .. 7 = domingo, la
+ * convencion de `getTodayBusinessHours`).
+ */
+const THURSDAY = 4
+const FRIDAY = 5
+
+const TOMORROW_ISO = "2026-08-28"
+const TOMORROW_LABEL = "Viernes, 28 de agosto"
+
+/**
+ * Horarios REALES de un empleado, con el descanso que le toque a cada dia.
+ * El backend serializa `LocalTime` con segundos ("13:00:00"), y asi es como
+ * los recibe la pantalla: escribirlos aqui sin ellos probaria otra cosa.
+ */
+function makeWorkingHours(
+  breaksByDay: Record<number, [string, string]> = {}
+): WorkingHoursResponse[] {
+  return [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => {
+    const rest = breaksByDay[dayOfWeek]
+    return {
+      dayOfWeek,
+      isOpen: true,
+      openTime: "09:00:00",
+      closeTime: "20:00:00",
+      breakStartTime: rest ? `${rest[0]}:00` : null,
+      breakEndTime: rest ? `${rest[1]}:00` : null,
+    }
+  })
+}
+
+/** El almuerzo del artboard (`CalendarioDesktop.dc.html:177-180`) el dia de hoy. */
+const LUNCH_TODAY = makeWorkingHours({ [THURSDAY]: ["13:00", "14:00"] })
+
+/**
+ * Sustituye el mapa VACIO del `beforeEach`. Ese mapa es comodo pero deja sin
+ * ejecutar todo el cableado de descansos: con el puesto se puede borrar
+ * `breaks` de `DayView` y la suite sigue verde.
+ */
+function mockWorkingHours(byEmployee: Record<string, WorkingHoursResponse[]>) {
+  useEmployeesWorkingHoursMock.mockReturnValue({
+    data: byEmployee,
+    isLoading: false,
+    isError: false,
+  })
+}
+
+/**
+ * Pixeles desde el arranque de la rejilla (08:00) hasta una hora: 48px por
+ * medio slot, o sea 1,6px por minuto. Escrito una vez para que las posiciones
+ * esperadas se lean como horas y no como numeros magicos.
+ */
+function topOf(hours: number, minutes = 0): string {
+  return `${(hours * 60 + minutes - 8 * 60) * 1.6}px`
+}
+
 /** Los parametros de la ULTIMA llamada a `useAppointments`. */
 function lastQueryParams(): Record<string, unknown> {
   const calls = useAppointmentsMock.mock.calls
@@ -220,6 +277,50 @@ describe("CalendarPage", () => {
     expect(screen.getByTestId("day-view").parentElement).toBe(content)
   })
 
+  /**
+   * La otra mitad de la invariante de `FILL_ROUTES`, y la que el caso de
+   * arriba NO cubre: el parentesco (`DayView` hijo directo del contenido) es
+   * cierto en las DOS ramas de `PageShell`, asi que se podia borrar
+   * `layout="fill"` con la suite entera verde. Sin `fill` el cuerpo recupera
+   * `px-7 py-6` y `max-w-[1084px]` y pierde la cadena `flex-1 min-h-0`; con el
+   * `overflow-hidden` del chasis encima, la rejilla queda cortada e
+   * inalcanzable. Por eso se afirma sobre el CONTENEDOR, no sobre el arbol.
+   */
+  it("el cuerpo va a alto completo y sin padding: la pantalla pide layout='fill'", () => {
+    mockMatchMedia(true)
+
+    const { container } = render(<CalendarPage />)
+
+    const content = container.querySelector('[data-slot="page-shell-content"]') as HTMLElement
+    expect(content).toHaveClass("flex", "min-h-0", "flex-1", "flex-col")
+    // Los dos tokens de la rama `default`, que aqui no pueden estar: el ancho
+    // de lectura (la rejilla va a ancho completo, `CalendarioDesktop:130`)...
+    expect(content).not.toHaveClass("max-w-[1084px]")
+    // ...y el padding exterior, que en `fill` lo trae cada franja.
+    expect(content.parentElement).not.toHaveClass("px-7")
+    expect(content.parentElement).toHaveClass("min-h-0", "flex-1")
+  })
+
+  /**
+   * La rama de CARGA sostiene la misma cadena de alturas que la cargada.
+   * `LoadingSkeleton` es compartido y no la trae (`space-y-3 p-4`), asi que
+   * como hijo flex directo no crecia ni hacia scroll: en un movil de 560dvh
+   * las franjas fijas mas el esqueleto pasaban de los 480px utiles y la ultima
+   * fila quedaba recortada, sin forma de alcanzarla.
+   */
+  it("mientras carga, el esqueleto crece y hace scroll como lo hara la rejilla", () => {
+    mockMatchMedia(false)
+    useAppointmentsMock.mockReturnValue({ data: undefined, isLoading: true })
+
+    const { container } = render(<CalendarPage />)
+
+    const content = container.querySelector('[data-slot="page-shell-content"]')
+    const loading = screen.getByTestId("calendar-loading")
+    expect(loading.parentElement).toBe(content)
+    expect(loading).toHaveClass("min-h-0", "flex-1", "overflow-y-auto")
+    expect(screen.queryByTestId("day-view")).not.toBeInTheDocument()
+  })
+
   // --- Canceladas ----------------------------------------------------------
 
   /**
@@ -284,6 +385,50 @@ describe("CalendarPage", () => {
     expect(screen.getAllByTestId("appointment-block")).toHaveLength(APPOINTMENTS.length)
   })
 
+  /**
+   * Plegar DESMONTA el campo que tenia el foco, y la lupa que lo sustituye es
+   * un nodo NUEVO: sin devolverselo a mano el foco cae en `document.body` y
+   * quien navega con teclado vuelve al principio del documento.
+   */
+  it("Escape devuelve el foco a la lupa, no al body", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
+    const field = screen.getByRole("textbox", { name: "Buscar citas" })
+
+    fireEvent.keyDown(field, { key: "Escape" })
+
+    expect(screen.getByRole("button", { name: "Buscar" })).toHaveFocus()
+    expect(document.body).not.toHaveFocus()
+  })
+
+  /**
+   * El resumen de la cabecera ("4 citas · 5h 30min") es una afirmacion de
+   * HECHO sobre la agenda del empleado, no una descripcion de lo que la vista
+   * deja ver. Alimentado con la lista ya filtrada, buscar "corte" dejaba a
+   * Sofia -- que tiene su dia -- anunciada como "Sin citas".
+   */
+  it("con el buscador activo la cabecera sigue contando el dia entero", () => {
+    mockMatchMedia(true)
+
+    const { container } = render(<CalendarPage />)
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar citas" }), {
+      target: { value: "corte" },
+    })
+
+    // La rejilla SI se recorta: sin esto el caso pasaria con el buscador roto.
+    expect(clientNames()).toEqual(["Carla Ruiz"])
+
+    const header = container.querySelector(
+      '[data-testid="employee-column-header"][data-employee-id="emp_2"]'
+    ) as HTMLElement
+    expect(within(header).queryByText("Sin citas")).not.toBeInTheDocument()
+    // La cita de Sofia (10:30-12:00) sigue en su agenda aunque no se pinte.
+    expect(within(header).getByText("1 cita · 1h 30min")).toBeInTheDocument()
+  })
+
   // --- La consulta cambia por ancho ----------------------------------------
 
   it("en movil la consulta lleva el employeeId del filtro de pildoras", () => {
@@ -342,6 +487,238 @@ describe("CalendarPage", () => {
     expect(url.searchParams.get("date")).toBe(TODAY_ISO)
     expect(url.searchParams.get("time")).toBe("15:30")
     expect(url.searchParams.get("employeeId")).toBe("emp_1")
+  })
+
+  /**
+   * El recorte de columnas de movil. En "Todos" la vista funde las columnas en
+   * una sola, asi que quedarse con la del empleado elegido no cambia lo que se
+   * VE -- pero si lo que se PULSA: sin el recorte `DayView` recibe N columnas,
+   * no sabe a quien atribuir la franja y manda `null`, y el alta pierde el
+   * profesional que el filtro ya habia elegido. El caso de escritorio de
+   * arriba no lo cubre: alli esta logica ni se aplica.
+   */
+  it("en movil la franja pulsada conserva el empleado del filtro de pildoras", () => {
+    mockMatchMedia(false)
+
+    const { container } = render(<CalendarPage />)
+    fireEvent.click(screen.getByRole("button", { name: /Sofia/ }))
+
+    const slot = container.querySelector(
+      '[data-testid="slot-target"][data-time="15:30"]'
+    ) as HTMLElement
+    fireEvent.click(slot)
+
+    expect(pushMock).toHaveBeenCalledTimes(1)
+    const url = new URL(pushMock.mock.calls[0][0] as string, "http://localhost")
+    expect(url.searchParams.get("time")).toBe("15:30")
+    expect(url.searchParams.get("employeeId")).toBe("emp_2")
+  })
+
+  // --- Descanso ------------------------------------------------------------
+
+  /**
+   * El descanso es POR EMPLEADO, no del salon: el artboard lo pinta solo en la
+   * columna de Laura (`CalendarioDesktop.dc.html:177-180`). Con el mapa de
+   * horarios vacio -- como arranca el `beforeEach` -- todo este cableado no
+   * llega a ejecutarse y se puede borrar `breaks` de `DayView` sin que nada se
+   * ponga rojo.
+   */
+  it("pinta el descanso en la columna del empleado que lo tiene y solo en esa", () => {
+    mockMatchMedia(true)
+    mockWorkingHours({ emp_1: LUNCH_TODAY })
+
+    const { container } = render(<CalendarPage />)
+
+    const laura = container.querySelector(
+      '[data-testid="day-view-column"][data-employee-id="emp_1"]'
+    ) as HTMLElement
+    const almuerzo = within(laura).getByTestId("break-block")
+    expect(almuerzo).toHaveTextContent("13:00 - 14:00")
+    expect(almuerzo).toHaveStyle({ top: topOf(13) })
+
+    const sofia = container.querySelector(
+      '[data-testid="day-view-column"][data-employee-id="emp_2"]'
+    ) as HTMLElement
+    expect(within(sofia).queryByTestId("break-block")).not.toBeInTheDocument()
+  })
+
+  /**
+   * El descanso se resuelve contra el dia VISIBLE, no contra hoy: son dias de
+   * la semana distintos y por tanto filas distintas del horario. Con
+   * `new Date()` en vez de `currentDate`, manana se pintaria el almuerzo de
+   * hoy -- y aqui no caen a la misma hora a proposito.
+   */
+  it("al cambiar de dia el descanso es el del dia visible, no el de hoy", () => {
+    mockMatchMedia(true)
+    mockWorkingHours({
+      emp_1: makeWorkingHours({ [THURSDAY]: ["13:00", "14:00"], [FRIDAY]: ["15:00", "16:00"] }),
+    })
+
+    render(<CalendarPage />)
+    expect(screen.getByTestId("break-block")).toHaveTextContent("13:00 - 14:00")
+
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+
+    expect(screen.getByTestId("break-block")).toHaveTextContent("15:00 - 16:00")
+    expect(screen.getByTestId("break-block")).toHaveStyle({ top: topOf(15) })
+  })
+
+  // --- Hueco libre ---------------------------------------------------------
+
+  /**
+   * BLOQUEANTE cerrado: en movil con "Todos" -- el estado inicial y el que
+   * dibuja el artboard -- la pantalla pintaba el descanso pero calculaba el
+   * hueco sin el, asi que el recuadro "Libre · toca para crear" caia ENCIMA
+   * del rayado del almuerzo e invitaba a crear una cita a la hora de comer.
+   * Pintar y calcular tienen que leer el MISMO dato.
+   */
+  it("en movil y en 'Todos' el hueco libre no se ofrece encima del almuerzo", () => {
+    mockMatchMedia(false)
+    vi.setSystemTime(new Date(2026, 7, 27, 12, 45))
+    useEmployeesMock.mockReturnValue({
+      data: {
+        content: [
+          ...EMPLOYEES,
+          makeEmployee({ id: "emp_3", firstName: "Marc", lastName: "Oliva", colorHex: null }),
+        ],
+      },
+    })
+    // Toda la plantilla almuerza a la vez, que es el caso normal del salon.
+    mockWorkingHours({ emp_1: LUNCH_TODAY, emp_2: LUNCH_TODAY, emp_3: LUNCH_TODAY })
+    // Nada despues de las 12:00: sin el descanso, el primer hueco desde las
+    // 12:45 seria justo el de las 13:00.
+    useAppointmentsMock.mockReturnValue({
+      data: { content: APPOINTMENTS.slice(0, 2) },
+      isLoading: false,
+    })
+
+    render(<CalendarPage />)
+
+    expect(screen.getByTestId("break-block")).toHaveStyle({ top: topOf(13), height: "92px" })
+    // 14:00, el primer tramo DESPUES del almuerzo -- no las 13:00.
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(14) })
+  })
+
+  /**
+   * El recuadro "Libre" del artboard movil (`Calendario.dc.html:112-114`).
+   * Sin este caso se puede pasar `freeSlot={null}` a `DayView` y la suite
+   * sigue verde.
+   */
+  it("en movil ofrece el primer hueco libre desde ahora", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+
+    // A las 10:00 la cita de Carla acaba justo y la de Ana empieza a y media.
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
+  })
+
+  /**
+   * El buscador cambia lo que se PINTA, no lo que esta OCUPADO. Calculando el
+   * hueco con la lista recortada, esconder la cita de las 09:00 ofreceria como
+   * libre una franja que ya tiene cita.
+   */
+  it("el buscador no mueve el hueco libre", () => {
+    mockMatchMedia(false)
+    vi.setSystemTime(new Date(2026, 7, 27, 9, 0))
+
+    render(<CalendarPage />)
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
+
+    // "manicura" deja fuera la cita de las 09:00-10:00, que es justo la que
+    // impide ofrecer las 09:00.
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar citas" }), {
+      target: { value: "manicura" },
+    })
+
+    expect(clientNames()).toEqual(["Ana Garcia"])
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
+  })
+
+  /**
+   * El "ahora" se congela al montar. Si se leyera el reloj en cada render, el
+   * recuadro saltaria de sitio a mitad de una interaccion -- basta teclear en
+   * el buscador para provocar un render -- y lo que se pulsa no seria lo que
+   * se vio.
+   */
+  it("el hueco libre no se mueve por el paso del tiempo dentro de la misma sesion", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
+
+    // 40 minutos despues, un render cualquiera: leyendo el reloj de nuevo el
+    // hueco se iria a las 12:00.
+    vi.setSystemTime(new Date(2026, 7, 27, 10, 40))
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }))
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar citas" }), {
+      target: { value: " " },
+    })
+
+    expect(screen.getByTestId("free-slot-hint")).toHaveStyle({ top: topOf(10) })
+  })
+
+  it("pulsar el hueco libre lleva al alta a esa HORA", () => {
+    mockMatchMedia(false)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByTestId("free-slot-hint"))
+
+    expect(pushMock).toHaveBeenCalledTimes(1)
+    const url = new URL(pushMock.mock.calls[0][0] as string, "http://localhost")
+    expect(url.searchParams.get("date")).toBe(TODAY_ISO)
+    // La hora, no los cinco primeros caracteres del ISO ("2026-").
+    expect(url.searchParams.get("time")).toBe("10:00")
+  })
+
+  // --- Navegacion de dia ---------------------------------------------------
+
+  /**
+   * `date-navigator.test.tsx` prueba que los callbacks se disparan; nadie
+   * probaba que la PANTALLA cambie de dia. Con `subDays` en `goToNextDay` el
+   * boton "Dia siguiente" retrocedia y pasaba CI limpio.
+   */
+  it("'Dia siguiente' avanza el dia visible y la consulta", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(TOMORROW_LABEL)
+    expect(lastQueryParams()).toMatchObject({ date: TOMORROW_ISO })
+  })
+
+  it("'Hoy' devuelve el dia visible a hoy", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+    fireEvent.click(screen.getByRole("button", { name: "Dia siguiente" }))
+    expect(lastQueryParams()).toMatchObject({ date: "2026-08-29" })
+
+    fireEvent.click(screen.getByRole("button", { name: "Hoy" }))
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(TODAY_LABEL)
+    expect(lastQueryParams()).toMatchObject({ date: TODAY_ISO })
+  })
+
+  // --- CTA -----------------------------------------------------------------
+
+  /**
+   * `CalendarioDesktop.dc.html:96` dibuja `gap: 8px` entre el "+" y el rotulo.
+   * La talla `action` trae `gap-1.5` (6px), que es la del resto de controles
+   * de cabecera; la desviacion decidida para este boton cubre el `padding`, no
+   * el `gap`. Se corrige en la llamada, no en la primitiva compartida.
+   */
+  it("el CTA 'Nueva cita' separa icono y rotulo los 8px del artboard", () => {
+    mockMatchMedia(true)
+
+    render(<CalendarPage />)
+
+    const cta = screen.getByRole("link", { name: /Nueva cita/ })
+    expect(cta).toHaveClass("gap-2")
+    expect(cta).not.toHaveClass("gap-1.5")
   })
 
   // --- Detalle -------------------------------------------------------------

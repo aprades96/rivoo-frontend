@@ -8,7 +8,7 @@ import { es } from "date-fns/locale"
 import { Plus } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { PageShell } from "@/components/layout/page-shell"
-import { DayView, type EmployeeBreaks } from "@/components/calendar/day-view"
+import { DayView } from "@/components/calendar/day-view"
 import {
   DateNavigatorCluster,
   DateNavigatorRow,
@@ -24,7 +24,14 @@ import { useAppointments } from "@/hooks/use-appointments"
 import { useEmployees, useEmployeesWorkingHours } from "@/hooks/use-staff"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { capitalizeFirst } from "@/lib/utils/format"
-import { breakPosition, groupByEmployee, nextFreeSlot } from "@/lib/utils/calendar"
+import {
+  breakPosition,
+  groupByEmployee,
+  nextFreeSlot,
+  visibleBreak,
+  type EmployeeBreaks,
+} from "@/lib/utils/calendar"
+import { cn } from "@/lib/utils"
 import type { Appointment } from "@/types/appointment"
 
 // Tailwind's `lg:` breakpoint (1024px), igual que `page-shell.tsx`.
@@ -37,8 +44,11 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
  * las dos mitades de esa invariante, que esta escrita alli. Sin `fill`, lo
  * que pase de 100dvh queda inalcanzable; con `fill` pero sin la ruta, el
  * scroll se lo vuelve a quedar la pagina. Aqui abajo cada franja del cuerpo
- * es un hijo flex directo y la unica que crece es `DayView` (`flex-1
- * min-h-0` propio), que es quien hace scroll por dentro.
+ * es un hijo flex directo y la unica que crece es la del contenido -- `DayView`
+ * (`flex-1 min-h-0` propio) cuando el dia esta cargado, y el envoltorio del
+ * esqueleto mientras carga --, que es quien hace scroll por dentro. Las DOS
+ * ramas, no solo la cargada: sin `flex-1 min-h-0 overflow-y-auto` en la de
+ * carga, lo que pase de 100dvh queda igual de inalcanzable.
  *
  * NO se montan el segmentado Dia/Semana de escritorio
  * (`design/CalendarioDesktop.dc.html:89-92`) ni su gemelo movil, el conmutador
@@ -105,6 +115,20 @@ export default function CalendarPage() {
     [dayAppointments, search]
   )
 
+  /**
+   * El dia COMPLETO repartido en columnas, SIN el recorte del buscador. De
+   * aqui sale el resumen de la cabecera ("4 citas · 5h 30min"), que es una
+   * afirmacion de hecho sobre la agenda del empleado y no una descripcion de
+   * lo que la vista deja ver: alimentado con la lista filtrada, buscar
+   * "corte" dejaba a una peluquera con el dia lleno anunciada como "Sin
+   * citas". Mismo criterio que `freeSlot`, que tambien lee el dia entero.
+   */
+  const summaryColumns = useMemo(
+    () => groupByEmployee(dayAppointments, employees),
+    [dayAppointments, employees]
+  )
+
+  /** Lo que se PINTA en la rejilla: el dia menos lo que descarte el buscador. */
   const columns = useMemo(() => {
     const all = groupByEmployee(appointments, employees)
     // En movil la vista funde las columnas en una sola, asi que quedarse solo
@@ -137,18 +161,19 @@ export default function CalendarPage() {
    * cita.
    *
    * La guarda de "solo si el dia visible es hoy" ya vive dentro de
-   * `nextFreeSlot`; aqui no se repite. Los horarios son los del empleado
-   * elegido: en "Todos" no hay un descanso unico que respetar.
+   * `nextFreeSlot`; aqui no se repite.
+   *
+   * El descanso que se le pasa es EXACTAMENTE el mismo objeto que `DayView`
+   * pinta en la columna de movil -- `visibleBreak(columns, breaks)` --, no los
+   * horarios del empleado seleccionado. Con el filtro en "Todos" (el estado
+   * inicial y el del artboard) no hay empleado elegido, asi que antes se
+   * mandaba `null`: el descanso no entraba en la lista de ocupados y el
+   * recuadro "Libre · toca para crear" se ofrecia ENCIMA del rayado del
+   * almuerzo. Pintar y calcular tienen que leer el mismo dato.
    */
   const freeSlot = useMemo(
-    () =>
-      nextFreeSlot(
-        dayAppointments,
-        currentDate,
-        now,
-        selectedEmployeeId ? workingHours[selectedEmployeeId] : null
-      ),
-    [dayAppointments, currentDate, now, selectedEmployeeId, workingHours]
+    () => nextFreeSlot(dayAppointments, currentDate, now, visibleBreak(columns, breaks)),
+    [dayAppointments, currentDate, now, columns, breaks]
   )
 
   const handleAppointmentTap = (appointment: Appointment) => {
@@ -210,7 +235,19 @@ export default function CalendarPage() {
       actions={
         <>
           {searchField}
-          <Link href="/appointments/new" className={buttonVariants({ size: "action" })}>
+          {/*
+            `gap-2` = los 8px que dibuja `CalendarioDesktop.dc.html:96` entre el
+            "+" y el rotulo. La talla `action` trae `gap-1.5` (6px), que es la
+            de los controles de cabecera del resto de artboards; se corrige
+            AQUI, en la llamada, y no en `button.tsx`, que es primitiva
+            compartida por quince pantallas. Va por `cn` y no concatenado: en
+            el orden del atributo no manda el ultimo, manda el orden de la hoja
+            de estilos -- es tailwind-merge quien borra el `gap-1.5`.
+          */}
+          <Link
+            href="/appointments/new"
+            className={cn(buttonVariants({ size: "action" }), "gap-2")}
+          >
             <Plus className="size-[17px]" />
             Nueva cita
           </Link>
@@ -241,11 +278,24 @@ export default function CalendarPage() {
       )}
 
       {aptsLoading ? (
-        <LoadingSkeleton count={6} />
+        /*
+          La rama de carga tiene que sostener la MISMA cadena de alturas que la
+          rama cargada: `flex-1 min-h-0 overflow-y-auto`. `LoadingSkeleton` es
+          compartido y no las trae (es un `div` con `space-y-3 p-4`), asi que
+          como hijo flex directo no crecia ni hacia scroll -- y con el
+          `h-dvh overflow-hidden` del chasis, en un movil de 560dvh las
+          franjas fijas (56 + 62 + 58) mas el esqueleto (332) pasaban de los
+          480px utiles y la ultima fila quedaba recortada e inalcanzable. El
+          envoltorio va aqui, no en el componente compartido.
+        */
+        <div data-testid="calendar-loading" className="min-h-0 flex-1 overflow-y-auto">
+          <LoadingSkeleton count={6} />
+        </div>
       ) : (
         <DayView
           variant={isDesktop ? "desktop" : "mobile"}
           columns={columns}
+          summaryColumns={summaryColumns}
           breaks={breaks}
           freeSlot={freeSlot}
           onAppointmentTap={handleAppointmentTap}

@@ -47,6 +47,17 @@ export interface DayViewProps {
    * de empleados. En movil se funden en una sola columna.
    */
   columns: EmployeeColumn[]
+  /**
+   * De donde sale el resumen de la cabecera de columna ("4 citas · 5h 30min"),
+   * SOLO escritorio. Por defecto, las propias `columns`.
+   *
+   * Existe porque ese resumen es una afirmacion de hecho sobre la agenda del
+   * empleado, no una descripcion de lo que la vista deja ver: cuando quien
+   * llama recorta `columns` (el buscador de `/calendar`), la cabecera de una
+   * peluquera con el dia lleno anunciaba "Sin citas". Se emparejan por
+   * `employeeId`; una columna sin pareja se resume con la suya.
+   */
+  summaryColumns?: EmployeeColumn[]
   /** Descansos ya resueltos con `breakPosition`, por id de empleado. */
   breaks?: EmployeeBreaks
   /**
@@ -89,6 +100,7 @@ export interface DayViewProps {
 export function DayView({
   variant,
   columns,
+  summaryColumns,
   breaks,
   freeSlot,
   onAppointmentTap,
@@ -131,6 +143,7 @@ export function DayView({
         {isDesktop ? (
           <DesktopColumns
             columns={columns}
+            summaryColumns={summaryColumns}
             breaks={breaks}
             onAppointmentTap={onAppointmentTap}
             onSlotTap={onSlotTap}
@@ -160,11 +173,13 @@ export function DayView({
  */
 function DesktopColumns({
   columns,
+  summaryColumns,
   breaks,
   onAppointmentTap,
   onSlotTap,
 }: {
   columns: EmployeeColumn[]
+  summaryColumns: EmployeeColumn[] | undefined
   breaks: EmployeeBreaks | undefined
   onAppointmentTap: ((appointment: Appointment) => void) | undefined
   onSlotTap: ((employeeId: string | null, time: string) => void) | undefined
@@ -182,7 +197,7 @@ function DesktopColumns({
       {columns.map((column, index) => (
         <EmployeeColumnHeader
           key={columnKey(column, index)}
-          column={column}
+          column={summaryColumnFor(summaryColumns, column)}
           index={index}
           className="sticky top-0 z-10 bg-background"
         />
@@ -378,4 +393,17 @@ function SlotTargets({
 /** La columna "Otros" no tiene id: se distingue por su posicion. */
 function columnKey(column: EmployeeColumn, index: number): string {
   return column.employeeId ?? `orphan-${index}`
+}
+
+/**
+ * La columna de la que sale el resumen de una cabecera: su pareja en
+ * `summaryColumns` si la hay, y ella misma si no. Sin `summaryColumns` -- el
+ * caso por defecto -- no hay nada que emparejar.
+ */
+function summaryColumnFor(
+  summaryColumns: EmployeeColumn[] | undefined,
+  column: EmployeeColumn
+): EmployeeColumn {
+  if (!summaryColumns) return column
+  return summaryColumns.find((candidate) => candidate.employeeId === column.employeeId) ?? column
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,16 +62,43 @@ export function CalendarSearch({ value, onChange, variant, className }: Calendar
   const [open, setOpen] = useState(false)
   const expanded = open || value.length > 0
 
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  /**
+   * Plegar DESMONTA el campo que tiene el foco, y la lupa que lo sustituye es
+   * un nodo NUEVO: sin devolverselo, el foco cae en `document.body` y quien
+   * navega con teclado vuelve al principio del documento.
+   *
+   * No se puede llamar a `focus()` dentro de `collapse`, porque alli el boton
+   * todavia no existe; de ahi la bandera, que se consume en el efecto de
+   * despues del pintado. Es un `ref` y no estado a proposito: el render ya lo
+   * provoca el propio plegado, asi que una segunda vuelta no aporta nada --
+   * ademas de que `setState` dentro de un efecto encadena renders.
+   *
+   * Solo se devuelve el foco cuando lo ha soltado ESTE componente: si el campo
+   * se pliega porque quien llama vacia el texto por su cuenta, la bandera
+   * sigue en `false` y aqui no se roba nada.
+   */
+  const restoreFocus = useRef(false)
+
+  useEffect(() => {
+    if (expanded) return
+    if (!restoreFocus.current) return
+    restoreFocus.current = false
+    triggerRef.current?.focus()
+  }, [expanded])
+
   const collapse = () => {
     setOpen(false)
     // Plegar es cancelar: dejar el texto puesto esconderia el motivo por el
     // que faltan citas en la rejilla.
     onChange("")
+    restoreFocus.current = true
   }
 
   if (!expanded) {
     return (
       <Button
+        ref={triggerRef}
         variant="outline"
         size="icon"
         aria-label="Buscar"
