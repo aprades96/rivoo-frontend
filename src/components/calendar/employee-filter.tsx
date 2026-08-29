@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 import { initials } from "@/lib/utils/format"
 import type { Employee } from "@/types/employee"
 
@@ -11,18 +12,31 @@ interface EmployeeFilterProps {
   onSelect: (id: string | null) => void
 }
 
+// Pildoras de 34px de alto (Calendario.dc.html:51-62).
+const PILL_BASE =
+  "flex h-[34px] shrink-0 items-center rounded-full border text-xs transition-colors"
+const PILL_SELECTED =
+  "border-primary bg-primary font-semibold text-primary-foreground"
+const PILL_IDLE = "border-border bg-background font-medium hover:bg-muted"
+
+/**
+ * Filtro de agenda por empleado. SOLO MOVIL (Calendario.dc.html:50-63): en
+ * escritorio la rejilla dibuja una columna por empleado, asi que este filtro
+ * ni se dibuja ni se monta. La fila trae su propio padding (12px 16px) porque
+ * en el artboard va a sangre y las pildoras se desplazan bajo el borde.
+ */
 export function EmployeeFilter({ employees, selectedId, onSelect }: EmployeeFilterProps) {
   return (
     <ScrollArea className="w-full">
-      <div className="flex gap-1.5 pb-2">
+      <div className="flex gap-1.5 px-4 py-3">
         {/* All employees pill */}
         <button
           onClick={() => onSelect(null)}
-          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-            selectedId === null
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border hover:bg-muted"
-          }`}
+          className={cn(
+            PILL_BASE,
+            "px-3.5",
+            selectedId === null ? PILL_SELECTED : PILL_IDLE
+          )}
         >
           Todos
         </button>
@@ -33,15 +47,18 @@ export function EmployeeFilter({ employees, selectedId, onSelect }: EmployeeFilt
             <button
               key={emp.id}
               onClick={() => onSelect(emp.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium transition-colors ${
-                isSelected
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border hover:bg-muted"
-              }`}
+              className={cn(
+                PILL_BASE,
+                "gap-[7px] pr-3 pl-[5px]",
+                isSelected ? PILL_SELECTED : PILL_IDLE
+              )}
             >
-              <Avatar className="h-5 w-5">
+              <Avatar className="size-6">
                 <AvatarFallback
-                  className="text-[8px]"
+                  className={cn(
+                    "text-[9px] font-bold",
+                    isSelected && "bg-white/22 text-primary-foreground"
+                  )}
                   style={
                     emp.colorHex && !isSelected
                       ? { backgroundColor: emp.colorHex + "20", color: emp.colorHex }
