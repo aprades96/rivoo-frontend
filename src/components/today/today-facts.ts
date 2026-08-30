@@ -164,6 +164,11 @@ function freeRow(employee: Employee, freeMinutes: number, next: Appointment | un
  *
  * `now` se inyecta siempre -- nunca se lee `new Date()` aqui dentro (mismo
  * criterio que `formatRelativeTime`, `dates.ts:70`).
+ *
+ * D19 (corregido): solo las filas "free" exigen jornada abierta -- una cita
+ * en curso produce "busy" incluso fuera de horario declarado, porque es
+ * evidencia mas dura sobre el presente que una jornada configurada de
+ * antemano.
  */
 export function getNowRows(
   appointments: Appointment[],
@@ -206,17 +211,35 @@ export function getNowRows(
       continue
     }
 
-    // classification.kind === "shift": jornada conocida. Fuera de ella --
-    // todavia sin abrir o ya cerrada -- el empleado no produce fila (distinto
-    // de "off", que es "hoy no trabaja").
-    const openAt = timeOnSameDay(now, classification.openTime)
-    const closeAt = timeOnSameDay(now, classification.closeTime)
-    if (now.getTime() < openAt.getTime() || now.getTime() >= closeAt.getTime()) {
+    // classification.kind === "shift": jornada conocida. Una cita EN CURSO
+    // gana siempre sobre el horario declarado, este dentro o fuera de la
+    // jornada -- es evidencia mas dura sobre lo que pasa AHORA que un
+    // horario que alguien configuro una vez, y un panel titulado "Ahora
+    // mismo" que calle a quien esta con un cliente a las 20:00 con cierre a
+    // las 18:00 miente por omision (mismo fallo que D18 corrige por el otro
+    // lado). Por eso `current` se comprueba ANTES que la ventana horaria:
+    // la guarda de jornada solo protege las filas "free", nunca las "busy"
+    // (D19 corregido).
+    // classification.kind === "shift": jornada conocida. Una cita EN CURSO
+    // gana siempre sobre el horario declarado, este dentro o fuera de la
+    // jornada -- es evidencia mas dura sobre lo que pasa AHORA que un
+    // horario que alguien configuro una vez, y un panel titulado "Ahora
+    // mismo" que calle a quien esta con un cliente a las 20:00 con cierre a
+    // las 18:00 miente por omision (mismo fallo que D18 corrige por el otro
+    // lado). Por eso `current` se comprueba ANTES que la ventana horaria:
+    // la guarda de jornada solo protege las filas "free", nunca las "busy"
+    // (D19 corregido).
+    if (current) {
+      entries.push({ row: busyRow(employee, current), group: 0, freeMinutes: 0 })
       continue
     }
 
-    if (current) {
-      entries.push({ row: busyRow(employee, current), group: 0, freeMinutes: 0 })
+    // Fuera de la jornada -- todavia sin abrir o ya cerrada -- y SIN cita en
+    // curso, el empleado no produce fila (distinto de "off", que es "hoy no
+    // trabaja").
+    const openAt = timeOnSameDay(now, classification.openTime)
+    const closeAt = timeOnSameDay(now, classification.closeTime)
+    if (now.getTime() < openAt.getTime() || now.getTime() >= closeAt.getTime()) {
       continue
     }
 

@@ -277,6 +277,43 @@ describe("getNowRows", () => {
     ])
   })
 
+  it("gives a busy row for an appointment overlapping now even when the shift already closed (D19 corrected)", () => {
+    const employee = makeEmployee({ id: "emp_12" })
+    const overlapping = makeAppointment({
+      employeeId: "emp_12",
+      clientName: "Cliente Tardio",
+      serviceName: "Tinte",
+      startTime: `${DAY}T10:30:00`,
+      endTime: `${DAY}T11:30:00`,
+    })
+
+    const rows = getNowRows(
+      [overlapping],
+      [employee],
+      { emp_12: [makeHours({ openTime: "08:00:00", closeTime: "10:00:00" })] },
+      NOW
+    )
+
+    // La cita en curso gana sobre el horario declarado: sigue "busy" aunque
+    // el cierre (10:00) ya haya pasado respecto a `now` (11:00).
+    expect(rows).toEqual([
+      { kind: "busy", employee, clientName: "Cliente Tardio", serviceName: "Tinte", until: "11:30" },
+    ])
+  })
+
+  it("still omits the employee when the shift already closed and there is no appointment overlapping now (D19 unchanged)", () => {
+    const employee = makeEmployee({ id: "emp_13" })
+
+    const rows = getNowRows(
+      [],
+      [employee],
+      { emp_13: [makeHours({ openTime: "08:00:00", closeTime: "10:00:00" })] },
+      NOW
+    )
+
+    expect(rows).toEqual([])
+  })
+
   describe("unresolved schedule (employee absent from the map)", () => {
     it("busy branch: an appointment overlapping now still produces 'busy'", () => {
       const employee = makeEmployee({ id: "emp_8" })
