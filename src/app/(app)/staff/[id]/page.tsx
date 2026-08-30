@@ -7,7 +7,6 @@ import { toast } from "sonner"
 import { Pencil, Trash2, Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
@@ -22,6 +21,7 @@ import { SegmentedControl } from "@/components/shared/segmented-control"
 import { WorkingHoursEditor } from "@/components/staff/working-hours-editor"
 import { ServiceAssignment } from "@/components/staff/service-assignment"
 import { EmployeeColor } from "@/components/staff/employee-color"
+import { EmployeeStatusBadge } from "@/components/staff/employee-card"
 import { EmployeeFormSheet } from "@/components/staff/employee-form"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -56,11 +56,26 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
   // "lo que hubiera en el historial". Mismo motivo en desktopBack abajo.
   const backToStaff = () => router.push("/staff")
 
-  const { data: employee, isLoading } = useQuery<Employee>({
+  const {
+    data: employee,
+    isError: employeeFetchFailed,
+    refetch: refetchEmployee,
+  } = useQuery<Employee>({
     queryKey: ["employee", id],
     queryFn: () => staffApi.getEmployee(id, accessToken!),
     enabled: !!accessToken,
   })
+
+  // F1: `isLoading` alone cannot tell a genuine failure (staff-service down,
+  // an unknown/deleted id -- e.g. GET .../staff/no-existe returning 404 or
+  // 500) apart from a fetch still in flight, and it never fires while the
+  // query is disabled (`enabled: !!accessToken`, the cold-start-before-token
+  // case) -- so a plain `isLoading || !employee` paints the skeleton
+  // forever on error. Exactly the defect this same block already fixed on
+  // the twin screen (clients/[id]/page.tsx:75-87) and left standing here.
+  // Guarding on `isError` only once `accessToken` exists keeps the disabled
+  // cold start (isError also false then) from flashing an error card.
+  const employeeFetchReallyFailed = !!accessToken && employeeFetchFailed
 
   const {
     data: workingHours,
@@ -72,9 +87,9 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     enabled: !!accessToken,
   })
 
-  // The outer `isLoading || !employee` guard below only covers the employee
-  // query. The working-hours query can still be undefined after that guard
-  // clears (it resolves separately, possibly later), which would mount
+  // The outer `!employee` guard below only covers the employee query. The
+  // working-hours query can still be undefined after that guard clears (it
+  // resolves separately, possibly later), which would mount
   // WorkingHoursEditor on its DEFAULT_HOURS with an enabled "Guardar
   // horarios" button (isSaving only reflects the mutation, not this GET) --
   // clicking it before the real GET lands would overwrite the employee's
@@ -152,7 +167,23 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     onError: () => toast.error("Error al desactivar empleado"),
   })
 
-  if (isLoading || !employee) {
+  if (employeeFetchReallyFailed) {
+    return (
+      <PageShell
+        title="Detalle empleado"
+        back={backToStaff}
+        desktopBack={{ variant: "bordered", onBack: backToStaff }}
+      >
+        <EmptyState
+          title="No se ha podido cargar el empleado"
+          description="Comprueba tu conexión e inténtalo de nuevo."
+          action={<Button onClick={() => refetchEmployee()}>Reintentar</Button>}
+        />
+      </PageShell>
+    )
+  }
+
+  if (!employee) {
     return (
       <PageShell
         title="Detalle empleado"
@@ -183,7 +214,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
   const hoursContent = workingHoursFailed ? (
     <EmptyState
       title="No se ha podido cargar el horario"
-      description="Comprueba tu conexion e intentalo de nuevo."
+      description="Comprueba tu conexión e inténtalo de nuevo."
       action={<Button onClick={() => refetchWorkingHours()}>Reintentar</Button>}
     />
   ) : workingHoursNotReady ? (
@@ -201,7 +232,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     employeeServicesFailed ? (
       <EmptyState
         title="No se han podido cargar los servicios"
-        description="Comprueba tu conexion e intentalo de nuevo."
+        description="Comprueba tu conexión e inténtalo de nuevo."
         action={<Button onClick={() => refetchEmployeeServices()}>Reintentar</Button>}
       />
     ) : employeeServicesNotReady ? (
@@ -233,20 +264,29 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
       {isDesktop ? (
         <div className="flex gap-6">
           {/* Tarjeta 1: perfil (DetalleEmpleadoDesktop.dc.html:111-144) */}
-          <div className="flex w-[300px] shrink-0 flex-col gap-4 rounded-xl border border-border bg-white p-5">
+          <div className="flex w-[300px] shrink-0 flex-col gap-4 rounded-xl border border-border bg-card p-5">
             <div className="flex items-center gap-3.5">
               <Avatar className="h-16 w-16">
-                <AvatarFallback className="text-[21px]" style={employeeAvatarStyle(employee.colorHex)}>
+                <AvatarFallback
+                  className="text-[21px] leading-none font-semibold"
+                  style={employeeAvatarStyle(employee.colorHex)}
+                >
                   {initials(employee.firstName, employee.lastName)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-col gap-1">
+                {/* M14: `DetalleEmpleadoDesktop.dc.html:115` draws `.display`
+                    (19px/lh 1.15) here -- the omission comment further down
+                    (mobile) reasons only about mobile, where the name would
+                    duplicate the PageShell title; the desktop card has no such
+                    title nearby. */}
+                <p className="font-heading text-[19px] leading-[1.15] font-semibold">
+                  {employee.firstName} {employee.lastName}
+                </p>
                 {employee.jobTitle && (
-                  <p className="text-[13px] text-muted-foreground">{employee.jobTitle}</p>
+                  <p className="text-[13px] leading-tight text-muted-foreground">{employee.jobTitle}</p>
                 )}
-                <Badge variant={employee.isActive ? "secondary" : "outline"} className="self-start">
-                  {employee.isActive ? "Activo" : "Inactivo"}
-                </Badge>
+                <EmployeeStatusBadge isActive={employee.isActive} />
               </div>
             </div>
 
@@ -255,12 +295,12 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Mail className="size-[15px] shrink-0" strokeWidth={1.75} />
-                <span className="text-[13px]">{employee.email}</span>
+                <span className="text-[13px] leading-tight">{employee.email}</span>
               </div>
               {employee.phone && (
                 <div className="flex items-center gap-2.5 text-muted-foreground">
                   <Phone className="size-[15px] shrink-0" strokeWidth={1.75} />
-                  <span className="text-[13px] tabular-nums">{formatPhone(employee.phone)}</span>
+                  <span className="text-[13px] leading-tight tabular-nums">{formatPhone(employee.phone)}</span>
                 </div>
               )}
             </div>
@@ -277,10 +317,10 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </div>
 
           {/* Tarjeta 2: horario semanal (DetalleEmpleadoDesktop.dc.html:146-231) */}
-          <div className="flex w-[386px] shrink-0 flex-col gap-3 rounded-xl border border-border bg-white p-5">
+          <div className="flex w-[386px] shrink-0 flex-col gap-3 rounded-xl border border-border bg-card p-5">
             <div className="flex items-baseline justify-between">
               <span className="text-[15px] font-semibold leading-tight">Horario semanal</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground-2">
                 Horas propias de {employee.firstName}
               </span>
             </div>
@@ -288,7 +328,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           </div>
 
           {/* Tarjeta 3: servicios (DetalleEmpleadoDesktop.dc.html:233-301) */}
-          <div className="w-[372px] shrink-0 rounded-xl border border-border bg-white p-5">
+          <div className="w-[372px] shrink-0 rounded-xl border border-border bg-card p-5">
             {servicesContent("Servicios que realiza")}
           </div>
         </div>
@@ -297,7 +337,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           {/* Identidad (DetalleEmpleado.dc.html:49-54) */}
           <div className="flex items-center gap-3">
             <Avatar className="h-14 w-14">
-              <AvatarFallback className="text-lg" style={employeeAvatarStyle(employee.colorHex)}>
+              <AvatarFallback className="text-lg font-semibold" style={employeeAvatarStyle(employee.colorHex)}>
                 {initials(employee.firstName, employee.lastName)}
               </AvatarFallback>
             </Avatar>
@@ -313,9 +353,9 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
               {employee.jobTitle && (
                 <p className="text-sm text-muted-foreground">{employee.jobTitle}</p>
               )}
-              <Badge variant={employee.isActive ? "secondary" : "outline"} className="mt-1">
-                {employee.isActive ? "Activo" : "Inactivo"}
-              </Badge>
+              <div className="mt-1">
+                <EmployeeStatusBadge isActive={employee.isActive} />
+              </div>
             </div>
             {/* `mobileActions={null}` vacia la cabecera movil (igual que en
                 /staff): en movil, Editar/Desactivar viven aqui como
@@ -399,7 +439,7 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
           <DialogHeader>
             <DialogTitle>Desactivar empleado</DialogTitle>
             <DialogDescription>
-              Se desactivara a {employee.firstName} {employee.lastName}. No podra recibir nuevas citas.
+              Se desactivará a {employee.firstName} {employee.lastName}. No podrá recibir nuevas citas.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

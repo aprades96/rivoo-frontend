@@ -156,22 +156,47 @@ describe("WorkingHoursEditor", () => {
   })
 
   it("renders closed days (isOpen=false) with the muted 'Cerrado' state instead of time fields", () => {
-    const { getAllByText } = renderEditor(serverHours)
+    const { getAllByText, queryByText } = renderEditor(serverHours)
 
-    // serverHours opens Mon-Fri (i < 5): Saturday and Sunday (dayOfWeek 6-7) are closed.
-    expect(getAllByText("Cerrado · sin horas guardadas")).toHaveLength(2)
+    // serverHours opens Mon-Fri (i < 5): Saturday and Sunday (dayOfWeek 6-7)
+    // are closed, but DO carry stored times ("08:30"/"19:30") -- the label
+    // must not claim they are missing.
+    expect(getAllByText("Cerrado")).toHaveLength(2)
+    expect(queryByText(/sin horas guardadas/)).not.toBeInTheDocument()
   })
 
   // D13: the three states of a day, and the freeze that only lives on this
   // component's OWN button.
   describe("D13: the three states of a day", () => {
-    it("closed (loaded): no time fields, and the muted label names the missing hours", () => {
+    it("closed (loaded), genuinely no stored hours: no time fields, and the muted label names the missing hours", () => {
       const closedSunday: WorkingHoursResponse[] = [
-        { dayOfWeek: 7, isOpen: false, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+        {
+          dayOfWeek: 7,
+          isOpen: false,
+          openTime: null as unknown as string,
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
       ]
       const { getByText, container } = renderEditor(closedSunday)
 
       expect(getByText("Cerrado · sin horas guardadas")).toBeInTheDocument()
+      expect(container.querySelectorAll('input[type="time"]')).toHaveLength(0)
+    })
+
+    // LOW: a day toggled off does not necessarily mean its schedule was
+    // erased -- the owner may have simply closed a day that still carries a
+    // previously saved range. Claiming "sin horas guardadas" there would be
+    // a fact about the database this component never checked.
+    it("closed (loaded), WITH previously stored hours: the muted label does not claim they are missing", () => {
+      const closedSunday: WorkingHoursResponse[] = [
+        { dayOfWeek: 7, isOpen: false, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+      ]
+      const { getByText, queryByText, container } = renderEditor(closedSunday)
+
+      expect(getByText("Cerrado")).toBeInTheDocument()
+      expect(queryByText(/sin horas guardadas/)).not.toBeInTheDocument()
       expect(container.querySelectorAll('input[type="time"]')).toHaveLength(0)
     })
 
@@ -216,6 +241,38 @@ describe("WorkingHoursEditor", () => {
         queryByText(/el domingo llega sin horas guardadas/i)
       ).not.toBeInTheDocument()
       expect(getByRole("button", { name: /guardar horarios/i })).toBeEnabled()
+    })
+
+    // LOW: a freshly created employee has BOTH Saturday and Sunday unset. The
+    // banner used to hard-code "El domingo" no matter which day(s) were
+    // actually incomplete -- activating Saturday made it incomplete too,
+    // silently unnamed.
+    it("names every incomplete day, not just one, when more than one is incomplete", () => {
+      const freshWeekend: WorkingHoursResponse[] = [
+        {
+          dayOfWeek: 6,
+          isOpen: true,
+          openTime: null as unknown as string,
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+        {
+          dayOfWeek: 7,
+          isOpen: true,
+          openTime: null as unknown as string,
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+      ]
+      const { getByText } = renderEditor(freshWeekend)
+
+      expect(
+        getByText(
+          "El sábado y el domingo llegan sin horas guardadas. Al activarlos hay que escribirlas antes de guardar."
+        )
+      ).toBeInTheDocument()
     })
   })
 

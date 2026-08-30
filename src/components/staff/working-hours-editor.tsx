@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import type { WorkingHoursResponse, WorkingHoursRequest } from "@/types/employee"
 
-const DAY_NAMES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
+const DAY_NAMES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
 
 const DEFAULT_HOURS: WorkingHoursRequest[] = Array.from({ length: 7 }, (_, i) => ({
   dayOfWeek: i + 1,
@@ -27,7 +27,7 @@ const DEFAULT_HOURS: WorkingHoursRequest[] = Array.from({ length: 7 }, (_, i) =>
 // widget) precisely so it keeps full keyboard support (typing digits,
 // arrow keys to step, Tab to move between the hour/minute segments).
 const TIME_INPUT_CLASS_NAME = cn(
-  "h-9 flex-1 rounded-lg border-border bg-white px-[10px] text-[13px] font-medium tabular-nums md:w-[92px] md:flex-none",
+  "h-9 flex-1 rounded-lg border-border bg-card px-[10px] text-[13px] font-medium tabular-nums md:w-[92px] md:flex-none",
   "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-clear-button]:hidden [&::-webkit-inner-spin-button]:hidden"
 )
 
@@ -64,6 +64,34 @@ export interface WorkingHoursEditorHandle {
 // TypeScript believes.
 function isIncomplete(day: WorkingHoursRequest): boolean {
   return day.isOpen && (!day.openTime || !day.closeTime)
+}
+
+// LOW: a closed day can still carry a previously stored schedule (the owner
+// toggled it off without clearing the times) -- claiming "sin horas
+// guardadas" for THAT day would assert something about the database this
+// component never checked. The suffix is only true when both times are
+// genuinely absent.
+function hasStoredHours(day: WorkingHoursRequest): boolean {
+  return !!day.openTime && !!day.closeTime
+}
+
+function closedLabel(day: WorkingHoursRequest): string {
+  return hasStoredHours(day) ? "Cerrado" : "Cerrado · sin horas guardadas"
+}
+
+// LOW: the banner used to hard-code "El domingo" regardless of which day (or
+// days) were actually incomplete. A freshly created employee has BOTH
+// Saturday and Sunday unset; opening Saturday alone already produces two
+// incomplete days at once, and the old copy silently ignored the first one.
+// Names every incomplete day, not just one.
+function incompleteDaysMessage(days: WorkingHoursRequest[]): string {
+  const names = days.filter(isIncomplete).map((d) => `el ${DAY_NAMES[d.dayOfWeek - 1].toLowerCase()}`)
+  if (names.length === 0) return ""
+  const joined = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`
+  const subject = joined.charAt(0).toUpperCase() + joined.slice(1)
+  const verb = names.length === 1 ? "llega" : "llegan"
+  const pronoun = names.length === 1 ? "activarlo" : "activarlos"
+  return `${subject} ${verb} sin horas guardadas. Al ${pronoun} hay que escribirlas antes de guardar.`
 }
 
 function hoursStateFrom(hours: WorkingHoursResponse[] | undefined): WorkingHoursRequest[] {
@@ -128,73 +156,69 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
 
     return (
       <div>
-        <div className="flex flex-col overflow-hidden rounded-[12px] border border-border bg-white">
-          {localHours.map((day, index) => {
+        {/* H5: each day is its own bordered/rounded card, stacked with an 8px
+            gap -- NOT one shared container sliced by hairline separators
+            (`DetalleEmpleado.dc.html:19,29,93`, `DetalleEmpleadoDesktop.dc.html:29,152`).
+            Row order is [toggle][day][hours] (`DetalleEmpleado.dc.html:95-97`),
+            height 52px mobile / 44px desktop, day label 74px / 78px. */}
+        <div className="flex flex-col gap-2">
+          {localHours.map((day) => {
             const dayLabel = DAY_NAMES[day.dayOfWeek - 1]
             const incomplete = isIncomplete(day)
             return (
-              <div key={day.dayOfWeek}>
-                {index > 0 && <div className="h-px bg-hairline" />}
+              <div
+                key={day.dayOfWeek}
+                className={cn(
+                  "flex h-[52px] items-center gap-2.5 rounded-lg border border-border bg-card px-2.5 md:h-11 md:gap-[10px]",
+                  !day.isOpen && "bg-muted-subtle",
+                  incomplete && "border-surface-now-border bg-surface-now"
+                )}
+              >
+                <Switch
+                  checked={day.isOpen}
+                  onCheckedChange={(checked) => updateDay(day.dayOfWeek, "isOpen", checked)}
+                  disabled={isSaving}
+                  aria-label={`Abierto ${dayLabel}`}
+                />
+                <span
+                  className={cn(
+                    "w-[74px] shrink-0 text-sm font-semibold md:w-[78px]",
+                    !day.isOpen && "text-muted-foreground-2"
+                  )}
+                >
+                  {dayLabel}
+                </span>
 
                 {day.isOpen ? (
-                  <div
-                    className={cn(
-                      "flex flex-col gap-[9px] py-3 px-[14px] md:grid md:grid-cols-[130px_52px_1fr] md:items-center md:gap-4 md:py-[11px] md:px-[14px]",
-                      incomplete && "border-y border-surface-now-border bg-surface-now"
-                    )}
-                  >
-                    <div className="flex items-center justify-between md:contents">
-                      <span className="text-sm font-semibold">{dayLabel}</span>
-                      <Switch
-                        checked={day.isOpen}
-                        onCheckedChange={(checked) => updateDay(day.dayOfWeek, "isOpen", checked)}
-                        disabled={isSaving}
-                        aria-label={`Abierto ${dayLabel}`}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 md:gap-[9px]">
-                      <Input
-                        type="time"
-                        value={day.openTime ?? ""}
-                        placeholder="--:--"
-                        onChange={(e) => updateDay(day.dayOfWeek, "openTime", e.target.value)}
-                        disabled={isSaving}
-                        className={cn(
-                          TIME_INPUT_CLASS_NAME,
-                          incomplete && "border-input-border-attention text-text-subtle"
-                        )}
-                        aria-label={`Hora de apertura, ${dayLabel}`}
-                      />
-                      <span className="text-xs text-muted-foreground-2">a</span>
-                      <Input
-                        type="time"
-                        value={day.closeTime ?? ""}
-                        placeholder="--:--"
-                        onChange={(e) => updateDay(day.dayOfWeek, "closeTime", e.target.value)}
-                        disabled={isSaving}
-                        className={cn(
-                          TIME_INPUT_CLASS_NAME,
-                          incomplete && "border-input-border-attention text-text-subtle"
-                        )}
-                        aria-label={`Hora de cierre, ${dayLabel}`}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between bg-muted-subtle p-[14px]">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-sm font-semibold text-muted-foreground-2">
-                        {dayLabel}
-                      </span>
-                      <span className="text-xs text-text-subtle">Cerrado &middot; sin horas guardadas</span>
-                    </div>
-                    <Switch
-                      checked={day.isOpen}
-                      onCheckedChange={(checked) => updateDay(day.dayOfWeek, "isOpen", checked)}
+                  <div className="flex flex-1 items-center gap-2 md:gap-[9px]">
+                    <Input
+                      type="time"
+                      value={day.openTime ?? ""}
+                      placeholder="--:--"
+                      onChange={(e) => updateDay(day.dayOfWeek, "openTime", e.target.value)}
                       disabled={isSaving}
-                      aria-label={`Abierto ${dayLabel}`}
+                      className={cn(
+                        TIME_INPUT_CLASS_NAME,
+                        incomplete && "border-input-border-attention text-text-subtle"
+                      )}
+                      aria-label={`Hora de apertura, ${dayLabel}`}
+                    />
+                    <span className="text-xs text-muted-foreground-2">a</span>
+                    <Input
+                      type="time"
+                      value={day.closeTime ?? ""}
+                      placeholder="--:--"
+                      onChange={(e) => updateDay(day.dayOfWeek, "closeTime", e.target.value)}
+                      disabled={isSaving}
+                      className={cn(
+                        TIME_INPUT_CLASS_NAME,
+                        incomplete && "border-input-border-attention text-text-subtle"
+                      )}
+                      aria-label={`Hora de cierre, ${dayLabel}`}
                     />
                   </div>
+                ) : (
+                  <span className="text-xs text-text-subtle">{closedLabel(day)}</span>
                 )}
               </div>
             )
@@ -207,14 +231,15 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-muted p-[10px_12px]">
             <Info className="mt-px h-[15px] w-[15px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
             <span className="text-xs leading-[1.45] text-muted-foreground">
-              El domingo llega sin horas guardadas. Al activarlo hay que escribirlas antes de guardar.
+              {incompleteDaysMessage(localHours)}
             </span>
           </div>
         )}
 
         {showSaveButton && (
           <Button
-            className="mt-3 w-full"
+            size="xl"
+            className="mt-3 h-[46px] w-full md:h-10 md:text-sm"
             onClick={() => onSave(localHours)}
             disabled={isSaving || hasIncompleteDay}
           >

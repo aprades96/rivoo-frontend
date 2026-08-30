@@ -129,6 +129,47 @@ describe("EmployeeDetailPage", () => {
     mockMatchMedia(false)
   })
 
+  // F1: `isLoading || !employee` used to collapse "the employee GET is still
+  // in flight" and "the employee GET actually failed" into the same branch,
+  // painting the skeleton forever on a 404/500 (e.g. staff-service down, or
+  // GET /api/v1/staff/employees/no-existe). Exactly the defect this same
+  // block already fixed on the twin screen (clients/[id]/page.tsx) and left
+  // standing here. This test goes FIRST on purpose.
+  it("F1: shows an error with a retry action instead of an infinite skeleton when the employee fails to load, and recovers once the retry succeeds", async () => {
+    getEmployee.mockRejectedValueOnce(new Error("not found"))
+    getEmployee.mockResolvedValueOnce(employee)
+    getWorkingHours.mockResolvedValue([])
+    const user = userEvent.setup()
+
+    const { container } = renderPage()
+
+    expect(await screen.findByText(/no se ha podido cargar el empleado/i)).toBeInTheDocument()
+    expect(container.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument()
+    expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /reintentar/i }))
+
+    // Proves the retry's data actually landed (react-query's notifyManager
+    // macrotask, per AGENTS.md), not just that the error text disappeared.
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    expect(screen.queryByText(/no se ha podido cargar el empleado/i)).not.toBeInTheDocument()
+  })
+
+  // F1: while `accessToken` is still `null` (session cold start), the
+  // employee query is disabled and React Query v5 reports `isError: false`
+  // for a disabled query -- same as `isLoading: false`. The error branch
+  // above must never fire during that window, only the skeleton.
+  it("F1: shows the skeleton, not the error card, while waiting for the access token on a cold load", () => {
+    useAuthMock.mockReturnValue({ accessToken: null, isOwner: true })
+    getEmployee.mockReturnValue(new Promise(() => {}))
+    getWorkingHours.mockReturnValue(new Promise(() => {}))
+
+    const { container } = renderPage()
+
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
+    expect(screen.queryByText(/no se ha podido cargar el empleado/i)).not.toBeInTheDocument()
+  })
+
   it("does not mount the working-hours editor for the 'Horarios' tab while the schedule is still loading, even though the employee record has already arrived", async () => {
     // The outer `isLoading || !employee` guard only covers the employee
     // query; it clears as soon as `employee` arrives even if the separate
@@ -210,7 +251,10 @@ describe("EmployeeDetailPage", () => {
 
     renderPage()
 
-    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    // M14 added the employee's name to the desktop profile card too, so
+    // plain text now matches twice (the PageShell `<h1>` title and the
+    // card) -- assert against the heading specifically.
+    expect(await screen.findByRole("heading", { name: "Ana Garcia" })).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Volver" }))
 
