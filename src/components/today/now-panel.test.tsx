@@ -43,7 +43,7 @@ const freeRowWithNext: NowRow = {
 
 const freeRowWithoutNext: NowRow = {
   kind: "free",
-  employee: freeEmployee,
+  employee: freeEmployee2,
   freeFor: "45min",
 }
 
@@ -132,6 +132,27 @@ describe("NowPanel", () => {
     })
   })
 
+  describe("separadores entre filas (Main.dc.html:86, HoyDesktop.dc.html:203)", () => {
+    it("con N filas pinta N-1 separadores -- van ENTRE filas, no despues de la ultima", () => {
+      render(
+        <NowPanel
+          rows={[busyRow, freeRowWithNext, freeRowWithoutNext, offRow]}
+          employees={allEmployees}
+          now={NOW}
+          variant="mobile"
+        />
+      )
+
+      expect(screen.getAllByTestId("now-panel-separator")).toHaveLength(3)
+    })
+
+    it("con una sola fila no pinta ningun separador", () => {
+      render(<NowPanel rows={[busyRow]} employees={allEmployees} now={NOW} variant="mobile" />)
+
+      expect(screen.queryByTestId("now-panel-separator")).not.toBeInTheDocument()
+    })
+  })
+
   describe("el punto de color", () => {
     it("usa employeeSolidColor + employeePaletteIndex sobre la lista COMPLETA de empleados", () => {
       render(<NowPanel rows={[busyRow]} employees={allEmployees} now={NOW} variant="mobile" />)
@@ -166,11 +187,16 @@ describe("NowPanel", () => {
   })
 
   describe("las dos variantes de ancho (D15: montaje condicional, no CSS)", () => {
-    it("movil: el rotulo va DENTRO de la tarjeta, junto a la hora actual", () => {
+    it("movil: el rotulo va DENTRO de la tarjeta (el nodo con borde y fondo), junto a la hora actual", () => {
       render(<NowPanel rows={[busyRow]} employees={allEmployees} now={NOW} variant="mobile" />)
 
+      // En movil no hay un nodo "tarjeta" separado -- el propio `now-panel` ES
+      // la tarjeta (lleva el borde y el fondo), y el rotulo cuelga de el. Por
+      // eso NO existe un `now-panel-card` aparte.
       const panel = screen.getByTestId("now-panel")
+      expect(panel).toHaveClass("border", "bg-(--color-surface-now)")
       expect(within(panel).getByText("Ahora mismo")).toBeInTheDocument()
+      expect(screen.queryByTestId("now-panel-card")).not.toBeInTheDocument()
       expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:10")
     })
 
@@ -185,6 +211,18 @@ describe("NowPanel", () => {
       render(<NowPanel rows={[busyRow]} employees={allEmployees} now={NOW} variant="desktop" />)
 
       expect(screen.getByText("Ahora mismo")).toHaveClass("text-muted-foreground")
+    })
+
+    it("escritorio: el rotulo va FUERA de la tarjeta -- el nodo con borde y fondo es un hijo distinto que solo envuelve la lista", () => {
+      render(<NowPanel rows={[busyRow]} employees={allEmployees} now={NOW} variant="desktop" />)
+
+      const panel = screen.getByTestId("now-panel")
+      expect(panel).not.toHaveClass("border")
+      expect(screen.getByText("Ahora mismo")).toBeInTheDocument()
+
+      const card = screen.getByTestId("now-panel-card")
+      expect(card).toHaveClass("border", "bg-(--color-surface-now)")
+      expect(within(card).queryByText("Ahora mismo")).not.toBeInTheDocument()
     })
   })
 })

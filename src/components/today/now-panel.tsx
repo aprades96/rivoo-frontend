@@ -172,6 +172,7 @@ export function NowPanel({ rows, employees, now, variant }: NowPanelProps) {
     <div data-testid="now-panel" className="flex flex-col gap-[10px]">
       <span className="text-[13px] leading-tight font-semibold text-muted-foreground">Ahora mismo</span>
       <div
+        data-testid="now-panel-card"
         className="flex flex-col gap-[14px] rounded-[10px] border border-(--color-surface-now-border) bg-(--color-surface-now) p-4"
       >
         {list}
