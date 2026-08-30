@@ -88,6 +88,9 @@
   --color-border-dashed: var(--border-dashed);
   --color-border-dashed-strong: var(--border-dashed-strong);
   --color-avatar-muted: var(--avatar-muted);
+  --color-surface-now: var(--surface-now);
+  --color-surface-now-border: var(--surface-now-border);
+  --color-surface-now-text: var(--surface-now-text);
   --color-warning-text: var(--warning-text);
   --color-grabber: var(--grabber);
 
@@ -172,6 +175,9 @@
   --grabber: #d8c9b8; /* DetalleCita.dc.html:39 — asa de la hoja inferior */
   --border-dashed-strong: #dcc9bb; /* NuevaCitaPaso4.dc.html:67, NuevaCitaDesktopPaso4.dc.html:78 — borde discontinuo de la tarjeta "Crear nuevo cliente" */
   --avatar-muted: #f0eae3; /* NuevaCitaPaso1.dc.html:89, NuevaCitaDesktopPaso1.dc.html:113 — fondo del avatar del empleado que hoy no trabaja */
+  --surface-now: #faefe9; /* HoyDesktop.dc.html:190 — fondo del panel "Ahora mismo". Mismo valor que --destructive-soft, que viene de ReservaError y aqui seria un nombre enganoso */
+  --surface-now-border: #ebd3c8; /* HoyDesktop.dc.html:190,203 — borde y separadores del panel "Ahora mismo" */
+  --surface-now-text: #904226; /* Main.dc.html:69-70 — rotulo "AHORA MISMO" y hora, SOLO movil. Es accentDark = mix(#B4522F, #000, .2). NO es --primary-pressed (#8f3f24) */
 }
 
 @layer base {

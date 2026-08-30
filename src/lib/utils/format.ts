@@ -8,6 +8,19 @@ export function formatCurrency(amount: number, currency: string = "EUR"): string
   }).format(amount)
 }
 
+// El KPI de facturacion dibuja "412 €" ENTERO (HoyDesktop.dc.html:107): es un
+// agregado de cabecera, no un precio unitario. Los precios unitarios siguen
+// usando `formatCurrency` ("35,00 €"). Ver D32 en el plan de la pantalla Hoy.
+export function formatCurrencyRounded(amount: number, currency: string = "EUR"): string {
+  const safeCurrency = typeof currency === "string" && VALID_CURRENCY_CODE.test(currency) ? currency : "EUR"
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: safeCurrency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(amount)
+}
+
 export function formatPhone(phone: string): string {
   // Spanish phone: +34 XXX XXX XXX
   const clean = phone.replace(/\D/g, "")

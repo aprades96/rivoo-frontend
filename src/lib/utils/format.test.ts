@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest"
-import { formatCurrency, formatPhone, initials, capitalizeFirst } from "./format"
+import { formatCurrency, formatCurrencyRounded, formatPhone, initials, capitalizeFirst } from "./format"
+
+/**
+ * `Intl.NumberFormat("es-ES", { currency: "EUR" })` separa la cifra del simbolo
+ * con un espacio DURO (U+00A0), no con el espacio normal que se lee en el
+ * artboard. Sin normalizar, un `toBe("412 €")` escrito con espacio normal
+ * fallaria aunque el codigo sea correcto.
+ */
+function normalize(value: string): string {
+  return value.replace(/\u00a0/g, " ")
+}
 
 describe("formatCurrency", () => {
   it("formats as EUR with Spanish locale", () => {
@@ -48,6 +58,28 @@ describe("formatCurrency", () => {
     const result = formatCurrency(15, "€")
     expect(result).toContain("15")
     expect(result).toMatch(/€/)
+  })
+
+  it("keeps two decimals for a unit price, unlike formatCurrencyRounded", () => {
+    expect(normalize(formatCurrency(412))).toBe("412,00 €")
+  })
+})
+
+describe("formatCurrencyRounded", () => {
+  it("rounds a whole number to a euro amount with no decimals", () => {
+    expect(normalize(formatCurrencyRounded(412))).toBe("412 €")
+  })
+
+  it("rounds an amount with decimals, dropping them entirely", () => {
+    expect(normalize(formatCurrencyRounded(412.4))).toBe("412 €")
+  })
+
+  it("formats zero without decimals", () => {
+    expect(normalize(formatCurrencyRounded(0))).toBe("0 €")
+  })
+
+  it("falls back to EUR when currency is invalid, same as formatCurrency", () => {
+    expect(normalize(formatCurrencyRounded(15, "€"))).toBe("15 €")
   })
 })
 
