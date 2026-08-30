@@ -11,6 +11,15 @@ export interface WizardStepperProps {
    * Defaults to `"md"`, today's public booking behaviour.
    */
   visibleFrom?: "md" | "lg"
+  /**
+   * Text color for a step already completed. Defaults to `"muted"`
+   * (`text-muted-foreground`, `#7A6A5F`) -- the public booking wizard's
+   * `.stepdone` color (`design/ReservaDesktopPaso3.dc.html:20`). The NuevaCita
+   * artboards have no `.stepdone` at all: a completed step keeps the plain
+   * `.step` color, `#B8A99C` (`design/NuevaCitaDesktopPaso3.dc.html:18,56,58`)
+   * -- pass `"subtle"` for that.
+   */
+  completedTone?: "muted" | "subtle"
 }
 
 // Full, literal class strings per `visibleFrom` value -- Tailwind scans the
@@ -25,12 +34,18 @@ const VISIBLE_FROM_CLASSNAMES: Record<NonNullable<WizardStepperProps["visibleFro
  * `design/ReservaDesktopPaso1.dc.html:50-60` and
  * `design/ReservaDesktopPaso2.dc.html:50-60`.
  *
- * Completed-label color: the artboards disagree with each other (D2 uses
- * `#B8A99C`, D3 uses `#7A6A5F` -- see `.step` vs `.stepdone` base color in
- * their respective <style> blocks). D3 is the later artboard, so this uses
- * its `#7A6A5F` (== `text-muted-foreground`) for completed labels.
+ * Completed-label color: the public booking artboards disagree with each
+ * other (D2 uses `#B8A99C`, D3 uses `#7A6A5F` -- see `.step` vs `.stepdone`
+ * base color in their respective <style> blocks). D3 is the later artboard,
+ * so `completedTone="muted"` (the default, `text-muted-foreground`) uses its
+ * `#7A6A5F`. See `completedTone` for the NuevaCita override.
  */
-export function WizardStepper({ step, labels = DEFAULT_STEP_LABELS, visibleFrom = "md" }: WizardStepperProps) {
+export function WizardStepper({
+  step,
+  labels = DEFAULT_STEP_LABELS,
+  visibleFrom = "md",
+  completedTone = "muted",
+}: WizardStepperProps) {
   return (
     // `gap` y conectores mas cortos hasta `xl:`, y las etiquetas sin partir.
     // A 1024 —donde el aside ya ocupa 320px de los 1024— los cinco nodos no
@@ -50,7 +65,7 @@ export function WizardStepper({ step, labels = DEFAULT_STEP_LABELS, visibleFrom 
                 className={cn(
                   "h-px w-3 xl:w-[26px]",
                   // Completado = el paso a su izquierda ya se supero.
-                  index < step ? "bg-[#D8C9B8]" : "bg-border"
+                  index < step ? "bg-border-dashed" : "bg-border"
                 )}
               />
             )}
@@ -60,7 +75,9 @@ export function WizardStepper({ step, labels = DEFAULT_STEP_LABELS, visibleFrom 
                 isActive
                   ? "font-semibold text-foreground"
                   : isCompleted
-                    ? "text-muted-foreground"
+                    ? completedTone === "subtle"
+                      ? "text-text-subtle"
+                      : "text-muted-foreground"
                     : "text-text-subtle"
               )}
             >
@@ -71,7 +88,7 @@ export function WizardStepper({ step, labels = DEFAULT_STEP_LABELS, visibleFrom 
                     ? "bg-primary text-primary-foreground"
                     : isCompleted
                       ? "bg-success-soft text-success"
-                      : "border border-[#D8C9B8]"
+                      : "border border-border-dashed"
                 )}
               >
                 {isCompleted ? (

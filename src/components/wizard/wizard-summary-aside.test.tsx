@@ -107,4 +107,58 @@ describe("WizardSummaryAside", () => {
       screen.queryByText("Sin registro · cancela gratis hasta 24h antes")
     ).not.toBeInTheDocument()
   })
+
+  it("sin `heading` pinta 'Tu reserva' (comportamiento por defecto de la reserva publica)", () => {
+    render(<WizardSummaryAside rows={[]} ctaLabel="Continuar" />)
+
+    expect(screen.getByText("Tu reserva")).toBeInTheDocument()
+  })
+
+  it("sin `ctaHeight` el CTA mide 46px (comportamiento por defecto de la reserva publica)", () => {
+    render(<WizardSummaryAside rows={[]} ctaLabel="Continuar" />)
+
+    const cta = screen.getByRole("button", { name: "Continuar" })
+    expect(cta).toHaveClass("h-[46px]")
+    expect(cta).not.toHaveClass("h-12")
+  })
+
+  it("un valor por defecto (sin `valueTone`) pinta con negrita, no con el estilo de placeholder", () => {
+    render(
+      <WizardSummaryAside
+        rows={[{ label: "Profesional", value: "Laura Martinez" }]}
+        ctaLabel="Continuar"
+      />
+    )
+
+    const value = screen.getByText("Laura Martinez")
+    expect(value).toHaveClass("font-semibold")
+    expect(value).not.toHaveClass("text-text-placeholder")
+  })
+
+  it("`valueTone='placeholder'` pinta el valor sin negrita, con el estilo de placeholder", () => {
+    render(
+      <WizardSummaryAside
+        rows={[{ label: "Profesional", value: "Sin elegir", valueTone: "placeholder" }]}
+        ctaLabel="Continuar"
+      />
+    )
+
+    const value = screen.getByText("Sin elegir")
+    expect(value).toHaveClass("text-text-placeholder")
+    expect(value).not.toHaveClass("font-semibold")
+  })
+
+  it("la fila Total lleva la tipografia de titular (font-heading + tracking-display)", () => {
+    render(
+      <WizardSummaryAside
+        rows={[{ label: "Servicio", value: "Corte + Tinte" }]}
+        total="65,00 €"
+        ctaLabel="Confirmar reserva"
+      />
+    )
+
+    const totalValue = screen.getByText("65,00 €")
+    expect(totalValue).toHaveClass("font-heading")
+    expect(totalValue).toHaveClass("tracking-display")
+  })
 })

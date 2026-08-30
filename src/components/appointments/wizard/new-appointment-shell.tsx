@@ -89,7 +89,13 @@ export function NewAppointmentShell({
       <div
         className={cn(
           "flex w-full flex-1",
-          isDesktop ? "mx-auto max-w-[1120px] gap-10 px-10 py-8" : "flex-col gap-4 px-4 pt-3.5",
+          // `max-w-[1200px]`, no `[1120px]`: con `box-sizing: border-box`
+          // (preflight) `max-w` incluye el `px-10` (40px por lado), asi que
+          // un `max-w-[1120px]` deja solo 1040px de contenido. El artboard
+          // dibuja un contenedor con `padding: 32px 40px` y DENTRO un
+          // `width: 1120px` (`design/NuevaCitaDesktopPaso1.dc.html:42-43`,
+          // igual en los cinco pasos): 1200 - 40*2 = 1120 de contenido real.
+          isDesktop ? "mx-auto max-w-[1200px] gap-10 px-10 py-8" : "flex-col gap-4 px-4 pt-3.5",
           showFooter && "pb-28"
         )}
       >
@@ -100,26 +106,30 @@ export function NewAppointmentShell({
           )}
         >
           {isDesktop ? (
-            <WizardStepper step={step} labels={STEP_LABELS} visibleFrom="lg" />
+            <>
+              <WizardStepper step={step} labels={STEP_LABELS} visibleFrom="lg" completedTone="subtle" />
+              <div className="flex flex-col gap-1.5">
+                <h1 className="font-heading text-[34px] leading-[1.05] font-semibold tracking-display">
+                  {title}
+                </h1>
+                {subtitle && <p className="text-sm leading-tight text-muted-foreground">{subtitle}</p>}
+              </div>
+            </>
           ) : (
-            <WizardProgress step={step} />
-          )}
-
-          {isDesktop ? (
-            <div className="flex flex-col gap-1.5">
-              <h1 className="font-heading text-[34px] leading-[1.05] font-semibold tracking-display">
-                {title}
-              </h1>
-              {subtitle && <p className="text-sm leading-tight text-muted-foreground">{subtitle}</p>}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-[3px]">
-              <span className="text-[11px] leading-tight font-semibold tracking-[0.06em] text-muted-foreground-2 uppercase">
-                Paso {step} de 5
-              </span>
-              <h1 className="font-heading text-[27px] leading-[1.1] font-semibold tracking-[-0.015em]">
-                {title}
-              </h1>
+            // Wrapper propio con `gap-3.5` (14px): en el artboard la barra y
+            // el bloque de titulo son contenedores HERMANOS, cada uno con
+            // `padding: 14px 16px 0` (`design/NuevaCitaPaso1.dc.html:33,41`),
+            // no dos items de una columna con el `gap-4` (16px) del resto.
+            <div className="flex flex-col gap-3.5">
+              <WizardProgress step={step} />
+              <div className="flex flex-col gap-[3px]">
+                <span className="text-[11px] leading-tight font-semibold tracking-[0.06em] text-muted-foreground-2 uppercase">
+                  Paso {step} de 5
+                </span>
+                <h1 className="font-heading text-[27px] leading-[1.1] font-semibold tracking-[-0.015em]">
+                  {title}
+                </h1>
+              </div>
             </div>
           )}
 

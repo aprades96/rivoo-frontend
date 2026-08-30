@@ -95,7 +95,7 @@ export function WizardSummaryAside({
           {total !== undefined && (
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs text-muted-foreground-2">Total</span>
-              <span className="text-xl font-semibold tabular-nums">{total}</span>
+              <span className="font-heading text-xl font-semibold tracking-display tabular-nums">{total}</span>
             </div>
           )}
         </>

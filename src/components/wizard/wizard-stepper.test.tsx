@@ -22,4 +22,39 @@ describe("WizardStepper", () => {
     expect(screen.getByText("Tres")).toBeInTheDocument()
     expect(screen.queryByText("Servicio")).not.toBeInTheDocument()
   })
+
+  it("sin `visibleFrom` se oculta hasta `md:` (comportamiento por defecto de la reserva publica)", () => {
+    const { container } = render(<WizardStepper step={1} />)
+
+    expect(container.firstElementChild).toHaveClass("md:flex")
+    expect(container.firstElementChild).not.toHaveClass("lg:flex")
+  })
+
+  it("sin `completedTone` un paso superado usa `text-muted-foreground` (color de la reserva publica)", () => {
+    render(<WizardStepper step={2} labels={["Uno", "Dos"]} />)
+
+    const completedLabel = screen.getByText("Uno").closest("div")
+    expect(completedLabel).toHaveClass("text-muted-foreground")
+    expect(completedLabel).not.toHaveClass("text-text-subtle")
+  })
+
+  it("con `completedTone='subtle'` un paso superado usa `text-text-subtle` (#B8A99C, artboards de NuevaCita)", () => {
+    render(<WizardStepper step={2} labels={["Uno", "Dos"]} completedTone="subtle" />)
+
+    const completedLabel = screen.getByText("Uno").closest("div")
+    expect(completedLabel).toHaveClass("text-text-subtle")
+    expect(completedLabel).not.toHaveClass("text-muted-foreground")
+  })
+
+  it("usa los tokens de color en vez de hexes literales para el conector y el aro pendiente", () => {
+    const { container } = render(<WizardStepper step={2} labels={["Uno", "Dos", "Tres"]} />)
+
+    const connector = container.querySelector(".h-px")
+    expect(connector).toHaveClass("bg-border-dashed")
+    expect(connector?.className).not.toContain("#D8C9B8")
+
+    const pendingRing = screen.getByText("Tres").closest("div")?.querySelector("span")
+    expect(pendingRing).toHaveClass("border-border-dashed")
+    expect(pendingRing?.className).not.toContain("#D8C9B8")
+  })
 })

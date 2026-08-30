@@ -8,6 +8,7 @@ import {
   formatTimeRange,
   formatDateLong,
   formatRelativeTime,
+  AFTERNOON_HOUR,
 } from "./dates"
 
 // Note: date-fns parseISO + format uses local timezone.
@@ -16,6 +17,12 @@ const MORNING = "2026-03-22T09:30:00"
 const AFTERNOON = "2026-03-22T14:00:00"
 const RANGE_START = "2026-03-22T09:00:00"
 const RANGE_END = "2026-03-22T09:45:00"
+
+describe("AFTERNOON_HOUR", () => {
+  it("es 14 -- el corte manana/tarde compartido por el asistente de nueva cita y la reserva publica", () => {
+    expect(AFTERNOON_HOUR).toBe(14)
+  })
+})
 
 describe("formatTime", () => {
   it("extracts HH:mm from ISO string", () => {
