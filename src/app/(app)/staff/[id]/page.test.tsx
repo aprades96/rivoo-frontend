@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import EmployeeDetailPage from "./page"
-import type { Employee } from "@/types/employee"
+import type { Employee, EmployeeServiceResponse } from "@/types/employee"
 
 // `push`/`back` estables via `vi.hoisted`: un `useRouter: () => ({ push: vi.fn(), ... })`
 // inline crea un espia NUEVO en cada llamada al hook, y aqui hace falta aseverar
@@ -35,9 +35,14 @@ vi.mock("@/hooks/use-auth", () => ({
 }))
 
 const useEmployeeServicesMock = vi.fn()
+// ServiceAssignment (mounted once the guard below clears) calls this for the
+// catalogue -- unrelated to the employee's own assignment, but it lives in
+// the same module, and this file mocks that module wholesale.
+const useServicesMock = vi.fn()
 
 vi.mock("@/hooks/use-staff", () => ({
   useEmployeeServices: (...args: unknown[]) => useEmployeeServicesMock(...args),
+  useServices: (...args: unknown[]) => useServicesMock(...args),
 }))
 
 const getEmployee = vi.fn()
@@ -77,6 +82,17 @@ const employee: Employee = {
   createdAt: "2026-01-01T00:00:00Z",
 }
 
+const assignedServices: EmployeeServiceResponse[] = [
+  {
+    serviceId: "svc_1",
+    serviceName: "Corte",
+    effectiveDuration: 30,
+    effectivePrice: 18,
+    customDuration: null,
+    customPrice: null,
+  },
+]
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -96,7 +112,15 @@ describe("EmployeeDetailPage", () => {
     useAuthMock.mockReset()
     useAuthMock.mockReturnValue({ accessToken: "token", isOwner: true })
     useEmployeeServicesMock.mockReset()
-    useEmployeeServicesMock.mockReturnValue({ data: undefined })
+    useEmployeeServicesMock.mockReturnValue({ data: undefined, isError: false, refetch: vi.fn() })
+    useServicesMock.mockReset()
+    useServicesMock.mockReturnValue({
+      data: {
+        content: [
+          { id: "svc_1", name: "Corte", description: null, durationMinutes: 30, price: 18, category: null, isActive: true },
+        ],
+      },
+    })
     pushMock.mockClear()
     backMock.mockClear()
   })
@@ -192,5 +216,138 @@ describe("EmployeeDetailPage", () => {
 
     expect(pushMock).toHaveBeenCalledWith("/staff")
     expect(backMock).not.toHaveBeenCalled()
+  })
+
+  // D16/§1.11.2: same class of bug as the working-hours guard above, made
+  // reachable once T4 fixed the assign-services contract (the 400 of
+  // §1.11.1 used to mask it entirely). This test goes FIRST in the plan's
+  // step order on purpose.
+  it("does not mount the service editor for the 'Servicios' section while the assignment is still loading, even though the employee record has already arrived", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    useEmployeeServicesMock.mockReturnValue({ data: undefined, isError: false, refetch: vi.fn() })
+    const user = userEvent.setup()
+
+    const { container } = renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+
+    expect(screen.queryByRole("button", { name: /guardar servicios/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument()
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
+  })
+
+  it("mounts the service editor with the assigned services once they have actually arrived", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    useEmployeeServicesMock.mockReturnValue({ data: assignedServices, isError: false, refetch: vi.fn() })
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+
+    expect(await screen.findByRole("button", { name: /guardar servicios \(1\)/i })).toBeEnabled()
+  })
+
+  it("shows an error with a retry action instead of an infinite skeleton for services when the assignment fails to load", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    const refetchEmployeeServices = vi.fn()
+    useEmployeeServicesMock.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: refetchEmployeeServices,
+    })
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+
+    expect(await screen.findByText(/no se han podido cargar los servicios/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /reintentar/i }))
+
+    expect(refetchEmployeeServices).toHaveBeenCalledTimes(1)
+  })
+
+  it("mobile: switches between the 'Horarios' and 'Servicios' sections through a single JS-mounted panel, never both at once", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([
+      { dayOfWeek: 1, isOpen: true, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+    ])
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByRole("button", { name: /guardar horarios/i })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /guardar servicios/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+
+    expect(screen.queryByRole("button", { name: /guardar horarios/i })).not.toBeInTheDocument()
+  })
+
+  it("desktop: lays out three fixed-width cards (profile, hours, services) with no segmented control", async () => {
+    mockMatchMedia(true)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([
+      { dayOfWeek: 1, isOpen: true, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+    ])
+    useEmployeeServicesMock.mockReturnValue({ data: assignedServices, isError: false, refetch: vi.fn() })
+
+    renderPage()
+
+    expect(await screen.findByText("Horario semanal")).toBeInTheDocument()
+    expect(screen.getByText("Horas propias de Ana")).toBeInTheDocument()
+    expect(await screen.findByText("Servicios que realiza")).toBeInTheDocument()
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument()
+  })
+
+  it("D14/D29: shows the employee's colour swatch and the formatted phone number instead of the raw digits", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue({ ...employee, colorHex: "#B4522F" })
+    getWorkingHours.mockResolvedValue([])
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    expect(screen.getByTestId("employee-color-swatch")).toBeInTheDocument()
+    expect(screen.getByText("600 000 000")).toBeInTheDocument()
+    expect(screen.queryByText("600000000")).not.toBeInTheDocument()
+  })
+
+  it("deactivating an employee invalidates all four caches it can have populated, not just 'employees'", async () => {
+    const invalidateSpy = vi.spyOn(QueryClient.prototype, "invalidateQueries")
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    deleteEmployee.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Desactivar" }))
+
+    const dialog = await screen.findByRole("dialog")
+    await user.click(within(dialog).getByRole("button", { name: "Desactivar" }))
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/staff"))
+
+    const invalidatedKeys = invalidateSpy.mock.calls.map((call) => (call[0] as { queryKey: unknown[] }).queryKey[0])
+    expect(invalidatedKeys).toEqual(
+      expect.arrayContaining(["employees", "employee", "employee-working-hours", "employee-services"])
+    )
+
+    invalidateSpy.mockRestore()
   })
 })

@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef, useImperativeHandle, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -52,6 +52,20 @@ export interface WorkingHoursEditorHandle {
   save: () => Promise<unknown>
 }
 
+// D13: a day is incomplete the moment it is open and EITHER time is still
+// blank -- one empty field is already enough, it does not take both. This is
+// the far more likely mistake (writing the opening time and forgetting the
+// closing one), and reading it as "neither" would let that case slip past
+// the freeze below. `!value` covers both `""` and `null`/`undefined` on
+// purpose: `src/types/employee.ts` types `openTime`/`closeTime` as a
+// non-nullable `string`, but the backend writes `null` for Saturday/Sunday
+// on a freshly created employee (EmployeeService.java) -- the type lies, so
+// the runtime check has to treat the field as nullable regardless of what
+// TypeScript believes.
+function isIncomplete(day: WorkingHoursRequest): boolean {
+  return day.isOpen && (!day.openTime || !day.closeTime)
+}
+
 function hoursStateFrom(hours: WorkingHoursResponse[] | undefined): WorkingHoursRequest[] {
   if (!hours || hours.length === 0) return DEFAULT_HOURS
   return hours.map((h) => ({
@@ -94,21 +108,41 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
       )
     }
 
+    // `save()` is the imperative escape hatch used by settings/business-hours
+    // and (onboarding)/business-hours (`showSaveButton={false}`, D13). It
+    // forwards to `onSave` UNCONDITIONALLY, on purpose: those two screens'
+    // `handleContinue` is `try { await save(); router.push(...) } catch {}`,
+    // and their toast is thrown by `mutation.onError`, which only runs if the
+    // mutation actually starts. If this method refused to call `onSave` on an
+    // incomplete day, the mutation would never run, `onError` would never
+    // fire, and the `catch {}` would swallow the rejection silently -- the
+    // user would press "Continuar" and nothing would happen at all: no
+    // navigation, no toast, no message. The freeze below therefore lives
+    // ONLY on the internal button's `disabled`, never here. Do not "fix" this
+    // by making `save()` reject too -- see D13 in the block plan.
     useImperativeHandle(ref, () => ({
       save: () => onSave(localHours),
     }))
+
+    const hasIncompleteDay = localHours.some(isIncomplete)
 
     return (
       <div>
         <div className="flex flex-col overflow-hidden rounded-[12px] border border-border bg-white">
           {localHours.map((day, index) => {
             const dayLabel = DAY_NAMES[day.dayOfWeek - 1]
+            const incomplete = isIncomplete(day)
             return (
               <div key={day.dayOfWeek}>
                 {index > 0 && <div className="h-px bg-hairline" />}
 
                 {day.isOpen ? (
-                  <div className="flex flex-col gap-[9px] py-3 px-[14px] md:grid md:grid-cols-[130px_52px_1fr] md:items-center md:gap-4 md:py-[11px] md:px-[14px]">
+                  <div
+                    className={cn(
+                      "flex flex-col gap-[9px] py-3 px-[14px] md:grid md:grid-cols-[130px_52px_1fr] md:items-center md:gap-4 md:py-[11px] md:px-[14px]",
+                      incomplete && "border-y border-surface-now-border bg-surface-now"
+                    )}
+                  >
                     <div className="flex items-center justify-between md:contents">
                       <span className="text-sm font-semibold">{dayLabel}</span>
                       <Switch
@@ -121,19 +155,27 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
                     <div className="flex items-center gap-2 md:gap-[9px]">
                       <Input
                         type="time"
-                        value={day.openTime}
+                        value={day.openTime ?? ""}
+                        placeholder="--:--"
                         onChange={(e) => updateDay(day.dayOfWeek, "openTime", e.target.value)}
                         disabled={isSaving}
-                        className={TIME_INPUT_CLASS_NAME}
+                        className={cn(
+                          TIME_INPUT_CLASS_NAME,
+                          incomplete && "border-input-border-attention text-text-subtle"
+                        )}
                         aria-label={`Hora de apertura, ${dayLabel}`}
                       />
                       <span className="text-xs text-muted-foreground-2">a</span>
                       <Input
                         type="time"
-                        value={day.closeTime}
+                        value={day.closeTime ?? ""}
+                        placeholder="--:--"
                         onChange={(e) => updateDay(day.dayOfWeek, "closeTime", e.target.value)}
                         disabled={isSaving}
-                        className={TIME_INPUT_CLASS_NAME}
+                        className={cn(
+                          TIME_INPUT_CLASS_NAME,
+                          incomplete && "border-input-border-attention text-text-subtle"
+                        )}
                         aria-label={`Hora de cierre, ${dayLabel}`}
                       />
                     </div>
@@ -144,7 +186,7 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
                       <span className="text-sm font-semibold text-muted-foreground-2">
                         {dayLabel}
                       </span>
-                      <span className="text-xs text-text-subtle">Cerrado</span>
+                      <span className="text-xs text-text-subtle">Cerrado &middot; sin horas guardadas</span>
                     </div>
                     <Switch
                       checked={day.isOpen}
@@ -159,11 +201,22 @@ export const WorkingHoursEditor = forwardRef<WorkingHoursEditorHandle, WorkingHo
           })}
         </div>
 
+        {/* D13: informational in the three consumers; only this component's
+            OWN button (below) refuses to submit while it is showing. */}
+        {hasIncompleteDay && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-muted p-[10px_12px]">
+            <Info className="mt-px h-[15px] w-[15px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+            <span className="text-xs leading-[1.45] text-muted-foreground">
+              El domingo llega sin horas guardadas. Al activarlo hay que escribirlas antes de guardar.
+            </span>
+          </div>
+        )}
+
         {showSaveButton && (
           <Button
             className="mt-3 w-full"
             onClick={() => onSave(localHours)}
-            disabled={isSaving}
+            disabled={isSaving || hasIncompleteDay}
           >
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Guardar horarios

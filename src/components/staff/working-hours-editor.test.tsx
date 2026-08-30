@@ -1,6 +1,7 @@
+import { createRef } from "react"
 import { describe, it, expect, vi } from "vitest"
 import { render, fireEvent } from "@testing-library/react"
-import { WorkingHoursEditor } from "./working-hours-editor"
+import { WorkingHoursEditor, type WorkingHoursEditorHandle } from "./working-hours-editor"
 import type { WorkingHoursResponse } from "@/types/employee"
 
 const serverHours: WorkingHoursResponse[] = Array.from({ length: 7 }, (_, i) => ({
@@ -158,6 +159,91 @@ describe("WorkingHoursEditor", () => {
     const { getAllByText } = renderEditor(serverHours)
 
     // serverHours opens Mon-Fri (i < 5): Saturday and Sunday (dayOfWeek 6-7) are closed.
-    expect(getAllByText("Cerrado")).toHaveLength(2)
+    expect(getAllByText("Cerrado · sin horas guardadas")).toHaveLength(2)
+  })
+
+  // D13: the three states of a day, and the freeze that only lives on this
+  // component's OWN button.
+  describe("D13: the three states of a day", () => {
+    it("closed (loaded): no time fields, and the muted label names the missing hours", () => {
+      const closedSunday: WorkingHoursResponse[] = [
+        { dayOfWeek: 7, isOpen: false, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+      ]
+      const { getByText, container } = renderEditor(closedSunday)
+
+      expect(getByText("Cerrado · sin horas guardadas")).toBeInTheDocument()
+      expect(container.querySelectorAll('input[type="time"]')).toHaveLength(0)
+    })
+
+    it("recently activated, no hours: empty '--:--' fields, the attention border, and the banner -- CTA disabled", () => {
+      // What the backend actually writes for a freshly created employee's
+      // Sunday (EmployeeService.java): open, both times null. The type in
+      // src/types/employee.ts lies and calls them non-nullable strings.
+      const freshSunday: WorkingHoursResponse[] = [
+        {
+          dayOfWeek: 7,
+          isOpen: true,
+          openTime: null as unknown as string,
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+      ]
+      const { getByRole, getByText, timeInputs } = renderEditor(freshSunday)
+
+      const inputs = timeInputs()
+      expect(inputs).toHaveLength(2)
+      expect(inputs.every((i) => i.value === "")).toBe(true)
+      expect(inputs.every((i) => i.getAttribute("placeholder") === "--:--")).toBe(true)
+      expect(inputs.every((i) => i.className.includes("border-input-border-attention"))).toBe(true)
+
+      expect(
+        getByText(
+          "El domingo llega sin horas guardadas. Al activarlo hay que escribirlas antes de guardar."
+        )
+      ).toBeInTheDocument()
+
+      expect(getByRole("button", { name: /guardar horarios/i })).toBeDisabled()
+    })
+
+    it("open with hours: no banner, CTA enabled", () => {
+      const openSunday: WorkingHoursResponse[] = [
+        { dayOfWeek: 7, isOpen: true, openTime: "10:00", closeTime: "14:00", breakStartTime: null, breakEndTime: null },
+      ]
+      const { getByRole, queryByText } = renderEditor(openSunday)
+
+      expect(
+        queryByText(/el domingo llega sin horas guardadas/i)
+      ).not.toBeInTheDocument()
+      expect(getByRole("button", { name: /guardar horarios/i })).toBeEnabled()
+    })
+  })
+
+  // D13: the obvious "fix" -- making `save()` itself refuse -- silently
+  // strands settings/business-hours (mobile's only save path) and
+  // (onboarding)/business-hours: their `handleContinue` is
+  // `try { await save(); router.push(...) } catch {}`, and the toast comes
+  // from `mutation.onError`, which only runs once the mutation actually
+  // starts. A regression here would mean "Continuar" does nothing at all.
+  it("D13 regression: save() via the ref still calls onSave even with an incomplete day, exactly like today", async () => {
+    const incompleteSunday: WorkingHoursResponse[] = [
+      {
+        dayOfWeek: 7,
+        isOpen: true,
+        openTime: null as unknown as string,
+        closeTime: null as unknown as string,
+        breakStartTime: null,
+        breakEndTime: null,
+      },
+    ]
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const ref = createRef<WorkingHoursEditorHandle>()
+    render(
+      <WorkingHoursEditor ref={ref} hours={incompleteSunday} onSave={onSave} showSaveButton={false} />
+    )
+
+    await ref.current?.save()
+
+    expect(onSave).toHaveBeenCalledTimes(1)
   })
 })

@@ -82,4 +82,35 @@ describe("ServiceAssignment", () => {
     expect(checkbox(/Tinte/).checked).toBe(true)
     expect(checkbox(/Corte/).checked).toBe(true)
   })
+
+  // D15: `4 de 6` (here 1 de 2) tracks the LIVE selection, not the server
+  // snapshot -- it has to move the instant a box is ticked, before any save.
+  it("D15: the counter tracks the live selection against the active catalogue, and updates on every toggle", () => {
+    render(<ServiceAssignment assignedServices={assigned} onSave={vi.fn().mockResolvedValue(undefined)} />)
+
+    expect(screen.getByText("1 de 2")).toBeInTheDocument()
+
+    fireEvent.click(checkbox(/Tinte/))
+
+    expect(screen.getByText("2 de 2")).toBeInTheDocument()
+  })
+
+  // D12: the desktop card title ("Servicios que realiza") is desktop-only --
+  // the mobile panel reuses this same component but the enumeration of
+  // "same pieces" it reuses names the counter, not the card title.
+  it("D12: renders the card title only when the caller passes it (desktop), and always renders the live counter", () => {
+    const { rerender } = render(
+      <ServiceAssignment
+        assignedServices={assigned}
+        onSave={vi.fn().mockResolvedValue(undefined)}
+        title="Servicios que realiza"
+      />
+    )
+    expect(screen.getByText("Servicios que realiza")).toBeInTheDocument()
+    expect(screen.getByText("1 de 2")).toBeInTheDocument()
+
+    rerender(<ServiceAssignment assignedServices={assigned} onSave={vi.fn().mockResolvedValue(undefined)} />)
+    expect(screen.queryByText("Servicios que realiza")).not.toBeInTheDocument()
+    expect(screen.getByText("1 de 2")).toBeInTheDocument()
+  })
 })
