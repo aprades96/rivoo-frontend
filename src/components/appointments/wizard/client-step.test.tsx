@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ClientStep } from "./client-step"
 import { useWizardStore } from "@/lib/stores/wizard-store"
 import { useClients } from "@/hooks/use-clients"
@@ -14,6 +15,18 @@ vi.mock("@/hooks/use-clients", () => ({ useClients: vi.fn() }))
 // wrapped in a SessionProvider" porque el test no monta ese provider. Mismo
 // mock que `wizard-context-pills.test.tsx:9`.
 vi.mock("@/hooks/use-staff", () => ({ useEmployees: vi.fn(() => ({ data: { content: [] } })) }))
+
+// D26: la resolucion de `preferredClientId` llama a `useAuth()` directamente
+// (no a traves de un hook ya mockeado como `useClients`), asi que hace falta
+// su propio doble -- mismo motivo que `confirmation-step.test.tsx:14-16`.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ accessToken: "token", isAuthenticated: true }),
+}))
+
+const getClientById = vi.fn()
+vi.mock("@/lib/api/clients", () => ({
+  clientsApi: { getById: (...args: unknown[]) => getClientById(...args) },
+}))
 
 // `useWizardNavigation` llama a `useRouter()`: sin `AppRouterContext` montado
 // lanza "invariant expected app router to be mounted" -- mismo mock que
@@ -68,6 +81,18 @@ function mockClients(content: Client[], isLoading = false) {
   } as unknown as ReturnType<typeof useClients>)
 }
 
+// `preferredClientId` (D26) resuelve con un `useQuery` REAL sobre
+// `clientsApi.getById`, no con un hook mockeado -- necesita su propio
+// `QueryClientProvider`, igual que `confirmation-step.test.tsx:128-137`.
+function renderStep() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ClientStep />
+    </QueryClientProvider>
+  )
+}
+
 describe("ClientStep", () => {
   beforeEach(() => {
     // `nextStep` avanza UN paso desde donde este el store
@@ -76,6 +101,7 @@ describe("ClientStep", () => {
     useWizardStore.getState().reset({ step: 4 })
     mockMatchMedia(false)
     mockClients([makeClient()])
+    getClientById.mockReset()
     // El fichero no resetea mocks entre tests: sin re-sembrar aqui el valor por
     // defecto, un `mockReturnValue` de cualquier test se filtraria a todos los
     // siguientes.
@@ -89,7 +115,7 @@ describe("ClientStep", () => {
   })
 
   it("pinta la lista sin haber escrito nada en el buscador", () => {
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
     expect(screen.getByText("Clientes recientes")).toBeInTheDocument()
@@ -97,7 +123,7 @@ describe("ClientStep", () => {
 
   it("escribir en el buscador cambia la consulta que hace useClients", async () => {
     const user = userEvent.setup()
-    render(<ClientStep />)
+    renderStep()
 
     await user.type(screen.getByPlaceholderText("Buscar por nombre..."), "Carla")
 
@@ -109,7 +135,7 @@ describe("ClientStep", () => {
 
   it("con texto en el buscador no pinta la etiqueta 'Clientes recientes'", async () => {
     const user = userEvent.setup()
-    render(<ClientStep />)
+    renderStep()
 
     await user.type(screen.getByPlaceholderText("Buscar por nombre..."), "Carla")
 
@@ -118,7 +144,7 @@ describe("ClientStep", () => {
 
   it("elegir un cliente lo guarda en el store y avanza al paso 5", async () => {
     const user = userEvent.setup()
-    render(<ClientStep />)
+    renderStep()
 
     await user.click(screen.getByRole("button", { name: /Ana Garcia/ }))
 
@@ -129,7 +155,7 @@ describe("ClientStep", () => {
 
   it("'Crear nuevo cliente' abre el formulario de alta en linea", async () => {
     const user = userEvent.setup()
-    render(<ClientStep />)
+    renderStep()
 
     await user.click(screen.getByRole("button", { name: /Crear nuevo cliente/ }))
 
@@ -138,40 +164,40 @@ describe("ClientStep", () => {
   })
 
   it("no existe ningun boton 'Continuar sin cliente'", () => {
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.queryByText(/Continuar sin cliente/)).not.toBeInTheDocument()
   })
 
   it("en movil el buscador pide nombre, en escritorio nombre/telefono/email", () => {
-    const { unmount } = render(<ClientStep />)
+    const { unmount } = renderStep()
     expect(screen.getByPlaceholderText("Buscar por nombre...")).toBeInTheDocument()
     expect(screen.queryByPlaceholderText("Buscar por nombre, teléfono o email...")).not.toBeInTheDocument()
     unmount()
 
     mockMatchMedia(true)
-    render(<ClientStep />)
+    renderStep()
     expect(screen.getByPlaceholderText("Buscar por nombre, teléfono o email...")).toBeInTheDocument()
     expect(screen.queryByPlaceholderText("Buscar por nombre...")).not.toBeInTheDocument()
   })
 
   it("pinta '0 visitas' tal cual devuelve el backend, sin derivarlo de otra fuente", () => {
     mockClients([makeClient({ totalVisits: 0 })])
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText(/0 visitas/)).toBeInTheDocument()
   })
 
   it("sin telefono muestra 'Sin contacto' junto a las visitas", () => {
     mockClients([makeClient({ phone: null })])
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText(/Sin contacto/)).toBeInTheDocument()
   })
 
   it("con 1 visita usa el singular", () => {
     mockClients([makeClient({ totalVisits: 1 })])
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText(/1 visita(?!s)/)).toBeInTheDocument()
     expect(screen.queryByText(/1 visitas/)).not.toBeInTheDocument()
@@ -179,7 +205,7 @@ describe("ClientStep", () => {
 
   it("el aside de escritorio pinta 'Resumen', no la cabecera ni la nota de la reserva publica", () => {
     mockMatchMedia(true)
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText("Resumen")).toBeInTheDocument()
     expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
@@ -203,15 +229,54 @@ describe("ClientStep", () => {
       selectedDate: "2026-08-28",
       selectedSlot: "2026-08-28T11:00:00",
     })
-    render(<ClientStep />)
+    renderStep()
 
     expect(screen.getByText("Mia Soler")).toBeInTheDocument()
     expect(screen.queryByText("Sin preferencia")).not.toBeInTheDocument()
   })
 
+  // D26: `/clients/{id}` -> "Nueva cita" siembra `preferredClientId`. El
+  // resto del asistente NO se altera: el usuario sigue pasando por los pasos
+  // 1-3 con normalidad y este paso resuelve el cliente en cuanto llega su
+  // turno.
+  describe("prefill de preferredClientId (D26)", () => {
+    it("con un preferredClientId que resuelve, selecciona el cliente y avanza al paso 5 sin intervencion", async () => {
+      const preferred = makeClient({ id: "cli_9", firstName: "Marc", lastName: "Oliva" })
+      getClientById.mockResolvedValue(preferred)
+      useWizardStore.getState().reset({ step: 4, preferredClientId: "cli_9" })
+
+      renderStep()
+
+      // `findBy*` sobre el paso 5 -- algo que este componente NO posee -- para
+      // probar que el dato aterrizo de verdad (AGENTS.md: los tests de React
+      // Query pueden pasar en falso si solo se comprueba de forma sincrona).
+      await waitFor(() => expect(useWizardStore.getState().step).toBe(5))
+      expect(useWizardStore.getState().selectedClient?.id).toBe("cli_9")
+      expect(useWizardStore.getState().preferredClientId).toBeNull()
+      expect(getClientById).toHaveBeenCalledWith("cli_9", "token")
+    })
+
+    it("con un preferredClientId que no resuelve (404), limpia la preferencia y deja la lista normal", async () => {
+      getClientById.mockRejectedValue(new Error("not found"))
+      useWizardStore.getState().reset({ step: 4, preferredClientId: "cli_ghost" })
+
+      renderStep()
+
+      await waitFor(() => expect(useWizardStore.getState().preferredClientId).toBeNull())
+      expect(useWizardStore.getState().step).toBe(4)
+      expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
+    })
+
+    it("sin preferredClientId, no llama a clientsApi.getById", () => {
+      renderStep()
+
+      expect(getClientById).not.toHaveBeenCalled()
+    })
+  })
+
   describe("alta de cliente en linea", () => {
     async function openForm(user: ReturnType<typeof userEvent.setup>) {
-      render(<ClientStep />)
+      renderStep()
       await user.click(screen.getByRole("button", { name: /Crear nuevo cliente/ }))
     }
 

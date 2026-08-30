@@ -39,6 +39,11 @@ function NewAppointmentPageContent() {
   const employeeId = searchParams.get("employeeId")
   const date = searchParams.get("date")
   const time = searchParams.get("time")
+  // D26: `/clients/{id}` -> "Nueva cita" siembra el cliente. NO es simetrico
+  // con los tres de arriba: aquellos son preferencias `string` que un paso
+  // posterior resuelve contra una lista ya cargada; `client-step.tsx`
+  // resuelve este id con su propia consulta (`clientsApi.getById`).
+  const clientId = searchParams.get("clientId")
 
   // Siembra y arranca SIEMPRE en el paso 1. Esta pagina NO resuelve el
   // empleado: `selectedEmployee` guarda el `Employee` COMPLETO y su unica
@@ -55,8 +60,9 @@ function NewAppointmentPageContent() {
       // forma aqui para que el paso 3 de la ola siguiente pueda comparar sin
       // reformatear.
       preferredSlot: date && time ? `${date}T${time}:00` : null,
+      preferredClientId: clientId,
     })
-  }, [reset, employeeId, date, time])
+  }, [reset, employeeId, date, time, clientId])
 
   return (
     <>

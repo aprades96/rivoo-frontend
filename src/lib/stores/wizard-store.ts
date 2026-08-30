@@ -28,6 +28,13 @@ export interface WizardState {
   preferredEmployeeId: string | null
   preferredDate: string | null
   preferredSlot: string | null
+  /** Id del cliente a preseleccionar cuando el asistente arranca desde su
+   * ficha (D26, `/clients/{id}` -> "Nueva cita"). Vive aparte de
+   * `selectedClient` (que guarda el `Client` COMPLETO) por el mismo motivo
+   * que `preferredEmployeeId`: `client-step.tsx` resuelve el objeto de forma
+   * asincrona con `clientsApi.getById`, compartiendo cache con la ficha
+   * (`["client", id]`). */
+  preferredClientId: string | null
 
   setStep: (step: number) => void
   nextStep: () => void
@@ -55,6 +62,7 @@ const INITIAL_STATE = {
   preferredEmployeeId: null,
   preferredDate: null,
   preferredSlot: null,
+  preferredClientId: null,
 }
 
 export const useWizardStore = create<WizardState>((set) => ({
@@ -102,7 +110,16 @@ export const useWizardStore = create<WizardState>((set) => ({
     }),
 
   selectClient: (client) =>
-    set({ selectedClient: client, newClientData: null }),
+    set({
+      selectedClient: client,
+      newClientData: null,
+      // La preferencia de prefill ya se ha consumido en cuanto hay un
+      // cliente elegido -- mismo patron que `selectEmployee`/`selectDateTime`.
+      // Sin limpiarla, volver al paso 4 desde el 5 (`onBack`) reengancharia el
+      // efecto de resolucion de `client-step.tsx` y forzaria otra vez el
+      // salto al paso 5, atrapando al usuario.
+      preferredClientId: null,
+    }),
 
   setNewClientData: (data) =>
     set({ newClientData: data, selectedClient: null }),

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,8 +16,10 @@ import type { WizardSummaryState } from "./wizard-summary"
 import { WizardSummaryAside } from "@/components/wizard/wizard-summary-aside"
 import { useClients } from "@/hooks/use-clients"
 import { useEmployees } from "@/hooks/use-staff"
+import { useAuth } from "@/hooks/use-auth"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useWizardStore } from "@/lib/stores/wizard-store"
+import { clientsApi } from "@/lib/api/clients"
 import { initials } from "@/lib/utils/format"
 import { employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
 import { cn } from "@/lib/utils"
@@ -35,9 +38,10 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
 export function ClientStep() {
   const { onClose, onBack } = useWizardNavigation()
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const { accessToken, isAuthenticated } = useAuth()
 
   const wizardState = useWizardStore()
-  const { selectClient, newClientData, setNewClientData, nextStep } = wizardState
+  const { selectClient, newClientData, setNewClientData, nextStep, preferredClientId } = wizardState
   const [search, setSearch] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -52,6 +56,34 @@ export function ClientStep() {
 
   const { data: employeesData } = useEmployees()
   const employees = employeesData?.content ?? []
+
+  // D26: resuelve el prefill de `?clientId=...` sembrado en
+  // `preferredClientId`. La `queryKey` (`["client", id]`) es la MISMA que
+  // `/clients/{id}` (`clients/[id]/page.tsx`), asi que si el usuario vino de
+  // ahi la respuesta ya esta en cache y esta consulta ni siquiera golpea la
+  // red. Si el id no resuelve (cliente borrado/invalido), se limpia la
+  // preferencia igual que hace `employee-step.tsx` con la suya, para no dejar
+  // al usuario atrapado reintentando en cada render.
+  const {
+    data: preferredClient,
+    isLoading: preferredClientLoading,
+    isError: preferredClientErrored,
+  } = useQuery<Client>({
+    queryKey: ["client", preferredClientId],
+    queryFn: () => clientsApi.getById(preferredClientId!, accessToken!),
+    enabled: isAuthenticated && !!accessToken && !!preferredClientId,
+  })
+
+  useEffect(() => {
+    if (!preferredClientId || preferredClientLoading) return
+
+    if (preferredClient) {
+      selectClient(preferredClient)
+      nextStep()
+    } else if (preferredClientErrored) {
+      useWizardStore.setState({ preferredClientId: null })
+    }
+  }, [preferredClientId, preferredClientLoading, preferredClient, preferredClientErrored, selectClient, nextStep])
 
   const handleSelectClient = (client: Client) => {
     selectClient(client)

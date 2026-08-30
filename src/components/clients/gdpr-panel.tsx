@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { clientsApi } from "@/lib/api/clients"
 import { useAuth } from "@/hooks/use-auth"
+import { formatDate } from "@/lib/utils/dates"
 
 interface GdprPanelProps {
   clientId: string
@@ -55,15 +56,15 @@ export function GdprPanel({ clientId, clientName, gdprConsentAt, onAnonymized }:
 
   return (
     <>
-      <Card className="space-y-3 border-orange-200 bg-orange-50/50 p-4">
+      <Card className="space-y-3 border-warning-border bg-warning-soft p-4">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4 text-orange-600" />
-          <h3 className="text-sm font-medium text-orange-800">Proteccion de datos (GDPR)</h3>
+          <ShieldAlert className="h-4 w-4 text-status-pending-text" />
+          <h3 className="text-sm font-medium text-status-pending-text">Proteccion de datos (GDPR)</h3>
         </div>
 
         {gdprConsentAt && (
           <p className="text-xs text-muted-foreground">
-            Consentimiento dado: {new Date(gdprConsentAt).toLocaleDateString("es-ES")}
+            Consentimiento dado: {formatDate(gdprConsentAt)}
           </p>
         )}
 
@@ -91,7 +92,18 @@ export function GdprPanel({ clientId, clientName, gdprConsentAt, onAnonymized }:
         </div>
       </Card>
 
-      <Dialog open={anonymizeDialogOpen} onOpenChange={setAnonymizeDialogOpen}>
+      <Dialog
+        open={anonymizeDialogOpen}
+        // D27: sin este guard, un `Esc` o un clic fuera del dialogo lo
+        // cerrarian mientras la anonimizacion (irreversible) sigue en vuelo
+        // -- el usuario perderia de vista una mutacion que ya no puede
+        // cancelar. Bloquea CUALQUIER intento de cambiar `open` mientras
+        // `isPending`, tanto para cerrar como para (re)abrir.
+        onOpenChange={(open) => {
+          if (anonymizeMutation.isPending) return
+          setAnonymizeDialogOpen(open)
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Anonimizar cliente</DialogTitle>
@@ -102,7 +114,11 @@ export function GdprPanel({ clientId, clientName, gdprConsentAt, onAnonymized }:
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAnonymizeDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setAnonymizeDialogOpen(false)}
+              disabled={anonymizeMutation.isPending}
+            >
               Cancelar
             </Button>
             <Button
