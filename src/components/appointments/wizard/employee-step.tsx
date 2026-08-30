@@ -171,7 +171,20 @@ export function EmployeeStep() {
   const summaryRows = getWizardSummaryRows(summaryState, 1)
   const cta = getWizardSummaryCta(summaryState, 1)
 
-  const aside = <WizardSummaryAside rows={summaryRows} ctaLabel={cta.label} ctaDisabled={cta.disabled} />
+  // `heading`/`note` por defecto de `WizardSummaryAside` son los de la
+  // reserva PUBLICA (`NuevaCitaDesktopPaso1.dc.html:123` dice "Resumen", y
+  // ningun artboard del asistente interno dibuja la nota de confianza: una
+  // cita creada a mano por el salon ni es "sin registro" ni se cancela
+  // gratis).
+  const aside = (
+    <WizardSummaryAside
+      rows={summaryRows}
+      ctaLabel={cta.label}
+      ctaDisabled={cta.disabled}
+      heading="Resumen"
+      note={null}
+    />
+  )
 
   return (
     <NewAppointmentShell
@@ -246,7 +259,11 @@ export function EmployeeStep() {
               >
                 <Avatar className={isDesktop ? "size-11" : "size-10"}>
                   <AvatarFallback
-                    className={cn(isDesktop ? "text-sm" : "text-[13px]", "font-semibold", avatarVisual.className)}
+                    className={cn(
+                      isDesktop ? "text-sm" : "text-[13px] leading-tight",
+                      "font-semibold",
+                      avatarVisual.className
+                    )}
                     style={avatarVisual.style}
                   >
                     {initials(employee.firstName, employee.lastName)}
@@ -263,8 +280,8 @@ export function EmployeeStep() {
                   // cierto es que no hay agenda ese dia.
                   working && (
                     <div className="flex shrink-0 flex-col items-end">
-                      <span className="text-[13px] font-semibold tabular-nums">{appointmentCount}</span>
-                      <span className="text-[10px] text-muted-foreground-2">citas hoy</span>
+                      <span className="text-[13px] leading-tight font-semibold tabular-nums">{appointmentCount}</span>
+                      <span className="text-[10px] leading-tight text-muted-foreground-2">citas hoy</span>
                     </div>
                   )
                 ) : (

@@ -79,6 +79,19 @@ describe("wizard-store", () => {
     expect(store.getState().step).toBe(1)
   })
 
+  it("selectEmployee clears any pending prefill preference (no atrapa en el paso 2 al volver)", () => {
+    // Escenario `?employeeId=...` desde el calendario: el paso 1 resuelve el
+    // prefill llamando a `selectEmployee` y avanza. Si `preferredEmployeeId`
+    // sobreviviera, volver al paso 1 remontaria `EmployeeStep`, su efecto lo
+    // volveria a leer y rebotaria de nuevo al paso 2.
+    const store = useWizardStore
+    store.getState().reset({ preferredEmployeeId: "emp_1" })
+
+    store.getState().selectEmployee(mockEmployee)
+
+    expect(store.getState().preferredEmployeeId).toBeNull()
+  })
+
   it("selectEmployee resets downstream selections", () => {
     const store = useWizardStore
     // Set up all selections

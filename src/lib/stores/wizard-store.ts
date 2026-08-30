@@ -72,6 +72,13 @@ export const useWizardStore = create<WizardState>((set) => ({
       selectedService: null,
       selectedDate: null,
       selectedSlot: null,
+      // La preferencia de prefill ya se ha consumido en cuanto el usuario
+      // elige explicitamente un profesional (igual que `selectDateTime` con
+      // fecha/hora): si no se limpia aqui, volver al paso 1 remonta
+      // `EmployeeStep`, su efecto de prefill vuelve a leer
+      // `preferredEmployeeId` y rebota otra vez al paso 2, atrapando al
+      // usuario.
+      preferredEmployeeId: null,
     }),
 
   selectService: (service) =>

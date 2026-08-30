@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { render, screen, within, fireEvent } from "@testing-library/react"
+import { render, screen, within, fireEvent, act } from "@testing-library/react"
 import { EmployeeStep } from "./employee-step"
 import { useWizardStore } from "@/lib/stores/wizard-store"
 import { useEmployees, useEmployeesWorkingHours } from "@/hooks/use-staff"
@@ -150,6 +150,22 @@ describe("EmployeeStep", () => {
     mockMatchMedia(false)
   })
 
+  it("el aside pinta 'Resumen' (no 'Tu reserva') y sin la nota de confianza de la reserva publica", () => {
+    // `NuevaCitaDesktopPaso1.dc.html:123` dice "Resumen"; la nota "Sin
+    // registro... cancela gratis..." es texto de la reserva PUBLICA y no
+    // aparece en ningun artboard del asistente interno -- una cita creada a
+    // mano por el salon no es sin registro ni se cancela gratis.
+    // El aside solo se monta en escritorio (`new-appointment-shell.tsx`:
+    // `showAside = isDesktop && aside != null`).
+    mockMatchMedia(true)
+    render(<EmployeeStep />)
+
+    expect(screen.getByText("Resumen")).toBeInTheDocument()
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sin registro/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/cancela gratis/)).not.toBeInTheDocument()
+  })
+
   it("la lista sale en el orden del artboard, con 'Sin preferencia' primera", () => {
     render(<EmployeeStep />)
 
@@ -181,11 +197,57 @@ describe("EmployeeStep", () => {
     expect(state.step).toBe(2)
   })
 
-  it("con mockMatchMedia(true) aparece 'citas hoy'", () => {
+  it("con mockMatchMedia(true) aparece 'citas hoy' con el numero SIN las CANCELLED", () => {
+    // El fixture de `beforeEach` monta a proposito CONFIRMED + COMPLETED +
+    // CANCELLED + PENDING para Laura/Sofia: sin la CANCELLED, Laura muestra
+    // 2 (no 3). Aseverar solo la presencia del texto "citas hoy" (como hacia
+    // antes esta prueba) deja pasar: quitar el filtro `isActive`, contar las
+    // CANCELLED, o fijar el contador a un valor constante.
     mockMatchMedia(true)
     render(<EmployeeStep />)
 
-    expect(screen.getAllByText("citas hoy").length).toBeGreaterThan(0)
+    const lauraButton = screen.getByRole("button", { name: /Laura Martinez/ })
+    expect(within(lauraButton).getByText("2")).toBeInTheDocument()
+    expect(within(lauraButton).getByText("citas hoy")).toBeInTheDocument()
+
+    const sofiaButton = screen.getByRole("button", { name: /Sofia Puig/ })
+    expect(within(sofiaButton).getByText("1")).toBeInTheDocument()
+  })
+
+  it("en escritorio, el que hoy no trabaja pinta 'Hoy no trabaja' (texto distinto del de movil)", () => {
+    // `employeeSubtitle` bifurca por `isDesktop`: movil conserva el puesto
+    // ("Estilista · hoy no trabaja", ya cubierto en la prueba del clic
+    // atenuado), escritorio lo sustituye por "Hoy no trabaja" entero
+    // (`NuevaCitaDesktopPaso1.dc.html:116`). Sin esta prueba, renombrar esa
+    // rama a cualquier otro texto sobrevive.
+    mockMatchMedia(true)
+    render(<EmployeeStep />)
+
+    const juliaButton = screen.getByRole("button", { name: /Julia Ventura/ })
+    expect(within(juliaButton).getByText("Hoy no trabaja")).toBeInTheDocument()
+  })
+
+  it("las dos lineas de 'citas hoy' llevan leading-tight (preflight 1.5 vs artboard ~1.25)", () => {
+    // `NuevaCitaDesktopPaso1.dc.html:82-85` dibuja 13px/10px sin
+    // `line-height` declarado; sin `leading-tight` la preflight del repo los
+    // sube a 1.5. La columna gemela del paso 4 (`client-step.tsx`) si lo
+    // lleva en las dos lineas.
+    mockMatchMedia(true)
+    render(<EmployeeStep />)
+
+    const lauraButton = screen.getByRole("button", { name: /Laura Martinez/ })
+    expect(within(lauraButton).getByText("2")).toHaveClass("leading-tight")
+    expect(within(lauraButton).getByText("citas hoy")).toHaveClass("leading-tight")
+  })
+
+  it("un empleado inactivo no sale en la lista", () => {
+    mockEmployees([laura, sofia, marc, julia, employee({ id: "emp_inactivo", firstName: "Ines", lastName: "Roca", isActive: false })])
+
+    render(<EmployeeStep />)
+
+    expect(screen.queryByText(/Ines Roca/)).not.toBeInTheDocument()
+    const options = within(screen.getByTestId("employee-options")).getAllByRole("button")
+    expect(options).toHaveLength(5)
   })
 
   it("con mockMatchMedia(false) no aparece 'citas hoy'", () => {
@@ -226,5 +288,29 @@ describe("EmployeeStep", () => {
     expect(state.preferredEmployeeId).toBeNull()
     expect(state.selectedEmployee).toBeNull()
     expect(state.step).toBe(1)
+  })
+
+  it("tras resolver el prefill y volver al paso 1, remontar NO rebota otra vez al paso 2", () => {
+    // Reproduce el escenario de `/calendar`: prefill resuelto (avanza a
+    // paso 2), el usuario pulsa "Volver" (paso 1), `EmployeeStep` remonta.
+    // Si `selectEmployee` no limpiara `preferredEmployeeId`, el efecto de
+    // prefill lo volveria a leer y rebotaria de nuevo al paso 2, atrapando
+    // al usuario sin forma de elegir otro profesional.
+    useWizardStore.setState({ preferredEmployeeId: "emp_sofia" })
+    const { unmount } = render(<EmployeeStep />)
+
+    expect(useWizardStore.getState().step).toBe(2)
+    expect(useWizardStore.getState().preferredEmployeeId).toBeNull()
+
+    // Simula "Volver": paso 1 + remontaje del componente.
+    act(() => {
+      useWizardStore.getState().prevStep()
+    })
+    unmount()
+    render(<EmployeeStep />)
+
+    const state = useWizardStore.getState()
+    expect(state.step).toBe(1)
+    expect(state.selectedEmployee?.id).toBe("emp_sofia")
   })
 })
