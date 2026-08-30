@@ -143,6 +143,20 @@ describe("ClientAppointmentHistory", () => {
       expect(noShow.className).toMatch(/text-muted-foreground-2/)
       expect(cancelled.className).toMatch(/text-muted-foreground-2/)
     })
+
+    // LOW: `formatCurrency(null)` no lanza, cae en "0,00 €" -- indistinguible
+    // de una cita gratis de verdad. El resto de la pantalla usa "—" para lo
+    // ausente.
+    it("con price nulo, pinta — en vez de 0,00 €", () => {
+      mockAppointments({
+        data: makePage([makeAppointment({ id: "apt_null_price", price: null as unknown as number })]),
+      })
+
+      render(<ClientAppointmentHistory clientId="cli_1" isDesktop />)
+
+      expect(screen.getByText("—")).toBeInTheDocument()
+      expect(screen.queryByText(/0,00.€/)).not.toBeInTheDocument()
+    })
   })
 
   describe("movil", () => {

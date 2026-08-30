@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, use, type ReactNode } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { Pencil, Mail, Phone, PhoneCall, FileText, Plus } from "lucide-react"
+import { Pencil, Mail, Phone, FileText, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -61,10 +61,18 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   // Salen del RESUMEN del historial, que B3 ya carga para la cabecerilla:
   // la misma `queryKey` que `ClientAppointmentHistory` monta abajo, asi que
   // esto sale gratis (una sola peticion en vuelo, no dos).
-  const { data: appointmentsPage } = useClientAppointments(id, { size: HISTORY_SIZE })
+  const { data: appointmentsPage, isError: appointmentsError } = useClientAppointments(id, {
+    size: HISTORY_SIZE,
+  })
   const summary = appointmentsPage?.summary
 
-  if (isLoading) {
+  // React Query v5 reporta `isLoading: false` para una query deshabilitada
+  // (`enabled: !!accessToken`). En carga en frio `useAuth` devuelve
+  // `accessToken: null` mientras resuelve `/api/auth/session`: sin este
+  // `!accessToken` la pantalla se saltaba directa a la rama de error de abajo
+  // (`isError || !client`, con `client` todavia `undefined`) durante todo ese
+  // round-trip. Mismo patron que `staff/[id]/page.tsx:84`.
+  if (isLoading || !accessToken) {
     return (
       <PageShell title="Cliente" mobileTitle="Detalle cliente" back desktopBack="plain">
         <LoadingSkeleton count={5} />
@@ -79,7 +87,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       <PageShell title="Cliente" mobileTitle="Detalle cliente" back desktopBack="plain">
         <EmptyState
           title="No se ha podido cargar el cliente"
-          description="Comprueba tu conexion e intentalo de nuevo."
+          description="Comprueba tu conexión e inténtalo de nuevo."
           action={<Button onClick={() => refetch()}>Reintentar</Button>}
         />
       </PageShell>
@@ -89,8 +97,18 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const fullName = `${client.firstName} ${client.lastName}`
   const clientSince = `Cliente desde ${formatDate(client.createdAt)}`
   const isOnlineBooking = client.source === "ONLINE_BOOKING"
-  const visits = summary?.completedCount ?? 0
-  const lastVisit = summary?.lastCompletedAt ? formatDate(summary.lastCompletedAt) : "—"
+  // D38, aplicado a los KPIs (F2): si el historial esta en error, los dos
+  // numeros de aqui derivan de su `summary` y no pueden pintar cifras
+  // reales -- un "Visitas 0" ahi mismo se leeria como un dato ("el cliente
+  // nunca ha venido"), no como un fallo de red. Se reusa "—" (D21), el mismo
+  // valor vacio que ya usa una fecha ausente: no hace falta inventar un
+  // tercer tratamiento visual para el mismo problema.
+  const visits = appointmentsError ? "—" : (summary?.completedCount ?? 0)
+  const lastVisit = appointmentsError
+    ? "—"
+    : summary?.lastCompletedAt
+      ? formatDate(summary.lastCompletedAt)
+      : "—"
 
   return (
     <PageShell
@@ -125,35 +143,38 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
         <div className="flex gap-6">
           {/* §1.7 DetalleClienteDesktop:100 -- columna izquierda FIJA 400px. */}
           <div className="flex w-[400px] shrink-0 flex-col gap-4">
-            <Card className="gap-4 p-5">
-              <div className="flex flex-col items-start gap-3">
+            <Card className="gap-4 border border-border p-5">
+              <div className="flex items-center gap-3.5">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="text-xl font-bold">
                     {initials(client.firstName, client.lastName)}
                   </AvatarFallback>
                 </Avatar>
-                <p className="font-heading text-[21px] leading-tight font-semibold">{fullName}</p>
-                {isOnlineBooking && (
-                  <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                    Reserva online
-                  </Badge>
-                )}
+                <div className="flex flex-col items-start gap-[3px]">
+                  <p className="font-heading text-[21px] leading-tight font-semibold tracking-display">
+                    {fullName}
+                  </p>
+                  {isOnlineBooking && (
+                    <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                      Reserva online
+                    </Badge>
+                  )}
+                </div>
               </div>
 
-              <Separator />
+              <Separator className="bg-hairline" />
 
               <ContactInfo client={client} showCallButton={false} />
-
-              {client.notes && <NotesBlock notes={client.notes} />}
             </Card>
 
-            <ClientKpis visits={visits} lastVisit={lastVisit} />
+            <ClientKpis visits={visits} lastVisit={lastVisit} isDesktop />
 
             {isOwner && (
               <GdprPanel
                 clientId={client.id}
                 clientName={fullName}
                 gdprConsentAt={client.gdprConsentAt}
+                isDesktop
                 onAnonymized={() => {
                   queryClient.invalidateQueries({ queryKey: ["client", id] })
                   queryClient.invalidateQueries({ queryKey: ["clients"] })
@@ -175,7 +196,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="font-heading text-xl leading-tight font-semibold">{fullName}</p>
+              <p className="font-heading text-xl leading-tight font-semibold tracking-display">{fullName}</p>
               <p className="text-xs leading-tight tabular-nums text-muted-foreground-2">{clientSince}</p>
             </div>
             {/* Movil: editar es un boton-icono, sin etiqueta (`DetalleCliente.dc.html:47-49`).
@@ -195,11 +216,9 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             )}
           </div>
 
-          <ClientKpis visits={visits} lastVisit={lastVisit} />
+          <ClientKpis visits={visits} lastVisit={lastVisit} isDesktop={false} />
 
           <ContactInfo client={client} showCallButton />
-
-          {client.notes && <NotesBlock notes={client.notes} />}
 
           <ClientAppointmentHistory clientId={client.id} isDesktop={false} />
 
@@ -208,6 +227,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               clientId={client.id}
               clientName={fullName}
               gdprConsentAt={client.gdprConsentAt}
+              isDesktop={false}
               onAnonymized={() => {
                 queryClient.invalidateQueries({ queryKey: ["client", id] })
                 queryClient.invalidateQueries({ queryKey: ["clients"] })
@@ -223,8 +243,9 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 }
 
 interface ClientKpisProps {
-  visits: number
+  visits: number | string
   lastVisit: string
+  isDesktop: boolean
 }
 
 /**
@@ -233,17 +254,37 @@ interface ClientKpisProps {
  * `client.totalVisits`/`client.lastVisitAt` -- ver el comentario en el
  * cuerpo de la pagina. `—` (D21) es el valor vacio de cualquier fecha
  * ausente, no un caso borde: sin backfill es el caso mayoritario el dia 1.
+ * `isDesktop` distingue las dos medidas de `.kpi` (§1.7): `gap 10`/`padding
+ * 12px 14px` en movil contra `gap 12`/`padding 14px 16px` en escritorio, y
+ * "Última visita" a 21px/1.5 contra 22px/1.43.
  */
-function ClientKpis({ visits, lastVisit }: ClientKpisProps) {
+function ClientKpis({ visits, lastVisit, isDesktop }: ClientKpisProps) {
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      <Card className="gap-0.5 px-3.5 py-3">
+    <div className={cn("grid grid-cols-2", isDesktop ? "gap-3" : "gap-2.5")}>
+      <Card
+        className={cn(
+          "gap-0.5 rounded-[10px] border border-border",
+          isDesktop ? "px-4 py-3.5" : "px-3.5 py-3"
+        )}
+      >
         <p className="text-xs text-muted-foreground">Visitas</p>
         <p className="font-heading text-[30px] leading-[1.05] font-semibold tabular-nums">{visits}</p>
       </Card>
-      <Card className="gap-0.5 px-3.5 py-3">
+      <Card
+        className={cn(
+          "gap-0.5 rounded-[10px] border border-border",
+          isDesktop ? "px-4 py-3.5" : "px-3.5 py-3"
+        )}
+      >
         <p className="text-xs text-muted-foreground">Última visita</p>
-        <p className="text-[21px] leading-[1.5] font-semibold tabular-nums">{lastVisit}</p>
+        <p
+          className={cn(
+            "font-heading font-semibold tabular-nums",
+            isDesktop ? "text-[22px] leading-[1.43]" : "text-[21px] leading-[1.5]"
+          )}
+        >
+          {lastVisit}
+        </p>
       </Card>
     </div>
   )
@@ -256,53 +297,92 @@ interface ContactInfoProps {
   showCallButton: boolean
 }
 
+/**
+ * H6: email antes que telefono en los DOS anchos (`DetalleCliente:65,70`,
+ * `DetalleClienteDesktop:120,126`), y las notas son el TERCER item de este
+ * mismo grupo -- no un bloque hermano aparte (`DetalleCliente:76`,
+ * `DetalleClienteDesktop:128`).
+ */
 function ContactInfo({ client, showCallButton }: ContactInfoProps) {
-  if (!client.phone && !client.email) return null
+  const notes = client.notes
+  if (!client.phone && !client.email && !notes) return null
 
   if (!showCallButton) {
     // Escritorio: lista simple dentro de la tarjeta de perfil, sin boton ni
     // borde propio (`DetalleClienteDesktop.dc.html:120-129`).
     return (
       <div className="flex flex-col gap-3">
-        {client.phone && (
-          <div className="flex items-center gap-2.5 text-sm">
-            <Phone className="size-[17px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
-            <span className="tabular-nums">{formatPhone(client.phone)}</span>
-          </div>
-        )}
         {client.email && (
           <div className="flex items-center gap-2.5 text-sm">
-            <Mail className="size-[17px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+            <Mail className="size-[17px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
             <span className="truncate">{client.email}</span>
           </div>
         )}
+        {client.phone && (
+          <div className="flex items-center gap-2.5 text-sm">
+            <Phone className="size-[17px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+            <span className="tabular-nums">{formatPhone(client.phone)}</span>
+          </div>
+        )}
+        {notes && <NotesBlock notes={notes} />}
       </div>
     )
   }
 
-  // Movil: grupo con borde propio y separador (`DetalleCliente.dc.html:64-80`).
-  return (
-    <div className="overflow-hidden rounded-[10px] border border-border bg-card">
-      {client.phone && (
+  // Movil: grupo con borde propio y separador (`DetalleCliente.dc.html:64-80`),
+  // con un separador SOLO entre las filas que de verdad existen.
+  const rows: { key: string; content: ReactNode }[] = []
+
+  if (client.email) {
+    rows.push({
+      key: "email",
+      content: (
         <div className="flex h-14 items-center gap-3 px-3.5">
-          <Phone className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+          <Mail className="size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+          <span className="min-w-0 flex-1 truncate text-sm">{client.email}</span>
+        </div>
+      ),
+    })
+  }
+
+  if (client.phone) {
+    rows.push({
+      key: "phone",
+      content: (
+        <div className="flex h-14 items-center gap-3 px-3.5">
+          <Phone className="size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
           <span className="min-w-0 flex-1 truncate text-sm tabular-nums">{formatPhone(client.phone)}</span>
           <a
             href={`tel:${client.phone}`}
             className="flex h-8 shrink-0 items-center rounded-lg border border-border bg-card px-3 text-xs font-semibold text-primary-pressed"
           >
-            <PhoneCall className="mr-1 size-3.5" strokeWidth={1.75} />
             Llamar
           </a>
         </div>
-      )}
-      {client.phone && client.email && <div className="ml-11 h-px bg-hairline" />}
-      {client.email && (
-        <div className="flex h-14 items-center gap-3 px-3.5">
-          <Mail className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
-          <span className="min-w-0 flex-1 truncate text-sm">{client.email}</span>
+      ),
+    })
+  }
+
+  if (notes) {
+    rows.push({
+      key: "notes",
+      content: (
+        <div className="flex items-start gap-3 px-3.5 py-[13px]">
+          <FileText className="mt-0.5 size-[18px] shrink-0 text-muted-foreground-2" strokeWidth={1.75} />
+          <span className="text-sm leading-[1.45] text-muted-foreground">{notes}</span>
         </div>
-      )}
+      ),
+    })
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[10px] border border-border bg-card">
+      {rows.map((row, index) => (
+        <div key={row.key}>
+          {row.content}
+          {index < rows.length - 1 && <div className="ml-11 h-px bg-hairline" />}
+        </div>
+      ))}
     </div>
   )
 }

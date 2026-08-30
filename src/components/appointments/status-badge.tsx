@@ -34,7 +34,7 @@ export const statusConfig: Record<
     className: "bg-(--color-status-cancelled-bg) text-(--color-status-cancelled-text) hover:bg-(--color-status-cancelled-bg)",
   },
   NO_SHOW: {
-    label: "No asistio",
+    label: "No asistió",
     className: "bg-(--color-status-no-show-bg) text-(--color-status-no-show-text) hover:bg-(--color-status-no-show-bg)",
   },
 }

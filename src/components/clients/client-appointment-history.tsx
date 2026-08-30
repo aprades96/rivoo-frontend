@@ -22,6 +22,14 @@ function isUnpaidStatus(status: string): boolean {
   return status === "NO_SHOW" || status === "CANCELLED"
 }
 
+// `price` puede llegar `null` pese a lo que dice `ClientAppointment.price`
+// (`number`): `formatCurrency(null)` no lanza, cae en `0` y pinta "0,00 €",
+// indistinguible de una cita gratis de verdad. El resto de la pantalla usa
+// "—" (D21) para lo ausente -- esta celda no era la excepcion.
+function formatAppointmentPrice(price: number): string {
+  return price != null ? formatCurrency(price) : "—"
+}
+
 const COLUMNS: DataTableColumn<ClientAppointment>[] = [
   {
     key: "date",
@@ -61,7 +69,7 @@ const COLUMNS: DataTableColumn<ClientAppointment>[] = [
           isUnpaidStatus(appointment.status) && "text-muted-foreground-2"
         )}
       >
-        {formatCurrency(appointment.price)}
+        {formatAppointmentPrice(appointment.price)}
       </span>
     ),
   },
@@ -102,7 +110,7 @@ export function ClientAppointmentHistory({ clientId, isDesktop }: ClientAppointm
     return (
       <EmptyState
         title="No se ha podido cargar el historial"
-        description="Comprueba tu conexion e intentalo de nuevo."
+        description="Comprueba tu conexión e inténtalo de nuevo."
         action={<Button onClick={() => refetch()}>Reintentar</Button>}
       />
     )
@@ -170,11 +178,18 @@ export function ClientAppointmentHistory({ clientId, isDesktop }: ClientAppointm
   )
 }
 
+// `DetalleClienteDesktop.dc.html:234`: fila propia de 48px con `padding 0
+// 18px`, no un `<p>` suelto. En escritorio `DataTable` (variant="nested") la
+// monta DENTRO de la tarjeta, tras el separador que ya inserta antes de un
+// `footer` (`data-table.tsx`); en movil se reutiliza tal cual (D24), aunque
+// su artboard no dibuje footer.
 function HistoryFooter({ shown, total }: { shown: number; total: number }) {
   return (
-    <p className="px-1 text-xs leading-tight tabular-nums text-muted-foreground-2">
-      Mostrando {shown} de {total} citas
-    </p>
+    <div className="flex h-12 items-center justify-between px-[18px] text-xs leading-tight tabular-nums text-muted-foreground-2">
+      <span>
+        Mostrando {shown} de {total} citas
+      </span>
+    </div>
   )
 }
 
@@ -191,7 +206,7 @@ function MobileHistoryRow({ appointment }: { appointment: ClientAppointment }) {
             isUnpaidStatus(appointment.status) && "text-muted-foreground-2"
           )}
         >
-          {appointment.employeeName} &middot; {formatCurrency(appointment.price)}
+          {appointment.employeeName} &middot; {formatAppointmentPrice(appointment.price)}
         </p>
       </div>
       <StatusBadge status={appointment.status as AppointmentStatus} className="mt-0.5 shrink-0 text-[10px]" />

@@ -12,8 +12,9 @@ vi.mock("next/navigation", () => ({
 }))
 
 let mockIsOwner = true
+let mockAccessToken: string | null = "token"
 vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ accessToken: "token", isOwner: mockIsOwner }),
+  useAuth: () => ({ accessToken: mockAccessToken, isOwner: mockIsOwner }),
 }))
 
 const getClientById = vi.fn()
@@ -128,12 +129,14 @@ describe("ClientDetailPage", () => {
     push.mockReset()
     getClientById.mockReset()
     mockIsOwner = true
+    mockAccessToken = "token"
     mockMatchMedia(false)
     mockAppointments()
   })
 
   afterEach(() => {
     mockMatchMedia(false)
+    mockAccessToken = "token"
   })
 
   it("mientras carga, pinta un esqueleto", () => {
@@ -143,6 +146,23 @@ describe("ClientDetailPage", () => {
 
     expect(document.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
     expect(screen.queryByText("Ana Garcia")).not.toBeInTheDocument()
+  })
+
+  // F1 -- regresion: React Query v5 reporta `isLoading: false` para una query
+  // deshabilitada (`enabled: !!accessToken`). En carga en frio `useAuth`
+  // devuelve `accessToken: null` mientras resuelve `/api/auth/session`
+  // (`use-auth.ts`): sin el `!accessToken` en la guarda de carga, este hueco
+  // se colaba directo a la rama de error ("No se ha podido cargar el
+  // cliente") en vez de pintar el esqueleto.
+  it("F1: con accessToken null (carga en frio), pinta el esqueleto, NO el error", () => {
+    mockAccessToken = null
+    getClientById.mockReturnValue(new Promise(() => {}))
+
+    renderPage()
+
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
+    expect(screen.queryByText("No se ha podido cargar el cliente")).not.toBeInTheDocument()
+    expect(getClientById).not.toHaveBeenCalled()
   })
 
   // §1.11.3: la rama de error tiene que ser VISIBLE, no un esqueleto
@@ -307,6 +327,28 @@ describe("ClientDetailPage", () => {
 
       const label = await screen.findByText("Última visita")
       expect(label.closest('[data-slot="card"]')!.textContent).toContain("5 ago 2026")
+    })
+
+    // F2 -- D38 aplicado a los KPIs: si el historial esta en error, `data` es
+    // `undefined` y antes se pintaba "Visitas 0 · Última visita —" como si
+    // fueran datos reales, a la vez que la columna del historial decia "No se
+    // ha podido cargar el historial". Un cero que parece un dato no vale.
+    it("F2: con el historial en error, los KPIs NO pintan '0' -- usan el mismo valor vacio que una fecha ausente", async () => {
+      getClientById.mockResolvedValue(makeClient())
+      useClientAppointmentsMock.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useClientAppointments>)
+
+      renderPage()
+
+      const visitsCard = (await screen.findByText("Visitas")).closest('[data-slot="card"]')
+      const lastVisitCard = screen.getByText("Última visita").closest('[data-slot="card"]')
+      expect(visitsCard!.textContent).not.toContain("0")
+      expect(visitsCard!.textContent).toContain("—")
+      expect(lastVisitCard!.textContent).toContain("—")
     })
   })
 

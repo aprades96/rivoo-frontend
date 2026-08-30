@@ -71,7 +71,7 @@ describe("GdprPanel", () => {
   it("D27: usa tokens de warning en vez de la paleta cruda de Tailwind", () => {
     renderPanel()
 
-    const heading = screen.getByText("Proteccion de datos (GDPR)")
+    const heading = screen.getByText("Protección de datos (GDPR)")
     const card = heading.closest('[data-slot="card"]')
     expect(card).not.toBeNull()
     expect(card?.className).not.toMatch(/orange/)
