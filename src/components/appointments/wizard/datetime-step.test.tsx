@@ -321,4 +321,184 @@ describe("DateTimeStep", () => {
 
     expect(screen.getByText("No hay huecos disponibles este dia.")).toBeInTheDocument()
   })
+
+  it("el aside dice 'Resumen' y no lleva la nota de confianza de la reserva publica", () => {
+    mockMatchMedia(true)
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByText("Resumen")).toBeInTheDocument()
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sin registro/)).not.toBeInTheDocument()
+  })
+
+  it("con 'Sin preferencia' pinta el spinner (no 'No hay huecos') mientras useEmployeesServices sigue cargando", () => {
+    useWizardStore.setState({ anyEmployee: true, selectedEmployee: null, selectedService: service })
+    mockEmployees([laura, mia])
+    // Cache fria: el paso 2 con "Sin preferencia" llama `useEmployeeServices(undefined)`
+    // (deshabilitado), asi que al montar el paso 3 esta consulta sigue en vuelo.
+    mockEmployeesServices({}, true)
+
+    const { container } = render(<DateTimeStep />)
+
+    expect(screen.queryByText("No hay huecos disponibles este dia.")).not.toBeInTheDocument()
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument()
+  })
+
+  it("al volver al paso 3, el calendario abre en selectedDate y no salta a hoy", () => {
+    const offset = 5
+    const chosenDate = format(addDays(new Date(), offset), "yyyy-MM-dd")
+
+    useWizardStore.setState({
+      selectedEmployee: laura,
+      selectedService: service,
+      selectedDate: chosenDate,
+      selectedSlot: `${chosenDate}T11:00:00`,
+      selectedSlotEmployeeId: "emp_1",
+      preferredDate: null,
+      preferredSlot: null,
+    })
+    mockAvailability([{ startTime: "11:00:00", endTime: "12:30:00", employeeId: "emp_1" }])
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByTestId(`mobile-day-${offset}`).className).toMatch(/bg-primary/)
+    expect(screen.getByTestId("mobile-day-0").className).not.toMatch(/bg-primary/)
+  })
+
+  it("el nombre del dia de una celda movil abierta y no seleccionada usa el color atenuado", () => {
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+
+    render(<DateTimeStep />)
+
+    const dayNameSpan = screen.getByTestId("mobile-day-2").querySelectorAll("span")[0]
+    expect(dayNameSpan.className).toMatch(/text-muted-foreground\b/)
+    expect(dayNameSpan.className).toMatch(/leading-none/)
+  })
+
+  it("el nombre del dia de una celda de escritorio abierta y no seleccionada usa el color atenuado", () => {
+    mockMatchMedia(true)
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+
+    render(<DateTimeStep />)
+
+    const dayNameSpan = screen.getByTestId("desktop-day-2").querySelectorAll("span")[0]
+    expect(dayNameSpan.className).toMatch(/text-muted-foreground\b/)
+    expect(dayNameSpan.className).toMatch(/leading-none/)
+  })
+
+  it("el numero de dia en escritorio usa 21px y tipografia display", () => {
+    mockMatchMedia(true)
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+
+    render(<DateTimeStep />)
+
+    const numberSpan = screen.getByTestId("desktop-day-0").querySelectorAll("span")[1]
+    expect(numberSpan.className).toMatch(/text-\[21px\]/)
+    expect(numberSpan.className).toMatch(/font-heading/)
+    expect(numberSpan.className).toMatch(/tracking-display/)
+  })
+
+  it("el numero de dia en movil sigue en 20px (text-xl) pero ya lleva tipografia display", () => {
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+
+    render(<DateTimeStep />)
+
+    const numberSpan = screen.getByTestId("mobile-day-0").querySelectorAll("span")[1]
+    expect(numberSpan.className).toMatch(/text-xl\b/)
+    expect(numberSpan.className).not.toMatch(/text-\[21px\]/)
+    expect(numberSpan.className).toMatch(/font-heading/)
+    expect(numberSpan.className).toMatch(/tracking-display/)
+  })
+
+  it("la tercera linea ('Cerrado') de una celda de escritorio cerrada lleva leading-none", () => {
+    mockMatchMedia(true)
+    const tomorrow = addDays(new Date(), 1)
+    const jsDay = tomorrow.getDay()
+    const closedDayOfWeek = jsDay === 0 ? 7 : jsDay
+
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+    mockWorkingHours({
+      emp_1: [
+        {
+          dayOfWeek: closedDayOfWeek,
+          isOpen: false,
+          openTime: "09:00",
+          closeTime: "20:00",
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+      ],
+    })
+
+    render(<DateTimeStep />)
+
+    const thirdSpan = screen.getByTestId("desktop-day-1").querySelectorAll("span")[2]
+    expect(thirdSpan.textContent).toBe("Cerrado")
+    expect(thirdSpan.className).toMatch(/leading-none/)
+  })
+
+  it("SlotSection usa 10px de espaciado vertical en movil (gap-2.5)", () => {
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+    mockAvailability([{ startTime: "09:00:00", endTime: "09:30:00", employeeId: "emp_1" }])
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByText("Mañana").parentElement?.className).toMatch(/gap-2\.5/)
+  })
+
+  it("SlotSection usa 12px de espaciado vertical en escritorio (gap-3)", () => {
+    mockMatchMedia(true)
+    useWizardStore.setState({ selectedEmployee: laura, selectedService: service })
+    mockAvailability([{ startTime: "09:00:00", endTime: "09:30:00", employeeId: "emp_1" }])
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByText("Mañana").parentElement?.className).toMatch(/gap-3\b/)
+  })
+
+  it("con 'Sin preferencia' y hueco ya elegido, el aside nombra al profesional del hueco", () => {
+    mockMatchMedia(true)
+    const todayStr = format(new Date(), "yyyy-MM-dd")
+
+    useWizardStore.setState({
+      anyEmployee: true,
+      selectedEmployee: null,
+      selectedService: service,
+      selectedDate: todayStr,
+      selectedSlot: `${todayStr}T09:00:00`,
+      selectedSlotEmployeeId: "emp_2",
+    })
+    mockEmployees([laura, mia])
+    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id, "emp_2")] })
+    mockAvailability([{ startTime: "09:00:00", endTime: "09:30:00", employeeId: "emp_2" }])
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByText("Mia Soler")).toBeInTheDocument()
+    expect(screen.queryByText("Sin preferencia")).not.toBeInTheDocument()
+  })
+
+  it("con dos empleados de horarios mixtos (uno cerrado, otro abierto), el dia sigue pulsable", () => {
+    const tomorrow = addDays(new Date(), 1)
+    const jsDay = tomorrow.getDay()
+    const dow = jsDay === 0 ? 7 : jsDay
+
+    useWizardStore.setState({ anyEmployee: true, selectedEmployee: null, selectedService: service })
+    mockEmployees([laura, mia])
+    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id, "emp_2")] })
+    mockWorkingHours({
+      emp_1: [
+        { dayOfWeek: dow, isOpen: false, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+      ],
+      emp_2: [
+        { dayOfWeek: dow, isOpen: true, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },
+      ],
+    })
+
+    render(<DateTimeStep />)
+
+    expect(screen.getByTestId("mobile-day-1")).not.toBeDisabled()
+  })
 })

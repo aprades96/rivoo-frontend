@@ -15,6 +15,7 @@ import {
   formatWizardTimeRange,
   getWizardSummaryCta,
   getWizardSummaryRows,
+  type WizardSummaryState,
 } from "./wizard-summary"
 import { useWizardAvailability, type WizardSlot } from "@/hooks/use-wizard-availability"
 import { useEmployees, useEmployeesServices, useEmployeesWorkingHours } from "@/hooks/use-staff"
@@ -36,6 +37,11 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
 const MOBILE_STRIP_DAYS = 30
 const DESKTOP_WEEK_SIZE = 7
 const DESKTOP_WEEK_PAGES = 4 // 4 x 7 = 28 dias, horizonte similar al de la tira movil.
+
+// Identidad estable para el camino "profesional concreto" de
+// `useEmployeesServices`: un `[]` literal en el JSX se recrea en cada render,
+// lo que invalida el `useCallback` de `combine` (`use-staff.ts`) sin motivo.
+const NO_EMPLOYEES: string[] = []
 
 /**
  * Si NINGUN empleado de `employeeIds` trabaja `date`, segun `hoursByEmployee`
@@ -72,6 +78,9 @@ export function DateTimeStep() {
     selectedService,
     selectedDate,
     selectedSlot,
+    selectedSlotEmployeeId,
+    selectedClient,
+    newClientData,
     preferredDate,
     preferredSlot,
     selectDateTime,
@@ -97,7 +106,7 @@ export function DateTimeStep() {
   // Solo se consulta con "Sin preferencia": con un empleado concreto ya
   // elegido no hace falta saber que mas ofrece el servicio.
   const { data: employeeServicesById, isLoading: employeeServicesLoading } = useEmployeesServices(
-    anyEmployee ? activeEmployeeIds : []
+    anyEmployee ? activeEmployeeIds : NO_EMPLOYEES
   )
 
   // Empleados sobre los que se pregunta disponibilidad. Con un profesional
@@ -148,12 +157,21 @@ export function DateTimeStep() {
    * los pinta. Hueco de backend, no un olvido de esta implementacion.
    */
 
-  // Resolucion del dia inicial: la preferencia de prefill si sigue vigente y
-  // cae dentro del horizonte, si no "hoy" -- y desde ahi, el primer dia que SI
-  // trabaje alguien del subconjunto (si el profesional elegido hoy no
-  // trabaja, el paso abre en el primer dia que si trabaje, no en hoy). Se
-  // espera a tener el subconjunto y sus horarios resueltos para no fijar un
-  // dia con datos a medias.
+  // Resolucion del dia inicial: el dia YA elegido si se vuelve a este paso con
+  // una seleccion previa (`selectedDate`), si no la preferencia de prefill si
+  // sigue vigente y cae dentro del horizonte, si no "hoy" -- y desde ahi, el
+  // primer dia que SI trabaje alguien del subconjunto (si el profesional
+  // elegido hoy no trabaja, el paso abre en el primer dia que si trabaje, no
+  // en hoy). Se espera a tener el subconjunto y sus horarios resueltos para no
+  // fijar un dia con datos a medias.
+  //
+  // `selectedDate` va ANTES que `preferredDate` a proposito: `selectDateTime`
+  // limpia `preferredDate` en cuanto el usuario elige un hueco, asi que un
+  // avance 3->4->5 y una vuelta 5->4->3 siempre trae `selectedDate` puesto y
+  // `preferredDate` a `null` -- mirar solo `preferredDate` (como hacia antes
+  // esta resolucion) remontaba el componente con `resolved=false` y volvia a
+  // "hoy" mientras el pie fijo, el aside y `isSlotSelected` seguian hablando
+  // del dia elegido, contradiciendose entre si.
   //
   // Ajuste DURANTE el render, no en un efecto: es una derivacion pura de
   // datos ya disponibles (nada de DOM ni de sistemas externos), y
@@ -163,7 +181,10 @@ export function DateTimeStep() {
   // `useEffect` (`react-hooks/set-state-in-effect`).
   if (!resolved && !subsetLoading && !(anyEmployee && subsetEmployeeIds.length === 0)) {
     let offset = 0
-    if (preferredDate) {
+    if (selectedDate) {
+      const selectedOffset = differenceInCalendarDays(parseISO(selectedDate), today)
+      if (selectedOffset >= 0 && selectedOffset < MOBILE_STRIP_DAYS) offset = selectedOffset
+    } else if (preferredDate) {
       const preferredOffset = differenceInCalendarDays(parseISO(preferredDate), today)
       if (preferredOffset >= 0 && preferredOffset < MOBILE_STRIP_DAYS) offset = preferredOffset
     }
@@ -204,10 +225,40 @@ export function DateTimeStep() {
       : `Huecos libres para ${selectedService.name} (${formatDurationTight(selectedService.durationMinutes)}).`
     : undefined
 
-  const rows = getWizardSummaryRows(wizardState, 3)
-  const cta = getWizardSummaryCta(wizardState, 3)
+  // El aside es interno (lo llena el salon a mano), no la reserva publica:
+  // "Resumen" en vez de "Tu reserva" (`NuevaCitaDesktopPaso3.dc.html:139`), y
+  // sin la nota de confianza por defecto de `WizardSummaryAside` -- ese texto
+  // ("Sin registro, cancela gratis...") no aparece en ninguno de los diez
+  // artboards del asistente y es directamente falso aqui: una cita creada por
+  // el salon si registra al cliente y no tiene esa politica de cancelacion.
+  //
+  // `slotEmployee` resuelto desde `selectedSlotEmployeeId` (el dueno del
+  // hueco elegido, no `selectedEmployee`): con "Sin preferencia" en cuanto hay
+  // hueco la cita ya tiene un profesional concreto, y `getProfessionalRow`
+  // (`wizard-summary.ts:108-113`) solo deja de decir "Sin preferencia" si se
+  // lo pasamos. Mismo patron que `confirmation-step.tsx:126-141`.
+  const slotEmployee = activeEmployees.find((e) => e.id === selectedSlotEmployeeId) ?? null
+  const summaryState: WizardSummaryState = {
+    selectedEmployee,
+    anyEmployee,
+    selectedService,
+    selectedDate,
+    selectedSlot,
+    selectedClient,
+    newClientData,
+    slotEmployee,
+  }
+  const rows = getWizardSummaryRows(summaryState, 3)
+  const cta = getWizardSummaryCta(summaryState, 3)
   const aside = (
-    <WizardSummaryAside rows={rows} ctaLabel={cta.label} ctaDisabled={cta.disabled} onCtaClick={nextStep} />
+    <WizardSummaryAside
+      heading="Resumen"
+      note={null}
+      rows={rows}
+      ctaLabel={cta.label}
+      ctaDisabled={cta.disabled}
+      onCtaClick={nextStep}
+    />
   )
 
   const footer = (
@@ -279,7 +330,7 @@ export function DateTimeStep() {
             />
           )}
 
-          {slotsLoading ? (
+          {slotsLoading || subsetLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -295,6 +346,7 @@ export function DateTimeStep() {
                   slots={morningSlots}
                   onSelect={handleSlotSelect}
                   isSelected={isSlotSelected}
+                  isDesktop={isDesktop}
                 />
               )}
               {afternoonSlots.length > 0 && (
@@ -303,6 +355,7 @@ export function DateTimeStep() {
                   slots={afternoonSlots}
                   onSelect={handleSlotSelect}
                   isSelected={isSlotSelected}
+                  isDesktop={isDesktop}
                 />
               )}
             </>
@@ -318,11 +371,16 @@ interface SlotSectionProps {
   slots: WizardSlot[]
   onSelect: (slot: WizardSlot) => void
   isSelected: (slot: WizardSlot) => boolean
+  isDesktop: boolean
 }
 
-function SlotSection({ label, slots, onSelect, isSelected }: SlotSectionProps) {
+function SlotSection({ label, slots, onSelect, isSelected, isDesktop }: SlotSectionProps) {
   return (
-    <div className="flex flex-col gap-2.5">
+    // 10px en movil (`NuevaCitaPaso3.dc.html:87,102`), 12px en escritorio
+    // (`NuevaCitaDesktopPaso3.dc.html:113,125`). Por `isDesktop`, no por
+    // `lg:`: este chasis ya distingue asi (jsdom no aplica CSS, y las dos
+    // ramas nunca conviven en pantalla a la vez).
+    <div className={cn("flex flex-col", isDesktop ? "gap-3" : "gap-2.5")}>
       <span className="text-xs font-semibold tracking-[0.05em] text-muted-foreground-2 uppercase">
         {label}
       </span>
@@ -384,10 +442,17 @@ function MobileDayStrip({ today, dayOffset, setDayOffset, hoursByEmployee, emplo
                     : "border-border bg-card hover:bg-muted/50"
               )}
             >
-              <span className={cn("text-[10px] uppercase", selected && "opacity-[0.85]")}>
+              <span
+                className={cn(
+                  "text-[10px] leading-none uppercase",
+                  selected ? "opacity-[0.85]" : !closed && "text-muted-foreground"
+                )}
+              >
                 {format(date, "EEE", { locale: es })}
               </span>
-              <span className="text-xl leading-none font-semibold tabular-nums">{format(date, "d")}</span>
+              <span className="font-heading text-xl leading-none font-semibold tracking-display tabular-nums">
+                {format(date, "d")}
+              </span>
             </button>
           )
         })}
@@ -467,10 +532,17 @@ function DesktopCalendar({
                     : "border-border bg-card hover:bg-muted/50"
               )}
             >
-              <span className={cn("text-[11px] uppercase", selected && "opacity-[0.85]")}>
+              <span
+                className={cn(
+                  "text-[11px] leading-none uppercase",
+                  selected ? "opacity-[0.85]" : !closed && "text-muted-foreground"
+                )}
+              >
                 {format(date, "EEE", { locale: es })}
               </span>
-              <span className="text-xl leading-none font-semibold tabular-nums">{format(date, "d")}</span>
+              <span className="font-heading text-[21px] leading-none font-semibold tracking-display tabular-nums">
+                {format(date, "d")}
+              </span>
               {/*
                 Tercera linea: el artboard pinta aqui el numero de huecos
                 libres del dia ("9 huecos",
@@ -486,7 +558,7 @@ function DesktopCalendar({
                 `public-datetime-step.tsx:441-450`, para que las dos
                 pantallas digan lo mismo.
               */}
-              <span className="text-[10px]">{closed ? "Cerrado" : ""}</span>
+              <span className="text-[10px] leading-none">{closed ? "Cerrado" : ""}</span>
             </button>
           )
         })}
