@@ -90,8 +90,8 @@ function mockServices(content: ServiceOffering[], isLoading = false) {
   } as unknown as ReturnType<typeof useServices>)
 }
 
-function mockEmployeeServices(assigned: EmployeeServiceResponse[] | undefined) {
-  useEmployeeServicesMock.mockReturnValue({ data: assigned } as unknown as ReturnType<
+function mockEmployeeServices(assigned: EmployeeServiceResponse[] | undefined, isError = false) {
+  useEmployeeServicesMock.mockReturnValue({ data: assigned, isError } as unknown as ReturnType<
     typeof useEmployeeServices
   >)
 }
@@ -263,5 +263,82 @@ describe("ServiceStep", () => {
 
     expect(screen.getByText("Laura no lo ofrece")).toBeInTheDocument()
     expect(screen.queryByText("Laura no ofrece este servicio")).not.toBeInTheDocument()
+  })
+
+  // Con un `selectedEmployee` CONCRETO: la peticion "en vuelo" (sin fallar
+  // todavia) sigue sin atenuar nada -- distinto del caso de fallo de abajo.
+  // `anyEmployee: true` (usado en el test de arriba) cortocircuita
+  // `isOffered` ANTES de llegar a `assignedIds`, asi que no ejerce esta rama.
+  it("con un profesional concreto y la peticion de sus servicios EN VUELO, no atenua nada", () => {
+    mockServices([makeService({ id: "s1", name: "Corte mujer", category: "Cabello" })])
+    mockEmployeeServices(undefined, false)
+    useWizardStore.setState({ selectedEmployee: laura })
+
+    render(<ServiceStep />)
+
+    const card = screen.getByRole("button", { name: /Corte mujer/ })
+    expect(card).not.toBeDisabled()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  // El backend no valida la asignacion empleado-servicio
+  // (`AppointmentService.java:86`): este filtro es la UNICA barrera, asi que
+  // un FALLO de `useEmployeeServices` (no solo la peticion en vuelo) tiene
+  // que atenuar TODO -- fallar cerrado, no abierto -- y avisar en pantalla.
+  it("con un profesional concreto y la peticion de sus servicios en ERROR, atenua todo y avisa en pantalla", () => {
+    mockServices([makeService({ id: "s1", name: "Corte mujer", category: "Cabello" })])
+    mockEmployeeServices(undefined, true)
+    useWizardStore.setState({ selectedEmployee: laura })
+
+    render(<ServiceStep />)
+
+    const card = screen.getByRole("button", { name: /Corte mujer/ })
+    expect(card).toBeDisabled()
+    expect(screen.getByRole("alert")).toHaveTextContent(/no se ha podido comprobar/i)
+  })
+
+  // "Sin preferencia" no tiene empleado concreto que consultar: el aviso de
+  // fallo de asignacion no aplica ahi.
+  it("con anyEmployee, un fallo de useEmployeeServices no pinta el aviso de asignacion", () => {
+    mockMatchMedia(true)
+    mockServices([makeService({ id: "s1", name: "Corte mujer", category: "Cabello" })])
+    mockEmployeeServices(undefined, true)
+    useWizardStore.setState({ anyEmployee: true, selectedEmployee: null })
+
+    render(<ServiceStep />)
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  // `WizardSummaryAside` por defecto pinta el encabezado y la nota de
+  // confianza de la reserva PUBLICA ("Tu reserva" + "Sin registro..."),
+  // incorrectos aqui: esta cita la crea el propio salon.
+  // `NuevaCitaDesktopPaso2.dc.html:130` dice "Resumen" y ningun artboard del
+  // asistente dibuja esa nota.
+  it("en escritorio, el aside dice 'Resumen' y no pinta la nota de la reserva publica", () => {
+    mockMatchMedia(true)
+    mockServices([makeService({ id: "s1", category: "Cabello" })])
+    mockEmployeeServices([assignedTo("s1")])
+    useWizardStore.setState({ selectedEmployee: laura })
+
+    render(<ServiceStep />)
+
+    expect(screen.getByText("Resumen")).toBeInTheDocument()
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sin registro/)).not.toBeInTheDocument()
+  })
+
+  // `isStepComplete` caso 2 gobierna el `disabled` del CTA del aside: sin
+  // servicio elegido tiene que estar deshabilitado. Nada mas en este fichero
+  // comprobaba el `disabled` del CTA -- solo el de las tarjetas de servicio.
+  it("en escritorio, el CTA del aside esta deshabilitado sin servicio elegido", () => {
+    mockMatchMedia(true)
+    mockServices([makeService({ id: "s1", category: "Cabello" })])
+    mockEmployeeServices([assignedTo("s1")])
+    useWizardStore.setState({ selectedEmployee: laura })
+
+    render(<ServiceStep />)
+
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled()
   })
 })

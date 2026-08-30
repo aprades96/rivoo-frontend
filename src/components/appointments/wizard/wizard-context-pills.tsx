@@ -21,34 +21,57 @@ import type { ServiceOffering } from "@/types/service"
  * escritorio las dibuja: ahi ese contexto vive en el subtitulo y en el
  * aside (`NewAppointmentShell`) -- brief T3.
  *
- * Sin props: los tres campos salen del store directamente, igual que el
- * resto de pasos del asistente (`employee-step.tsx`). La ALTURA y el
- * contenido de la pildora de servicio cambian los DOS a la vez en cuanto hay
- * fecha/hora elegida -- 32px con tijeras+duracion en los pasos 2-3
- * (`NuevaCitaPaso{2,3}.dc.html:50`), 30px en texto pelado en el paso 4
- * (`NuevaCitaPaso4.dc.html:20,56`) -- asi que se deriva de un unico booleano
- * (`hasDateTime`) en vez de un prop "step" que cada paso de la ola siguiente
- * tendria que mantener en sincronia con lo que el store ya sabe.
+ * Sin props: los cuatro campos (incluido `step`) salen del store
+ * directamente, igual que el resto de pasos del asistente
+ * (`employee-step.tsx`). La variante se deriva del PASO (D32), no de si ya
+ * hay fecha/hora elegida: cada paso pinta como contexto lo YA resuelto en
+ * pasos ANTERIORES, nunca lo que el propio paso esta pidiendo ahora mismo.
+ * Derivar de `hasDateTime` rompia justo el frame que cada artboard retrata --
+ * `NuevaCitaPaso3.dc.html:49-58` dibuja el hueco de las 11:00 ya elegido EN
+ * esa misma pantalla y aun asi solo pinta 2 pildoras (profesional + servicio
+ * con tijeras+duracion), nunca una tercera de fecha/hora. Y al volver de
+ * 3->2 el store conserva servicio/fecha/hora (`wizard-store.ts` solo los
+ * limpia al ELEGIR de nuevo, no al retroceder), asi que un paso 2 basado en
+ * los datos pintaria de mas -- `NuevaCitaPaso2.dc.html:49-54` solo dibuja la
+ * de profesional. Leer `step` del store evita ademas anadir un prop que los
+ * cinco ficheros de paso tendrian que mantener en sincronia.
+ *
+ * Formas medidas: 2 pildoras de 32px con tijeras+duracion en el paso 3
+ * (`NuevaCitaPaso3.dc.html:50,54-56`), 1 sola (profesional) en el paso 2
+ * (`NuevaCitaPaso2.dc.html:49-54`), 3 de 30px sin tijeras ni duracion desde
+ * el paso 4 (`NuevaCitaPaso4.dc.html:51-58`).
  */
 export function WizardContextPills() {
-  const { selectedEmployee, selectedService, selectedDate, selectedSlot } = useWizardStore()
+  const { step, selectedEmployee, selectedService, selectedDate, selectedSlot } = useWizardStore()
   const { data } = useEmployees()
   const employees = data?.content ?? []
 
   if (!selectedEmployee && !selectedService) return null
 
-  const hasDateTime = Boolean(selectedDate && selectedSlot)
-  const heightClass = hasDateTime ? "h-[30px]" : "h-[32px]"
+  const isLateVariant = step >= 4
+  const heightClass = isLateVariant ? "h-[30px]" : "h-[32px]"
+  // `gap: 7px` en las pildoras de profesional de los pasos 2-3
+  // (`NuevaCitaPaso2.dc.html:50`, `NuevaCitaPaso3.dc.html:50`); la del paso 4
+  // usa el `gap: 6px` de `.chip` (`NuevaCitaPaso4.dc.html:20,52`) -- no tocar
+  // ese caso, es el que ya estaba bien.
+  const employeeGapClass = isLateVariant ? "gap-1.5" : "gap-[7px]"
+  const showService = step >= 3 && Boolean(selectedService)
+  const showDateTime = step >= 4 && Boolean(selectedDate && selectedSlot)
 
   return (
     <div className="flex gap-1.5">
       {selectedEmployee && (
-        <EmployeePill employee={selectedEmployee} employees={employees} heightClass={heightClass} />
+        <EmployeePill
+          employee={selectedEmployee}
+          employees={employees}
+          heightClass={heightClass}
+          gapClass={employeeGapClass}
+        />
       )}
-      {selectedService && (
-        <ServicePill service={selectedService} withDetail={!hasDateTime} heightClass={heightClass} />
+      {showService && selectedService && (
+        <ServicePill service={selectedService} withDetail={step === 3} heightClass={heightClass} />
       )}
-      {selectedDate && selectedSlot && (
+      {showDateTime && selectedDate && selectedSlot && (
         <DateTimePill date={selectedDate} slot={selectedSlot} heightClass={heightClass} />
       )}
     </div>
@@ -59,28 +82,35 @@ function EmployeePill({
   employee,
   employees,
   heightClass,
+  gapClass,
 }: {
   employee: Employee
   employees: Employee[]
   heightClass: string
+  gapClass: string
 }) {
   // Nunca del hex del artboard: dos de estas pildoras dibujan a la misma
   // empleada de dos colores distintos, y ese desliz del canvas no se
   // replica. `-1 -> 0` cuando el empleado todavia no esta en la lista
-  // (`useEmployees` en vuelo o empleado inactivo).
+  // (`useEmployees` en vuelo o empleado inactivo) -- OJO, no
+  // `employeePaletteIndex` en si (que ya normaliza negativos con modulo):
+  // pasar -1 directamente a `employeeFallbackAvatarClassName` caeria en el
+  // ULTIMO color de la paleta (modulo negativo), no en el primero, que es lo
+  // que aqui se quiere para "todavia no esta en la lista".
   const rawIndex = employeePaletteIndex(employees, employee.id)
   const fallbackIndex = rawIndex === -1 ? 0 : rawIndex
 
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 rounded-full border border-border bg-card pr-[11px] pl-[5px] text-xs",
+        "flex items-center rounded-full border border-border bg-card pr-[11px] pl-[5px] text-xs",
+        gapClass,
         heightClass
       )}
     >
       <span
         className={cn(
-          "flex size-[22px] shrink-0 items-center justify-center rounded-full text-[9px] font-bold",
+          "flex size-[22px] shrink-0 items-center justify-center rounded-full text-[9px] leading-none font-bold",
           !employee.colorHex && employeeFallbackAvatarClassName(fallbackIndex)
         )}
         style={employee.colorHex ? employeeAvatarAlphaStyle(employee.colorHex) : undefined}

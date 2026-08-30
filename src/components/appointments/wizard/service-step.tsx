@@ -72,7 +72,7 @@ export function ServiceStep() {
   const { selectedEmployee, anyEmployee, selectService, nextStep } = wizardState
 
   const employeeId = !anyEmployee ? selectedEmployee?.id : undefined
-  const { data: employeeServicesData } = useEmployeeServices(employeeId)
+  const { data: employeeServicesData, isError: employeeServicesError } = useEmployeeServices(employeeId)
 
   const services = useMemo(
     () => servicesData?.content?.filter((s) => s.isActive) ?? [],
@@ -87,8 +87,19 @@ export function ServiceStep() {
     [employeeServicesData]
   )
 
-  const isOffered = (service: ServiceOffering) =>
-    anyEmployee || assignedIds === null || assignedIds.has(service.id)
+  // El backend NO valida que el empleado ofrezca el servicio elegido
+  // (`AppointmentService.java:86`): este filtro es la UNICA barrera. Por eso
+  // un FALLO de `useEmployeeServices` (`isError`) no puede tratarse como la
+  // peticion en vuelo -- `assignedIds` tambien es `null` ahi, pero fallar
+  // ABIERTO dejaria pasar cualquier servicio a un empleado concreto sin que
+  // nadie mas lo compruebe. Se falla CERRADO: con la comprobacion caida, se
+  // atenua TODO salvo con "Sin preferencia" (`anyEmployee`), donde no hay
+  // empleado concreto que consultar.
+  const isOffered = (service: ServiceOffering) => {
+    if (anyEmployee) return true
+    if (employeeServicesError) return false
+    return assignedIds === null || assignedIds.has(service.id)
+  }
 
   const groups = useMemo(() => groupServicesByCategory(services), [services])
 
@@ -108,7 +119,37 @@ export function ServiceStep() {
 
   const rows = getWizardSummaryRows(wizardState, 2)
   const cta = getWizardSummaryCta(wizardState, 2)
-  const aside = <WizardSummaryAside rows={rows} ctaLabel={cta.label} ctaDisabled={cta.disabled} />
+  // `heading`/`note` por defecto de `WizardSummaryAside` son los de la
+  // reserva PUBLICA ("Tu reserva" + nota de confianza sin registro/cancela
+  // gratis) -- correctos ahi, pero esta es una cita que crea el propio salon:
+  // ni es sin registro ni se cancela gratis, y ningun artboard del asistente
+  // dibuja esa nota (`NuevaCitaDesktopPaso2.dc.html:130` dice "Resumen").
+  // Mismo par que ya usan los demas pasos del asistente (`employee-step.tsx`,
+  // `confirmation-step.tsx`).
+  const aside = (
+    <WizardSummaryAside
+      rows={rows}
+      ctaLabel={cta.label}
+      ctaDisabled={cta.disabled}
+      heading="Resumen"
+      note={null}
+    />
+  )
+
+  // Aviso visible cuando la comprobacion de que ofrece el empleado FALLA
+  // (`isError`): con "Sin preferencia" no aplica (no hay empleado concreto
+  // que consultar). Sin este aviso, `isOffered` fallando cerrado atenuaria
+  // TODOS los servicios sin explicar por que -- una lista muda de tarjetas
+  // grises.
+  const showAssignmentErrorBanner = employeeServicesError && !anyEmployee
+
+  const notOfferedText = (isDesktopView: boolean): string | undefined => {
+    if (!selectedEmployee) return undefined
+    if (employeeServicesError) return "No se ha podido comprobar"
+    return isDesktopView
+      ? `${selectedEmployee.firstName} no lo ofrece`
+      : `${selectedEmployee.firstName} no ofrece este servicio`
+  }
 
   return (
     <NewAppointmentShell
@@ -120,6 +161,16 @@ export function ServiceStep() {
       aside={aside}
     >
       {!isDesktop && <WizardContextPills />}
+
+      {showAssignmentErrorBanner && (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive-border bg-destructive-soft px-3 py-2 text-sm text-destructive"
+        >
+          No se ha podido comprobar qué servicios ofrece {selectedEmployee?.firstName}. Actualiza la
+          página o vuelve a intentarlo.
+        </div>
+      )}
 
       {servicesLoading ? (
         <LoadingSkeleton count={5} />
@@ -138,9 +189,7 @@ export function ServiceStep() {
                     key={service.id}
                     service={service}
                     offered={isOffered(service)}
-                    notOfferedText={
-                      selectedEmployee ? `${selectedEmployee.firstName} no lo ofrece` : undefined
-                    }
+                    notOfferedText={notOfferedText(true)}
                     isDesktop
                     onSelect={() => handleSelect(service)}
                   />
@@ -168,11 +217,7 @@ export function ServiceStep() {
                   key={service.id}
                   service={service}
                   offered={isOffered(service)}
-                  notOfferedText={
-                    selectedEmployee
-                      ? `${selectedEmployee.firstName} no ofrece este servicio`
-                      : undefined
-                  }
+                  notOfferedText={notOfferedText(false)}
                   isDesktop={false}
                   onSelect={() => handleSelect(service)}
                 />
