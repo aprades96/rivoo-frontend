@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect } from "vitest"
+import { render, screen } from "@testing-library/react"
 import { ClientCard } from "./client-card"
 import type { Client } from "@/types/client"
 
@@ -26,13 +26,12 @@ describe("ClientCard", () => {
     expect(screen.getByText("AL")).toBeInTheDocument()
   })
 
-  it("renders contact info", () => {
+  it("renders phone and email on a single line, phone formatted (D29)", () => {
     render(<ClientCard client={mockClient} />)
-    expect(screen.getByText(/612345678/)).toBeInTheDocument()
-    expect(screen.getByText(/ana@test.com/)).toBeInTheDocument()
+    expect(screen.getByText("612 345 678 · ana@test.com")).toBeInTheDocument()
   })
 
-  it("renders visit count", () => {
+  it("renders visit count and its label", () => {
     render(<ClientCard client={mockClient} />)
     expect(screen.getByText("5")).toBeInTheDocument()
     expect(screen.getByText("visitas")).toBeInTheDocument()
@@ -44,10 +43,15 @@ describe("ClientCard", () => {
     expect(screen.getByText("Sin contacto")).toBeInTheDocument()
   })
 
-  it("calls onTap when clicked", () => {
-    const onTap = vi.fn()
-    render(<ClientCard client={mockClient} onTap={onTap} />)
-    fireEvent.click(screen.getByText("Ana Lopez"))
-    expect(onTap).toHaveBeenCalledWith(mockClient)
+  it("with only an email, the line does not carry a stray leading separator", () => {
+    const emailOnly = { ...mockClient, phone: null }
+    render(<ClientCard client={emailOnly} />)
+    expect(screen.getByText("ana@test.com")).toBeInTheDocument()
+  })
+
+  it("is a real navigable link to /clients/{id}, not a click handler on a div (D5)", () => {
+    render(<ClientCard client={mockClient} />)
+    const link = screen.getByRole("link", { name: /Ana Lopez/ })
+    expect(link).toHaveAttribute("href", "/clients/cli_1")
   })
 })

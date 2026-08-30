@@ -10,10 +10,12 @@ import type { Page } from "@/types/api"
 /** ~250ms so typing does not fire one request per keystroke, without adding
  * visible lag to the input itself (the caller keeps its own, undebounced,
  * state for the `Input` value -- only the value fed into `useClients` is
- * delayed). */
-const SEARCH_DEBOUNCE_MS = 250
+ * delayed). Exported: `/clients` (`clients/page.tsx`, T6) shares this exact
+ * debounce instead of duplicating it -- same 250ms, same tested behaviour,
+ * just fed into a queryKey with `size: 50` instead of this hook's `size: 10`. */
+export const SEARCH_DEBOUNCE_MS = 250
 
-function useDebouncedValue<T>(value: T, delayMs: number): T {
+export function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value)
 
   useEffect(() => {
