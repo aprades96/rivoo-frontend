@@ -9,7 +9,7 @@ const statuses: { status: AppointmentStatus; label: string }[] = [
   { status: "IN_PROGRESS", label: "En curso" },
   { status: "COMPLETED", label: "Completada" },
   { status: "CANCELLED", label: "Cancelada" },
-  { status: "NO_SHOW", label: "No asistio" },
+  { status: "NO_SHOW", label: "No asistió" },
 ]
 
 describe("StatusBadge", () => {

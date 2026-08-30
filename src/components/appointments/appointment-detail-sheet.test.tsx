@@ -248,11 +248,11 @@ describe("AppointmentDetailSheet", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
-  it("'No asistio' dispara la mutacion NO_SHOW -- la transicion PENDING->NO_SHOW que abre D5", async () => {
+  it("'No asistió' dispara la mutacion NO_SHOW -- la transicion PENDING->NO_SHOW que abre D5", async () => {
     const user = userEvent.setup()
     render(<AppointmentDetailSheet appointment={makeAppointment()} open onOpenChange={vi.fn()} />)
 
-    await user.click(screen.getByText("No asistio"))
+    await user.click(screen.getByText("No asistió"))
 
     expect(updateStatusMutateMock).toHaveBeenCalledWith(
       { id: "apt_1", status: "NO_SHOW" },

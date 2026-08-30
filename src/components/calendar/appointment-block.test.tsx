@@ -164,7 +164,7 @@ describe("AppointmentBlock · estados", () => {
 
     const el = block()
     expect(el).toHaveClass("border-l-destructive", "bg-destructive-tint")
-    expect(screen.getByText(exact("11:30 - 12:00 · No asistio"))).toBeInTheDocument()
+    expect(screen.getByText(exact("11:30 - 12:00 · No asistió"))).toBeInTheDocument()
   })
 
   it("en curso se pinta como confirmada (supuesto)", () => {

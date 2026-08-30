@@ -61,7 +61,7 @@ function actionsFor(status: AppointmentStatus, variant: AppointmentActionsVarian
         secondary:
           variant === "sheet"
             ? [
-                { label: "No asistio", icon: UserX, intent: { kind: "status", target: "NO_SHOW" } },
+                { label: "No asistió", icon: UserX, intent: { kind: "status", target: "NO_SHOW" } },
                 CANCEL_ACTION,
               ]
             : [
@@ -73,7 +73,7 @@ function actionsFor(status: AppointmentStatus, variant: AppointmentActionsVarian
       return {
         cta: { label: "Iniciar", icon: Play, intent: { kind: "status", target: "IN_PROGRESS" } },
         secondary: [
-          { label: "No asistio", icon: UserX, intent: { kind: "status", target: "NO_SHOW" } },
+          { label: "No asistió", icon: UserX, intent: { kind: "status", target: "NO_SHOW" } },
           CANCEL_ACTION,
         ],
       }

@@ -81,7 +81,7 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
 const TERMINAL_SUFFIX: Partial<Record<AppointmentStatus, string>> = {
   COMPLETED: "Completada",
   CANCELLED: "Cancelada",
-  NO_SHOW: "No asistio",
+  NO_SHOW: "No asistió",
 }
 
 /** Los estados que pintan el nombre y la hora en rojo (`:226-227`). */

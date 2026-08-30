@@ -50,7 +50,7 @@ describe("AppointmentActions", () => {
   })
 
   describe("PENDING", () => {
-    it("variant=sheet: CTA Confirmar cita + secundarias No asistio y Cancelar, medidas de movil", () => {
+    it("variant=sheet: CTA Confirmar cita + secundarias No asistió y Cancelar, medidas de movil", () => {
       renderActions("PENDING", "sheet")
 
       const cta = screen.getByTestId("appointment-cta")
@@ -63,7 +63,7 @@ describe("AppointmentActions", () => {
 
       const secondaryButtons = within(secondaryRow).getAllByTestId("appointment-secondary-action")
       expect(secondaryButtons).toHaveLength(2)
-      expect(secondaryButtons[0]).toHaveTextContent("No asistio")
+      expect(secondaryButtons[0]).toHaveTextContent("No asistió")
       expect(secondaryButtons[1]).toHaveTextContent("Cancelar")
       for (const button of secondaryButtons) {
         expect(button.className).toContain("h-[46px]")
@@ -99,10 +99,10 @@ describe("AppointmentActions", () => {
       expect(onStatusChange).toHaveBeenCalledWith("CONFIRMED")
     })
 
-    it("sheet: 'No asistio' dispara onStatusChange(NO_SHOW) -- la transicion que T0 abre", async () => {
+    it("sheet: 'No asistió' dispara onStatusChange(NO_SHOW) -- la transicion que T0 abre", async () => {
       const user = userEvent.setup()
       const { onStatusChange } = renderActions("PENDING", "sheet")
-      await user.click(screen.getByText("No asistio"))
+      await user.click(screen.getByText("No asistió"))
       expect(onStatusChange).toHaveBeenCalledWith("NO_SHOW")
     })
 
@@ -124,14 +124,14 @@ describe("AppointmentActions", () => {
   })
 
   describe("CONFIRMED", () => {
-    it.each(VARIANTS)("variant=%s: CTA Iniciar + secundarias No asistio y Cancelar", (variant) => {
+    it.each(VARIANTS)("variant=%s: CTA Iniciar + secundarias No asistió y Cancelar", (variant) => {
       renderActions("CONFIRMED", variant)
 
       expect(screen.getByTestId("appointment-cta")).toHaveTextContent("Iniciar")
 
       const secondaryButtons = screen.getAllByTestId("appointment-secondary-action")
       expect(secondaryButtons).toHaveLength(2)
-      expect(secondaryButtons[0]).toHaveTextContent("No asistio")
+      expect(secondaryButtons[0]).toHaveTextContent("No asistió")
       expect(secondaryButtons[1]).toHaveTextContent("Cancelar")
     })
 
