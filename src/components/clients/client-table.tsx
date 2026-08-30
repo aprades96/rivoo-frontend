@@ -3,17 +3,19 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatPhone, initials } from "@/lib/utils/format"
 import { formatDate } from "@/lib/utils/dates"
+import { employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
+import { cn } from "@/lib/utils"
 import type { Client } from "@/types/client"
 
 interface ClientTableProps {
   clients: Client[]
   /** Total real del backend (`data.totalElements`), no `clients.length`: la
-   * linea de paginacion (D22) compara la pagina servida contra el total. */
+   * línea de paginación (D22) compara la página servida contra el total. */
   totalElements: number
-  /** El tamano de pagina que pide `/clients` (50, D22) -- ninguna otra
+  /** El tamaño de página que pide `/clients` (50, D22) -- ninguna otra
    * pantalla del bloque reutiliza este componente con otro valor, pero se
-   * recibe como prop en vez de constante literal para no esconder el numero
-   * que la linea de texto anuncia. */
+   * recibe como prop en vez de constante literal para no esconder el número
+   * que la línea de texto anuncia. */
   pageSize: number
 }
 
@@ -30,10 +32,19 @@ export function ClientTable({ clients, totalElements, pageSize }: ClientTablePro
       key: "client",
       header: "Cliente",
       width: "minmax(0,1.5fr)",
+      // M13: los clientes nunca traen un color propio (a diferencia de
+      // `Employee.colorHex`), así que el avatar SIEMPRE cae en la paleta de
+      // reserva -- por posición en la lista, igual que `employee-card.tsx` y
+      // `employee-table.tsx` -- en vez de salir siempre gris (`bg-muted`).
       cell: (client) => (
         <div className="flex min-w-0 items-center gap-3">
           <Avatar className="h-[38px] w-[38px]">
-            <AvatarFallback className="text-[13px] font-semibold">
+            <AvatarFallback
+              className={cn(
+                "text-[13px] leading-none font-semibold",
+                employeeFallbackAvatarClassName(clients.indexOf(client))
+              )}
+            >
               {initials(client.firstName, client.lastName)}
             </AvatarFallback>
           </Avatar>
@@ -79,7 +90,7 @@ export function ClientTable({ clients, totalElements, pageSize }: ClientTablePro
   ]
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-[18px]">
       <DataTable
         columns={columns}
         rows={clients}
@@ -89,8 +100,8 @@ export function ClientTable({ clients, totalElements, pageSize }: ClientTablePro
         gap={16}
         caption="Clientes"
       />
-      {/* D22: fuera de la tarjeta de la tabla, con numeros reales -- sin
-          controles de paginacion, porque ningun artboard los dibuja. */}
+      {/* D22: fuera de la tarjeta de la tabla, con números reales -- sin
+          controles de paginación, porque ningún artboard los dibuja. */}
       <p className="text-xs text-muted-foreground-2">
         Mostrando {clients.length} de {totalElements} · la lista pide {pageSize} por página
       </p>
@@ -100,11 +111,11 @@ export function ClientTable({ clients, totalElements, pageSize }: ClientTablePro
 
 /**
  * Las tres formas de la columna Contacto (§1.6, D29,
- * `ClientesDesktop.dc.html:106-109,139-140,154`): email + telefono; telefono +
+ * `ClientesDesktop.dc.html:106-109,139-140,154`): email + teléfono; teléfono +
  * "Sin correo" cuando falta el email; o "Sin contacto" a secas cuando no hay
- * ninguno de los dos. El cuarto caso (solo email, sin telefono) no lo dibuja
- * ningun artboard -- se degrada a una sola linea con el email, sin inventar
- * un "Sin telefono" que nadie ha pedido.
+ * ninguno de los dos. El cuarto caso (solo email, sin teléfono) no lo dibuja
+ * ningún artboard -- se degrada a una sola línea con el email, sin inventar
+ * un "Sin teléfono" que nadie ha pedido.
  */
 function ContactCell({ client }: { client: Client }) {
   if (client.email && client.phone) {

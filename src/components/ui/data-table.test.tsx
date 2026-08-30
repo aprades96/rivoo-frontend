@@ -22,7 +22,7 @@ const columns: DataTableColumn<Row>[] = [
 ]
 
 describe("DataTable", () => {
-  it("pinta un columnheader por columna, incluida la vacia que solo ocupa hueco", () => {
+  it("pinta un columnheader por columna, incluida la vacía que solo ocupa hueco", () => {
     render(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} caption="Empleados" />)
 
     const headers = screen.getAllByRole("columnheader")
@@ -40,9 +40,9 @@ describe("DataTable", () => {
     expect(screen.getAllByRole("cell")).toHaveLength(3 * columns.length)
   })
 
-  it("con href, cada fila es un enlace alcanzable por teclado hacia la ruta correcta", async () => {
+  it("con href, cada fila conserva role=row (no rompe el árbol de la tabla) y es alcanzable por teclado hacia la ruta correcta", async () => {
     const user = userEvent.setup()
-    render(
+    const { container } = render(
       <DataTable
         columns={columns}
         rows={rows}
@@ -52,13 +52,40 @@ describe("DataTable", () => {
       />
     )
 
-    const links = screen.getAllByRole("link")
+    // El `<a>` lleva `role="row"` explícito (A1): `getByRole("link")` ya no
+    // lo encuentra, el destino se comprueba por el atributo `href` del ancla.
+    const [, ...dataRows] = screen.getAllByRole("row")
+    expect(dataRows).toHaveLength(3)
+
+    const links = container.querySelectorAll("a[href]")
     expect(links).toHaveLength(3)
     expect(links[0]).toHaveAttribute("href", "/staff/emp_1")
     expect(links[1]).toHaveAttribute("href", "/staff/emp_2")
 
     await user.tab()
     expect(links[0]).toHaveFocus()
+  })
+
+  it("la cabecera lleva su línea inferior en las dos variantes (H1: EquipoDesktop:102, ClientesDesktop:93)", () => {
+    const { rerender } = render(
+      <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} caption="Empleados" />
+    )
+    const [screenHeaderRow] = screen.getAllByRole("row")
+    expect(screenHeaderRow).toHaveClass("border-b")
+    expect(screenHeaderRow).toHaveClass("border-hairline")
+
+    rerender(
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        variant="nested"
+        caption="Historial de citas"
+      />
+    )
+    const [nestedHeaderRow] = screen.getAllByRole("row")
+    expect(nestedHeaderRow).toHaveClass("border-b")
+    expect(nestedHeaderRow).toHaveClass("border-hairline")
   })
 
   it("variant=nested aplica el alto y el fondo de D4 por clase, no por pixel", () => {
@@ -100,7 +127,7 @@ describe("DataTable", () => {
     expect(dataRows[2]).not.toHaveClass("bg-muted-subtle")
   })
 
-  it("el separador no aparece detras de la ultima fila cuando no hay footer", () => {
+  it("el separador no aparece detras de la última fila cuando no hay footer", () => {
     render(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} caption="Empleados" />)
 
     const table = screen.getByRole("table")
@@ -109,7 +136,7 @@ describe("DataTable", () => {
     expect(screen.getAllByTestId("data-table-separator")).toHaveLength(rows.length - 1)
   })
 
-  it("el footer solo se monta si viene, y cuando viene se separa de la ultima fila", () => {
+  it("el footer solo se monta si viene, y cuando viene se separa de la última fila", () => {
     const { rerender } = render(
       <DataTable columns={columns} rows={rows} rowKey={(row) => row.id} caption="Historial de citas" />
     )
@@ -129,7 +156,7 @@ describe("DataTable", () => {
     const table = screen.getByRole("table")
     expect(table.lastElementChild).toHaveTextContent("Mostrando 3 de 3 citas")
     // DetalleClienteDesktop.dc.html:218-224 dibuja un separador entre la
-    // ultima fila y el footer: con footer hay tantos separadores como filas,
+    // última fila y el footer: con footer hay tantos separadores como filas,
     // no filas-1.
     expect(screen.getAllByTestId("data-table-separator")).toHaveLength(rows.length)
   })

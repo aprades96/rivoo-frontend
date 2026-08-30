@@ -8,8 +8,8 @@ import { formatPhone, initials } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import type { Employee } from "@/types/employee"
 
-// Rejilla de `EquipoDesktop.dc.html:28`: seis columnas, la ultima solo para
-// el chevron. Constante a nivel de modulo -- no depende de props, y una
+// Rejilla de `EquipoDesktop.dc.html:28`: seis columnas, la última solo para
+// el chevron. Constante a nivel de módulo -- no depende de props, y una
 // referencia estable evita recrear el array (y por tanto las funciones
 // `cell`) en cada render de `EmployeeTable`.
 const COLUMNS: DataTableColumn<Employee>[] = [
@@ -21,7 +21,7 @@ const COLUMNS: DataTableColumn<Employee>[] = [
       <span className="flex min-w-0 items-center gap-3">
         <Avatar className="h-[38px] w-[38px] shrink-0">
           <AvatarFallback
-            className="text-sm font-semibold"
+            className="text-[13px] leading-none font-semibold"
             style={employeeAvatarStyle(employee.colorHex)}
           >
             {initials(employee.firstName, employee.lastName)}
@@ -72,7 +72,7 @@ const COLUMNS: DataTableColumn<Employee>[] = [
             {formatPhone(employee.phone)}
           </span>
         ) : (
-          // Estado vacio SOLO de escritorio (D9): el movil no tiene columna
+          // Estado vacío SOLO de escritorio (D9): el móvil no tiene columna
           // de contacto separada donde mostrarlo.
           <span className="text-[12px] leading-tight text-text-subtle">Sin teléfono</span>
         )}
@@ -108,26 +108,43 @@ const COLUMNS: DataTableColumn<Employee>[] = [
 
 interface EmployeeTableProps {
   employees: Employee[]
+  /** Total real del backend (`data.totalElements`), no `employees.length`:
+   * la línea de paginación (F2) compara la página servida contra el total. */
+  totalElements: number
+  /** El tamaño de página que pide `/staff/employees` (100, `staff.ts`). Se
+   * recibe como prop en vez de constante literal, igual que `ClientTable`,
+   * para no esconder el número que la línea de texto anuncia. */
+  pageSize: number
 }
 
 /**
  * Tabla de escritorio del panel "Empleados" (`EquipoDesktop.dc.html:100`).
  * Sobre `DataTable` (T2): filas de 68px, gap de columna 16px, cada fila es un
  * `<Link>` hacia la ficha del empleado (D5), y la fila inactiva lleva el
- * tinte `--muted-subtle` que solo existe en escritorio (D9) -- en movil
+ * tinte `--muted-subtle` que solo existe en escritorio (D9) -- en móvil
  * (`EmployeeCard`) el fondo no cambia.
+ *
+ * F2: `/staff/employees` pide `size=100` sin paginación (`staff.ts`); con más
+ * de 100 empleados la tabla los trunca en silencio. La línea "Mostrando X de
+ * Y" (misma que `ClientTable`) hace visible ese recorte en vez de dejar que
+ * el contador de la cabecera y las filas pintadas se contradigan.
  */
-export function EmployeeTable({ employees }: EmployeeTableProps) {
+export function EmployeeTable({ employees, totalElements, pageSize }: EmployeeTableProps) {
   return (
-    <DataTable
-      columns={COLUMNS}
-      rows={employees}
-      rowKey={(employee) => employee.id}
-      rowHeight={68}
-      gap={16}
-      href={(employee) => `/staff/${employee.id}`}
-      rowClassName={(employee) => (employee.isActive ? undefined : "bg-muted-subtle")}
-      caption="Empleados"
-    />
+    <div className="flex flex-col gap-[18px]">
+      <DataTable
+        columns={COLUMNS}
+        rows={employees}
+        rowKey={(employee) => employee.id}
+        rowHeight={68}
+        gap={16}
+        href={(employee) => `/staff/${employee.id}`}
+        rowClassName={(employee) => (employee.isActive ? undefined : "bg-muted-subtle")}
+        caption="Empleados"
+      />
+      <p className="text-xs text-muted-foreground-2">
+        Mostrando {employees.length} de {totalElements} · la lista pide {pageSize} por página
+      </p>
+    </div>
   )
 }

@@ -29,7 +29,7 @@ vi.mock("@/lib/api/clients", () => ({
 
 /**
  * El polyfill de `src/test/setup.ts` devuelve SIEMPRE `matches: false`, o sea
- * movil. Escritorio hay que simularlo aqui, y devolverlo a movil en
+ * móvil. Escritorio hay que simularlo aquí, y devolverlo a móvil en
  * `afterEach` para no contaminar el siguiente caso (AGENTS.md).
  */
 function mockMatchMedia(desktop: boolean) {
@@ -96,7 +96,7 @@ describe("ClientsPage", () => {
     mockMatchMedia(false)
   })
 
-  it("en movil, pinta tarjetas (no una tabla), con el subtitulo en una sola linea y el bloque de visitas con etiqueta", async () => {
+  it("en móvil, pinta tarjetas (no una tabla), con el subtitulo en una sola línea y el bloque de visitas con etiqueta", async () => {
     mockMatchMedia(false)
     list.mockResolvedValue(makePage([makeClient()], 248))
 
@@ -106,11 +106,11 @@ describe("ClientsPage", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument()
     expect(screen.getByText("612 345 678 · ana@test.com")).toBeInTheDocument()
     expect(screen.getByText("visitas")).toBeInTheDocument()
-    // D22: el movil no dibuja la linea de paginacion.
+    // D22: el móvil no dibuja la línea de paginacion.
     expect(screen.queryByText(/la lista pide/)).not.toBeInTheDocument()
   })
 
-  it("en escritorio, pinta una tabla con las cinco columnas, formatDate, y la linea de paginacion FUERA de la tabla (D21, D22)", async () => {
+  it("en escritorio, pinta una tabla con las cinco columnas, formatDate, y la línea de paginacion FUERA de la tabla (D21, D22)", async () => {
     mockMatchMedia(true)
     list.mockResolvedValue(
       makePage(
@@ -151,17 +151,31 @@ describe("ClientsPage", () => {
     expect(screen.getByText("Sin correo")).toBeInTheDocument()
     expect(screen.getByText("Sin contacto")).toBeInTheDocument()
 
-    // Fuera de la tabla, con numeros reales.
+    // Fuera de la tabla, con números reales.
     expect(within(table).queryByText(/Mostrando/)).not.toBeInTheDocument()
     expect(screen.getByText("Mostrando 3 de 248 · la lista pide 50 por página")).toBeInTheDocument()
   })
 
-  it("conserva el vacio inicial (D23) cuando no hay clientes", async () => {
+  it("conserva el vacío inicial (D23) cuando no hay clientes", async () => {
     list.mockResolvedValue(makePage([], 0))
 
     renderPage()
 
     expect(await screen.findByText("Sin clientes")).toBeInTheDocument()
+  })
+
+  it("cuando la petición falla, avisa del fallo en vez de afirmar 'Sin clientes' (F1)", async () => {
+    list.mockRejectedValue(new Error("network down"))
+
+    renderPage()
+
+    // `findBy*` prueba que el estado de error aterrizó de verdad (AGENTS.md:
+    // una aserción síncrona pasaría igual con el fallo reintroducido, porque
+    // `isLoading` seguiría en `true` en el primer render).
+    expect(
+      await screen.findByText("No se han podido cargar los clientes")
+    ).toBeInTheDocument()
+    expect(screen.queryByText("Sin clientes")).not.toBeInTheDocument()
   })
 
   it("la queryKey lleva `size: 50`, distinto del `size: 10` de useClients (D34)", async () => {
@@ -174,7 +188,7 @@ describe("ClientsPage", () => {
     expect(client.getQueryData(["clients", { search: "", size: 10 }])).toBeUndefined()
   })
 
-  it("teclear rapido dispara UNA sola peticion tras ~250ms (D20)", async () => {
+  it("teclear rapido dispara UNA sola petición tras ~250ms (D20)", async () => {
     vi.useFakeTimers()
     list.mockResolvedValue(makePage([makeClient()], 1))
 
@@ -193,7 +207,7 @@ describe("ClientsPage", () => {
     const input = screen.getByPlaceholderText("Buscar clientes...")
 
     // Tres pulsaciones separadas 80ms, todas por debajo del debounce de
-    // 250ms: si cada una disparase su propia peticion, `list` tendria 4
+    // 250ms: si cada una disparase su propia petición, `list` tendría 4
     // llamadas al final del bucle.
     for (const partial of ["F", "Fe", "Fer"]) {
       await act(async () => {
@@ -203,8 +217,8 @@ describe("ClientsPage", () => {
     }
     expect(list).toHaveBeenCalledTimes(1)
 
-    // Pasado el debounce completo desde la ultima tecla, se asienta UNA sola
-    // peticion con el valor final.
+    // Pasado el debounce completo desde la última tecla, se asienta UNA sola
+    // petición con el valor final.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(250)
     })
@@ -212,13 +226,13 @@ describe("ClientsPage", () => {
     expect(list).toHaveBeenLastCalledWith({ search: "Fer", page: 0, size: 50 }, "token")
   })
 
-  it("mientras la peticion del texto asentado esta en vuelo, la lista NO se desmonta (keepPreviousData, D20)", async () => {
+  it("mientras la petición del texto asentado está en vuelo, la lista NO se desmonta (keepPreviousData, D20)", async () => {
     vi.useFakeTimers()
 
-    // La PRIMERA peticion se resuelve al momento (monta la pagina inicial).
+    // La PRIMERA petición se resuelve al momento (monta la página inicial).
     // La SEGUNDA -- la que dispara el debounce tras teclear -- se deja en
     // vuelo a proposito, con una promesa que esta prueba controla a mano:
-    // es el unico modo de observar el instante exacto en que la queryKey ya
+    // es el único modo de observar el instante exacto en que la queryKey ya
     // cambio pero el dato nuevo todavia no ha llegado, que es precisamente
     // cuando `useDeferredValue` desmontaba la lista para pintar el
     // esqueleto. Con una promesa que se resuelve sola (como en el test de
@@ -244,19 +258,19 @@ describe("ClientsPage", () => {
     const input = screen.getByPlaceholderText("Buscar clientes...")
     await act(async () => {
       fireEvent.change(input, { target: { value: "Fer" } })
-      // El debounce completo: la queryKey cambia y la segunda peticion (la
+      // El debounce completo: la queryKey cambia y la segunda petición (la
       // promesa controlada, todavia sin resolver) queda en vuelo.
       await vi.advanceTimersByTimeAsync(250)
     })
     expect(list).toHaveBeenCalledTimes(2)
 
-    // AQUI es donde `keepPreviousData` importa: la pagina anterior sigue
+    // AQUI es donde `keepPreviousData` importa: la página anterior sigue
     // pintada y no aparece el esqueleto de carga mientras la respuesta nueva
     // no ha llegado.
     expect(screen.getByText("Ana Garcia")).toBeInTheDocument()
     expect(document.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument()
 
-    // Se resuelve la segunda peticion -- dato que el componente NO poseia
+    // Se resuelve la segunda petición -- dato que el componente NO poseia
     // hasta ahora -- y se comprueba que aterriza de verdad.
     await act(async () => {
       resolveSecond(makePage([makeClient({ firstName: "Resultado-Fer" })], 1))

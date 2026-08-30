@@ -180,7 +180,7 @@ describe("StaffPage", () => {
     mockMatchMedia(false)
   })
 
-  it("pinta 'Equipo' como titulo de la cabecera en movil y en escritorio", () => {
+  it("pinta 'Equipo' como titulo de la cabecera en móvil y en escritorio", () => {
     mockMatchMedia(false)
     const { rerenderPage } = renderPage()
     expect(screen.getByRole("heading", { name: "Equipo" })).toBeInTheDocument()
@@ -190,7 +190,7 @@ describe("StaffPage", () => {
     expect(screen.getByRole("heading", { name: "Equipo" })).toBeInTheDocument()
   })
 
-  it("cambia el contenido del panel al pulsar la pestana Servicios, no solo la URL", async () => {
+  it("cambia el contenido del panel al pulsar la pestaña Servicios, no solo la URL", async () => {
     const user = userEvent.setup()
     const { rerenderPage } = renderPage()
 
@@ -198,14 +198,14 @@ describe("StaffPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Servicios" }))
 
-    // El destino de la barra lateral solo escribe la URL: prueba tambien que
-    // se llamo con `replace` (no `push`, no es un paso que "atras" deba
-    // deshacer) antes de comprobar que el panel realmente cambio.
+    // El destino de la barra lateral solo escribe la URL: prueba también que
+    // se llamó con `replace` (no `push`, no es un paso que "atrás" deba
+    // deshacer) antes de comprobar que el panel realmente cambió.
     expect(replaceMock).toHaveBeenCalledWith("/staff?tab=services", { scroll: false })
 
-    // Nuestro doble de router no esta enganchado a la reactividad de React
+    // Nuestro doble de router no está enganchado a la reactividad de React
     // (a diferencia del contexto real de Next): el componente no se
-    // reevalua solo porque la variable oculta del mock haya cambiado.
+    // reevalúa solo porque la variable oculta del mock haya cambiado.
     rerenderPage()
 
     const servicesPanel = await screen.findByRole("tabpanel")
@@ -223,7 +223,7 @@ describe("StaffPage", () => {
   })
 
   it("sigue a la query cuando cambia sin remontar (navegacion de cliente desde la barra lateral)", async () => {
-    // A diferencia de los dos tests anteriores, aqui no hay clic sobre el
+    // A diferencia de los dos tests anteriores, aquí no hay clic sobre el
     // propio segmentado ni remontaje con la query ya puesta: se monta en
     // /staff (sin query), la query cambia por debajo -- como hace el
     // <Link> de la barra lateral hacia /staff?tab=services, que es
@@ -240,6 +240,40 @@ describe("StaffPage", () => {
     const servicesPanel = await screen.findByRole("tabpanel")
     expect(servicesPanel).toHaveTextContent("Corte de pelo")
     expect(servicesPanel).not.toHaveTextContent("Ana Garcia")
+  })
+
+  it("cuando falla la petición de empleados, avisa del fallo en vez de afirmar 'Sin empleados' (F1)", async () => {
+    const refetch = vi.fn()
+    useEmployeesMock.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch })
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(screen.getByText("No se ha podido cargar el equipo")).toBeInTheDocument()
+    expect(screen.queryByText("Sin empleados")).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Reintentar" }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("cuando falla la petición de servicios, avisa del fallo en vez de afirmar 'Sin servicios' (F1)", async () => {
+    const refetch = vi.fn()
+    useServicesMock.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch })
+    const user = userEvent.setup()
+
+    const { rerenderPage } = renderPage()
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+    // El doble de `next/navigation` no es reactivo (ver el test de arriba):
+    // hace falta un `rerenderPage()` explícito para que el panel lea la
+    // nueva query.
+    rerenderPage()
+
+    const servicesPanel = await screen.findByRole("tabpanel")
+    expect(servicesPanel).toHaveTextContent("No se han podido cargar los servicios")
+    expect(screen.queryByText("Sin servicios")).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Reintentar" }))
+    expect(refetch).toHaveBeenCalledTimes(1)
   })
 
   describe("panel Empleados en escritorio", () => {
@@ -266,18 +300,24 @@ describe("StaffPage", () => {
       ])
     })
 
-    it("el contador dice '5 empleados · 4 activos' (D8: la pagina contiene a todo el mundo)", () => {
+    it("el contador dice '5 empleados · 4 activos' (D8: la página contiene a todo el mundo)", () => {
       renderPage()
 
-      expect(screen.getByRole("tabpanel")).toHaveTextContent("5 empleados · 4 activos")
+      // M4: en escritorio el contador vive junto al segmentado, no dentro
+      // del tabpanel (EquipoDesktop.dc.html:92-97, misma fila).
+      expect(screen.getByText("5 empleados · 4 activos")).toBeInTheDocument()
+      expect(screen.getByRole("tabpanel")).not.toHaveTextContent("5 empleados · 4 activos")
     })
 
     it("la fila inactiva lleva su clase de tinte (D9) y hay un enlace por fila", () => {
-      renderPage()
+      const { container } = renderPage()
 
-      const links = screen.getAllByRole("link")
-      // El CTA de escritorio ("Añadir empleado") tambien es un <button>, no
-      // un <Link>, asi que los cinco enlaces son exactamente las cinco filas.
+      // La fila de DataTable con `href` lleva `role="row"` explícito (A1):
+      // `getByRole("link")` ya no la encuentra, así que se cuenta por el
+      // atributo `href` del ancla. El CTA de escritorio ("Añadir empleado")
+      // es un <button>, no un <Link>, así que los cinco anclas son
+      // exactamente las cinco filas.
+      const links = [...container.querySelectorAll("a[href]")]
       expect(links).toHaveLength(5)
 
       const nilRow = links.find((link) => link.textContent?.includes("Nil Bosch"))
@@ -290,14 +330,14 @@ describe("StaffPage", () => {
     it("'Sin teléfono' y 'Por defecto' aparecen para el empleado sin telefono ni color", () => {
       renderPage()
 
-      // Nil Bosch es el unico sin telefono; Marc y Laia tambien carecen de
+      // Nil Bosch es el único sin telefono; Marc y Laia también carecen de
       // `colorHex` (§1.3 solo fija el color de Laura y Sofia en el
-      // artboard), asi que "Por defecto" puede aparecer mas de una vez.
+      // artboard), así que "Por defecto" puede aparecer mas de una vez.
       expect(screen.getByText("Sin teléfono")).toBeInTheDocument()
       expect(screen.getAllByText("Por defecto").length).toBeGreaterThan(0)
     })
 
-    it("con mas gente por debajo de la pagina y ningun inactivo visto, calla el desglose (D8)", () => {
+    it("con mas gente por debajo de la página y ningun inactivo visto, calla el desglose (D8)", () => {
       const manyActive: Employee[] = Array.from({ length: 100 }, (_, i) => ({
         ...laura,
         id: `emp_${i}`,
@@ -310,13 +350,30 @@ describe("StaffPage", () => {
 
       renderPage()
 
-      const panel = screen.getByRole("tabpanel")
-      expect(panel).toHaveTextContent("150 empleados")
-      expect(panel).not.toHaveTextContent("activos")
+      expect(screen.getByText("150 empleados")).toBeInTheDocument()
+      expect(screen.queryByText(/activos/)).not.toBeInTheDocument()
+    })
+
+    it("con 150 empleados y una página de 100, avisa del recorte con números reales (F2)", () => {
+      const manyActive: Employee[] = Array.from({ length: 100 }, (_, i) => ({
+        ...laura,
+        id: `emp_${i}`,
+        firstName: `Empleado${i}`,
+      }))
+      useEmployeesMock.mockReturnValue({
+        data: { content: manyActive, totalElements: 150 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      expect(
+        screen.getByText("Mostrando 100 de 150 · la lista pide 100 por página")
+      ).toBeInTheDocument()
     })
   })
 
-  describe("panel Empleados en movil", () => {
+  describe("panel Empleados en móvil", () => {
     beforeEach(() => {
       mockMatchMedia(false)
       useEmployeesMock.mockReturnValue({
@@ -341,7 +398,7 @@ describe("StaffPage", () => {
       expect(panel).not.toHaveTextContent("activos")
     })
 
-    it("el CTA 'Añadir' esta en el cuerpo del panel, no en la cabecera", () => {
+    it("el CTA 'Añadir' está en el cuerpo del panel, no en la cabecera", () => {
       renderPage()
 
       const addButtons = screen.getAllByRole("button", { name: "Añadir" })

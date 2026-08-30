@@ -25,18 +25,23 @@ export interface DataTableProps<T> {
 }
 
 /**
- * Primitivo de tabla generico sobre CSS grid (D2). No usa `<table>` porque los
+ * Primitivo de tabla genérico sobre CSS grid (D2). No usa `<table>` porque los
  * artboards mezclan columnas `fr`/`px` en `grid-template-columns`, y aplicar
- * `display: grid` sobre `<tr>` borra los roles ARIA implicitos de la tabla en
+ * `display: grid` sobre `<tr>` borra los roles ARIA implícitos de la tabla en
  * varios navegadores (D3). Los roles se escriben a mano: `table`, `row`,
  * `columnheader`, `cell`.
  *
- * Excepcion deliberada: cuando `href` viene informado, la fila se renderiza
- * como `<Link>` de Next SIN `role="row"` explicito. Un `role` explicito
- * sustituye el rol implicito del elemento: si se forzara `role="row"` sobre el
- * `<a>`, `getByRole("link")` dejaria de encontrarlo (D5 exige que la fila sea
- * "alcanzable por teclado" como enlace). Las filas sin `href` si llevan
- * `role="row"`.
+ * Cuando `href` viene informado, la fila se renderiza como `<Link>` de Next
+ * CON `role="row"` explícito. Sin él, un `<a>` no es un hijo válido de
+ * `role="table"` y los `role="cell"` de dentro quedan huérfanos sin `row`
+ * ancestro: un lector de pantalla en modo tabla anuncia una única fila (la
+ * cabecera) y el resto del contenido deja de ser navegable por filas o
+ * columnas. El `role="row"` explícito sustituye el rol implícito "link" en el
+ * árbol de accesibilidad, pero no toca el comportamiento nativo del
+ * `<a href>`: sigue siendo focalizable por teclado (tabindex por defecto) y
+ * activable con Intro, que es lo que D5 exige ("alcanzable por teclado").
+ * Quien necesite comprobar el destino debe leer el atributo `href` del ancla
+ * (`a[href]`), no `getByRole("link")` -- ese rol ya no está disponible.
  */
 export function DataTable<T>({
   columns,
@@ -55,10 +60,8 @@ export function DataTable<T>({
 
   const headerStyle: CSSProperties = { gridTemplateColumns, columnGap: gap }
   const headerClassName = cn(
-    "grid items-center px-[18px]",
-    isNested
-      ? "h-10 rounded-t-xl border-b border-hairline bg-muted-subtle"
-      : "h-11 bg-sidebar"
+    "grid items-center px-[18px] border-b border-hairline",
+    isNested ? "h-10 rounded-t-xl bg-muted-subtle" : "h-11 bg-sidebar"
   )
   const headerCellClassName = cn(
     "font-bold tracking-[0.08em] text-muted-foreground-2 uppercase",
@@ -90,7 +93,7 @@ export function DataTable<T>({
 
     if (href) {
       body.push(
-        <Link key={key} href={href(row)} style={rowStyle} className={className}>
+        <Link key={key} href={href(row)} role="row" style={rowStyle} className={className}>
           {renderCells(row)}
         </Link>
       )
@@ -102,12 +105,12 @@ export function DataTable<T>({
       )
     }
 
-    // El separador no aparece detras de la ultima fila (EquipoDesktop:189):
+    // El separador no aparece detrás de la última fila (EquipoDesktop:189):
     // la tabla termina en la fila con la esquina redondeada del contenedor.
     // Salvo que la tabla lleve `footer` (el historial de citas,
-    // DetalleClienteDesktop:218-224): ahi el artboard SI dibuja un separador
-    // entre la ultima fila y el footer, porque el footer es un bloque
-    // distinto de la rejilla de filas, no la ultima fila.
+    // DetalleClienteDesktop:218-224): ahí el artboard SÍ dibuja un separador
+    // entre la última fila y el footer, porque el footer es un bloque
+    // distinto de la rejilla de filas, no la última fila.
     if (!isLastRow || footer) {
       body.push(
         <div key={`${key}-sep`} data-testid="data-table-separator" className="h-px bg-hairline" />

@@ -21,36 +21,36 @@ const mockClient: Client = {
 
 describe("ClientCard", () => {
   it("renders client name and initials", () => {
-    render(<ClientCard client={mockClient} />)
+    render(<ClientCard client={mockClient} index={0} />)
     expect(screen.getByText("Ana Lopez")).toBeInTheDocument()
     expect(screen.getByText("AL")).toBeInTheDocument()
   })
 
   it("renders phone and email on a single line, phone formatted (D29)", () => {
-    render(<ClientCard client={mockClient} />)
+    render(<ClientCard client={mockClient} index={0} />)
     expect(screen.getByText("612 345 678 · ana@test.com")).toBeInTheDocument()
   })
 
   it("renders visit count and its label", () => {
-    render(<ClientCard client={mockClient} />)
+    render(<ClientCard client={mockClient} index={0} />)
     expect(screen.getByText("5")).toBeInTheDocument()
     expect(screen.getByText("visitas")).toBeInTheDocument()
   })
 
   it("shows 'Sin contacto' when no phone or email", () => {
     const noContact = { ...mockClient, email: null, phone: null }
-    render(<ClientCard client={noContact} />)
+    render(<ClientCard client={noContact} index={0} />)
     expect(screen.getByText("Sin contacto")).toBeInTheDocument()
   })
 
   it("with only an email, the line does not carry a stray leading separator", () => {
     const emailOnly = { ...mockClient, phone: null }
-    render(<ClientCard client={emailOnly} />)
+    render(<ClientCard client={emailOnly} index={0} />)
     expect(screen.getByText("ana@test.com")).toBeInTheDocument()
   })
 
   it("is a real navigable link to /clients/{id}, not a click handler on a div (D5)", () => {
-    render(<ClientCard client={mockClient} />)
+    render(<ClientCard client={mockClient} index={0} />)
     const link = screen.getByRole("link", { name: /Ana Lopez/ })
     expect(link).toHaveAttribute("href", "/clients/cli_1")
   })

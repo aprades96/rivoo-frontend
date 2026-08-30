@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { EmployeeTable } from "./employee-table"
 import type { Employee } from "@/types/employee"
@@ -30,7 +30,7 @@ const nil: Employee = {
 
 describe("EmployeeTable", () => {
   it("renders a role=table with the six columns of §1.3", () => {
-    render(<EmployeeTable employees={[laura, nil]} />)
+    render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
     expect(screen.getByRole("table")).toBeInTheDocument()
     const headers = screen.getAllByRole("columnheader")
@@ -46,9 +46,12 @@ describe("EmployeeTable", () => {
 
   it("each row is a keyboard-reachable link toward the employee's detail page (D5)", async () => {
     const user = userEvent.setup()
-    render(<EmployeeTable employees={[laura, nil]} />)
+    const { container } = render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
-    const links = screen.getAllByRole("link")
+    // The row keeps role="row" (A1) so the table tree stays valid;
+    // getByRole("link") no longer finds it, so the target is asserted via
+    // the anchor's href attribute instead.
+    const links = container.querySelectorAll("a[href]")
     expect(links).toHaveLength(2)
     expect(links[0]).toHaveAttribute("href", "/staff/emp_laura")
     expect(links[1]).toHaveAttribute("href", "/staff/emp_nil")
@@ -58,22 +61,22 @@ describe("EmployeeTable", () => {
   })
 
   it("tints only the inactive row's background (D9)", () => {
-    render(<EmployeeTable employees={[laura, nil]} />)
+    const { container } = render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
-    const links = screen.getAllByRole("link")
+    const links = container.querySelectorAll("a[href]")
     expect(links[0]).not.toHaveClass("bg-muted-subtle")
     expect(links[1]).toHaveClass("bg-muted-subtle")
   })
 
   it("shows the phone formatted, or 'Sin teléfono' when there isn't one", () => {
-    render(<EmployeeTable employees={[laura, nil]} />)
+    render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
     expect(screen.getByText("612 345 678")).toBeInTheDocument()
     expect(screen.getByText("Sin teléfono")).toBeInTheDocument()
   })
 
   it("shows the color dot with its hex, or 'Por defecto' without any dot when there is none", () => {
-    render(<EmployeeTable employees={[laura, nil]} />)
+    render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
     expect(screen.getByText("#B4522F")).toBeInTheDocument()
     expect(screen.getByText("Por defecto")).toBeInTheDocument()
@@ -83,9 +86,17 @@ describe("EmployeeTable", () => {
   })
 
   it("shows the 'Activo'/'Inactivo' status badge", () => {
-    render(<EmployeeTable employees={[laura, nil]} />)
+    render(<EmployeeTable employees={[laura, nil]} totalElements={2} pageSize={100} />)
 
     expect(screen.getByText("Activo")).toBeInTheDocument()
     expect(screen.getByText("Inactivo")).toBeInTheDocument()
+  })
+
+  it("prints the pagination line with real numbers OUTSIDE the table (F2)", () => {
+    render(<EmployeeTable employees={[laura, nil]} totalElements={150} pageSize={100} />)
+
+    const table = screen.getByRole("table")
+    expect(within(table).queryByText(/Mostrando/)).not.toBeInTheDocument()
+    expect(screen.getByText("Mostrando 2 de 150 · la lista pide 100 por página")).toBeInTheDocument()
   })
 })

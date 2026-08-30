@@ -60,7 +60,7 @@ describe("EmployeeCard", () => {
     expect(link).toHaveFocus()
   })
 
-  // D9: en movil la fila inactiva NO tinta el fondo (a diferencia de la
+  // D9: en móvil la fila inactiva NO tinta el fondo (a diferencia de la
   // tabla de escritorio); solo el nombre y el puesto atenuan su color.
   it("does not tint the background of an inactive row in mobile (D9)", () => {
     render(<EmployeeCard employee={inactiveEmployee} />)

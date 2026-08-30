@@ -87,14 +87,16 @@ describe("ClientTable", () => {
   })
 
   it("each row is a link to /clients/{id} (D5)", () => {
-    render(
+    const { container } = render(
       <ClientTable
         clients={[makeClient({ id: "cli_1" }), makeClient({ id: "cli_2", firstName: "Marc" })]}
         totalElements={2}
         pageSize={50}
       />
     )
-    const links = screen.getAllByRole("link")
+    // The row keeps role="row" (A1); getByRole("link") no longer finds it,
+    // so the target is asserted via the anchor's href attribute.
+    const links = container.querySelectorAll("a[href]")
     expect(links).toHaveLength(2)
     expect(links[0]).toHaveAttribute("href", "/clients/cli_1")
     expect(links[1]).toHaveAttribute("href", "/clients/cli_2")
