@@ -63,7 +63,7 @@ function reportMutationError(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
     toast.error(error.problem.detail || fallback)
   } else {
-    toast.error("Error de conexion. Intentalo de nuevo.")
+    toast.error("Error de conexión. Inténtalo de nuevo.")
   }
 }
 
@@ -154,7 +154,13 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
   // D17: alto y padding de campo difieren entre anchos DENTRO de la misma
   // familia (44/14px en movil, 40/12px en escritorio) -- no es un desliz, se
   // conserva (§2.5 D17 "salvo que").
-  const inputClass = isDesktop ? "h-10 px-3 text-[14px]" : "h-11 px-[14px] text-[14px]"
+  // M11: `FormularioEmpleado.dc.html:32` (`.in`) pide fondo `#FFFFFF` (`--card`)
+  // y `:33` (`.ph`) pide `#9A8A7E` (`--muted-foreground-2`) para el placeholder;
+  // sin fijarlos aqui el campo hereda `bg-transparent` y
+  // `placeholder:text-muted-foreground` (#7A6A5F) de `ui/input.tsx`.
+  const inputClass = isDesktop
+    ? "h-10 px-3 text-[14px] leading-tight bg-card placeholder:text-muted-foreground-2"
+    : "h-11 px-[14px] text-[14px] leading-tight bg-card placeholder:text-muted-foreground-2"
   const nameGridGap = isDesktop ? "gap-3" : "gap-[10px]"
 
   return (
@@ -181,9 +187,20 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
        * de T7.
        */
       closeButtonVariant={isDesktop ? "bordered" : "plain"}
+      // M12: el gap del contenedor viene del consumidor -- 14 en escritorio
+      // (`FormularioEmpleadoDesktop.dc.html`, modal de 512px) y 12 en movil
+      // (`FormularioEmpleado.dc.html:91`). La sombra de escritorio es la de
+      // `FormularioEmpleadoDesktop.dc.html:299`; la hoja movil no lleva sombra
+      // propia (usa la de `ui/sheet.tsx`).
+      dialogClassName="gap-3.5 shadow-[0_24px_60px_rgba(42,35,32,0.26)]"
+      sheetClassName="gap-3"
       footer={
         <Button
-          className={isDesktop ? "h-[42px] w-full text-[14px] font-semibold" : "h-[48px] w-full text-[15px] font-semibold"}
+          className={
+            isDesktop
+              ? "h-[42px] w-full text-[14px] leading-tight font-semibold"
+              : "h-[48px] w-full text-[15px] leading-tight font-semibold"
+          }
           onClick={handleSubmit}
           disabled={isPending || !isValid}
         >
@@ -204,8 +221,9 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
       <div className="flex flex-col gap-3">
         <div className={`grid grid-cols-2 ${nameGridGap}`}>
           <div className="flex flex-col gap-1.5">
-            <Label className={LABEL_CLASS}>Nombre *</Label>
+            <Label className={LABEL_CLASS} htmlFor="employee-first-name">Nombre *</Label>
             <Input
+              id="employee-first-name"
               value={form.firstName}
               onChange={(e) => update("firstName", e.target.value)}
               placeholder="Nombre"
@@ -213,8 +231,9 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className={LABEL_CLASS}>Apellidos *</Label>
+            <Label className={LABEL_CLASS} htmlFor="employee-last-name">Apellidos *</Label>
             <Input
+              id="employee-last-name"
               value={form.lastName}
               onChange={(e) => update("lastName", e.target.value)}
               placeholder="Apellidos"
@@ -224,8 +243,9 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Email *</Label>
+          <Label className={LABEL_CLASS} htmlFor="employee-email">Email *</Label>
           <Input
+            id="employee-email"
             type="email"
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
@@ -235,8 +255,9 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Telefono</Label>
+          <Label className={LABEL_CLASS} htmlFor="employee-phone">Teléfono</Label>
           <Input
+            id="employee-phone"
             type="tel"
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
@@ -246,8 +267,9 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Puesto</Label>
+          <Label className={LABEL_CLASS} htmlFor="employee-job-title">Puesto</Label>
           <Input
+            id="employee-job-title"
             value={form.jobTitle}
             onChange={(e) => update("jobTitle", e.target.value)}
             placeholder="Barbero, Estilista..."
@@ -300,14 +322,15 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
                 </label>
               </div>
               <p className="pl-[27px] text-[11px] leading-[1.45] text-muted-foreground-2">
-                Permite al empleado iniciar sesion y gestionar sus citas
+                Permite al empleado iniciar sesión y gestionar sus citas
               </p>
             </div>
 
             {form.createAccount && (
               <div className="flex flex-col gap-1.5">
-                <Label className={LABEL_CLASS}>Contraseña temporal *</Label>
+                <Label className={LABEL_CLASS} htmlFor="employee-password">Contraseña temporal *</Label>
                 <Input
+                  id="employee-password"
                   type="password"
                   value={form.password}
                   onChange={(e) => update("password", e.target.value)}
@@ -315,7 +338,7 @@ export function EmployeeFormSheet({ open, onOpenChange, employee }: EmployeeForm
                   className={inputClass}
                 />
                 <p className="text-[11px] leading-[1.45] text-muted-foreground-2">
-                  El empleado podra cambiarla despues
+                  El empleado podrá cambiarla después
                 </p>
               </div>
             )}

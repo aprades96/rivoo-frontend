@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogPortal, DialogOverlay, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetTitle, SheetClose } from "@/components/ui/sheet"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { cn } from "@/lib/utils"
 
 const DESKTOP_QUERY = "(min-width: 1024px)"
 
@@ -46,6 +47,19 @@ export interface ResponsiveFormModalProps {
   closeButtonVariant: "plain" | "bordered"
   /** La nota de edicion del formulario de empleado (D18); no existe en alta ni en cliente. */
   note?: React.ReactNode
+  /**
+   * Overrides de espaciado y sombra para el DIALOGO de escritorio (hallazgo
+   * M12): los cuatro artboards fijan un `gap` distinto a proposito (14
+   * empleado escritorio, 12 empleado movil, 20 cliente escritorio, 16 cliente
+   * movil) y una sombra propia por familia (empleado
+   * `0 24px 60px rgba(42,35,32,.26)`, cliente `0 18px 48px rgba(42,35,32,.28)`)
+   * que este contenedor no puede fijar sin unificar dos cosas que los
+   * artboards NO unifican. Se fusiona con `cn()` sobre las clases base, asi
+   * que el valor del consumidor gana.
+   */
+  dialogClassName?: string
+  /** Mismo mecanismo que `dialogClassName`, para la HOJA movil (gap 12/16). */
+  sheetClassName?: string
 }
 
 function CloseIcon({ variant }: { variant: "plain" | "bordered" }) {
@@ -71,6 +85,8 @@ export function ResponsiveFormModal({
   footer,
   closeButtonVariant,
   note,
+  dialogClassName,
+  sheetClassName,
 }: ResponsiveFormModalProps) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
 
@@ -82,9 +98,21 @@ export function ResponsiveFormModal({
           <DialogPrimitive.Popup
             data-slot="responsive-form-modal-dialog"
             data-testid="responsive-form-modal-dialog"
-            className="fixed top-1/2 left-1/2 z-50 flex w-full max-w-[512px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-xl border border-border bg-background p-6 outline-none"
+            className={cn(
+              "fixed top-1/2 left-1/2 z-50 flex w-full max-w-[512px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-xl border border-border bg-background p-6 outline-none",
+              dialogClassName
+            )}
           >
             <div className="flex items-center justify-between gap-3">
+              {/*
+                M12: unificado a 23px/1.1 a proposito, no por inercia. Tres de
+                los cuatro artboards (`FormularioEmpleado.dc.html:98`,
+                `FormularioCliente.dc.html:50`, `FormularioClienteDesktop.dc.html:167`)
+                dan 23px/1.1; solo `FormularioEmpleadoDesktop.dc.html:302` da
+                20px, una aparicion unica frente a las otras tres. Se unifica
+                al valor mayoritario, mismo criterio que el radio del modal y
+                el scrim (D17).
+              */}
               <DialogTitle className="text-[23px] leading-[1.1] font-semibold tracking-display">
                 {title}
               </DialogTitle>
@@ -115,7 +143,14 @@ export function ResponsiveFormModal({
         side="bottom"
         showCloseButton={false}
         overlayClassName={SCRIM_CLASS}
-        className="max-h-[85vh] overflow-y-auto rounded-t-2xl pt-[10px] pr-4 pb-5 pl-4"
+        className={cn(
+          // M12: `FormularioEmpleado.dc.html:91` y `FormularioCliente.dc.html:43`
+          // dibujan la hoja sin borde superior; anula el `data-[side=bottom]:border-t`
+          // de `ui/sheet.tsx` con el mismo modificador para que tailwind-merge
+          // lo resuelva como el mismo grupo.
+          "max-h-[85vh] overflow-y-auto rounded-t-2xl pt-[10px] pr-4 pb-5 pl-4 data-[side=bottom]:border-t-0",
+          sheetClassName
+        )}
       >
         <div className="flex justify-center">
           <div data-testid="responsive-form-modal-grabber" className="h-1 w-9 rounded-full bg-grabber" />

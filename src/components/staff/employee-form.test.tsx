@@ -212,7 +212,7 @@ describe("EmployeeFormSheet", () => {
       fillMinimalValidForm()
       fireEvent.click(screen.getByRole("button", { name: "Crear empleado" }))
 
-      await waitFor(() => expect(toastError).toHaveBeenCalledWith("Error de conexion. Intentalo de nuevo."))
+      await waitFor(() => expect(toastError).toHaveBeenCalledWith("Error de conexión. Inténtalo de nuevo."))
     })
 
     it("only shows the access-account block and temporary password in create mode (D18)", () => {
@@ -297,5 +297,67 @@ describe("EmployeeFormSheet", () => {
       const closeButton = screen.getByRole("button", { name: "Cerrar" })
       expect(closeButton.className).toContain("border-border")
     })
+  })
+
+  // M11: FormularioEmpleado.dc.html:32-33 (`.in`/`.ph`) pide fondo blanco y
+  // placeholder `--muted-foreground-2` -- sin fijarlos el campo heredaba
+  // `bg-transparent` y el placeholder de otro token de `ui/input.tsx`.
+  // Un test por rama de ancho porque `inputClass` se recalcula por rama (D17).
+  describe("field background and placeholder color (M11)", () => {
+    it("gives fields a solid card background and the muted-foreground-2 placeholder on mobile", () => {
+      mockMatchMedia(false)
+      renderSheet(null)
+
+      expect(firstNameInput().className).toContain("bg-card")
+      expect(firstNameInput().className).toContain("placeholder:text-muted-foreground-2")
+    })
+
+    it("gives fields a solid card background and the muted-foreground-2 placeholder on desktop", () => {
+      mockMatchMedia(true)
+      renderSheet(null)
+
+      expect(firstNameInput().className).toContain("bg-card")
+      expect(firstNameInput().className).toContain("placeholder:text-muted-foreground-2")
+    })
+  })
+
+  // M12: el gap y la sombra del contenedor compartido vienen del consumidor
+  // porque los cuatro artboards los fijan distintos a proposito.
+  describe("container gap and shadow come from this consumer (M12)", () => {
+    it("passes the mobile sheet gap (12px) to the shared container", () => {
+      mockMatchMedia(false)
+      renderSheet(null)
+
+      const dialog = screen.getByRole("dialog", { name: "Nuevo empleado" })
+      expect(dialog.className).toContain("gap-3")
+      expect(dialog.className).not.toContain("gap-3.5")
+    })
+
+    it("passes the desktop dialog gap (14px) and its own shadow to the shared container", () => {
+      mockMatchMedia(true)
+      renderSheet(null)
+
+      const dialog = screen.getByTestId("responsive-form-modal-dialog")
+      expect(dialog.className).toContain("gap-3.5")
+      expect(dialog.className).toContain("shadow-[0_24px_60px_rgba(42,35,32,0.26)]")
+    })
+  })
+
+  // M1: la app escribe con ortografia correcta aunque los artboards no.
+  it("spells accented labels correctly (M1)", () => {
+    renderSheet(null)
+
+    expect(screen.getByText("Teléfono")).toBeInTheDocument()
+  })
+
+  // LOW: cada campo debe anunciarse con su etiqueta real, no como "en blanco".
+  it("wires every label to its field via htmlFor/id (LOW)", () => {
+    renderSheet(null)
+
+    expect(screen.getByLabelText("Nombre *")).toBeInTheDocument()
+    expect(screen.getByLabelText("Apellidos *")).toBeInTheDocument()
+    expect(screen.getByLabelText("Email *")).toBeInTheDocument()
+    expect(screen.getByLabelText("Teléfono")).toBeInTheDocument()
+    expect(screen.getByLabelText("Puesto")).toBeInTheDocument()
   })
 })

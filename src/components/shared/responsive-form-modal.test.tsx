@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react"
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -17,7 +18,10 @@ function mockMatchMedia(desktop: boolean) {
   })) as unknown as typeof window.matchMedia
 }
 
-function renderModal(onOpenChange: (open: boolean) => void) {
+function renderModal(
+  onOpenChange: (open: boolean) => void,
+  overrides: Partial<ComponentProps<typeof ResponsiveFormModal>> = {}
+) {
   return render(
     <ResponsiveFormModal
       open
@@ -25,6 +29,7 @@ function renderModal(onOpenChange: (open: boolean) => void) {
       title="Nuevo empleado"
       footer={<button type="button">Crear empleado</button>}
       closeButtonVariant="plain"
+      {...overrides}
     >
       <p>form fields</p>
     </ResponsiveFormModal>
@@ -91,5 +96,53 @@ describe("ResponsiveFormModal", () => {
     renderModal(vi.fn())
 
     expect(screen.getByRole("dialog", { name: "Nuevo empleado" })).toBeInTheDocument()
+  })
+
+  // M12: el contenedor unificaba gap y sombra que los cuatro artboards NO
+  // unifican; ahora vienen del consumidor via `dialogClassName`/`sheetClassName`.
+  describe("consumer-supplied gap and shadow overrides (M12)", () => {
+    it("merges sheetClassName into the mobile sheet, without the shared border-t (mobile branch)", () => {
+      mockMatchMedia(false)
+
+      renderModal(vi.fn(), { sheetClassName: "gap-3" })
+
+      const dialog = screen.getByRole("dialog", { name: "Nuevo empleado" })
+      expect(dialog.className).toContain("gap-3")
+      // tailwind-merge collapses the conflicting `data-[side=bottom]:border-t`
+      // from `ui/sheet.tsx` into this override -- only the `-0` variant
+      // should remain in the final class list.
+      expect(dialog.className).toContain("data-[side=bottom]:border-t-0")
+      expect(dialog.className).not.toMatch(/(?:^|\s)data-\[side=bottom\]:border-t(?!-0)/)
+    })
+
+    it("keeps the default gap-4 on the mobile sheet when no override is supplied (mobile branch)", () => {
+      mockMatchMedia(false)
+
+      renderModal(vi.fn())
+
+      const dialog = screen.getByRole("dialog", { name: "Nuevo empleado" })
+      expect(dialog.className).toContain("gap-4")
+    })
+
+    it("merges dialogClassName into the desktop dialog container (desktop branch)", () => {
+      mockMatchMedia(true)
+
+      renderModal(vi.fn(), {
+        dialogClassName: "gap-3.5 shadow-[0_24px_60px_rgba(42,35,32,0.26)]",
+      })
+
+      const dialog = screen.getByTestId("responsive-form-modal-dialog")
+      expect(dialog.className).toContain("gap-3.5")
+      expect(dialog.className).toContain("shadow-[0_24px_60px_rgba(42,35,32,0.26)]")
+    })
+
+    it("has no shadow on the desktop dialog when no override is supplied (desktop branch)", () => {
+      mockMatchMedia(true)
+
+      renderModal(vi.fn())
+
+      const dialog = screen.getByTestId("responsive-form-modal-dialog")
+      expect(dialog.className).not.toMatch(/shadow-/)
+    })
   })
 })

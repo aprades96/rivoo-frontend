@@ -140,6 +140,13 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
       onOpenChange={onOpenChange}
       title={isEditing ? "Editar cliente" : "Nuevo cliente"}
       closeButtonVariant="bordered"
+      // M12: el gap del contenedor viene del consumidor -- 20 en escritorio y
+      // 16 en movil (§1.8), distintos a proposito de los del formulario de
+      // empleado. La sombra de escritorio es la de
+      // `FormularioClienteDesktop.dc.html:164`; la hoja movil no lleva sombra
+      // propia (usa la de `ui/sheet.tsx`).
+      dialogClassName="gap-5 shadow-[0_18px_48px_rgba(42,35,32,0.28)]"
+      sheetClassName="gap-4"
       footer={
         <Button
           size="2xl"
@@ -155,8 +162,9 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-2.5">
           <div className="flex flex-col gap-1.5">
-            <Label className={LABEL_CLASS}>Nombre *</Label>
+            <Label className={LABEL_CLASS} htmlFor="client-first-name">Nombre *</Label>
             <Input
+              id="client-first-name"
               className={FIELD_CLASS}
               value={form.firstName}
               onChange={(e) => update("firstName", e.target.value)}
@@ -164,8 +172,9 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className={LABEL_CLASS}>Apellidos *</Label>
+            <Label className={LABEL_CLASS} htmlFor="client-last-name">Apellidos *</Label>
             <Input
+              id="client-last-name"
               className={FIELD_CLASS}
               value={form.lastName}
               onChange={(e) => update("lastName", e.target.value)}
@@ -174,8 +183,9 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Email</Label>
+          <Label className={LABEL_CLASS} htmlFor="client-email">Email</Label>
           <Input
+            id="client-email"
             className={FIELD_CLASS}
             type="email"
             value={form.email}
@@ -184,8 +194,9 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Telefono</Label>
+          <Label className={LABEL_CLASS} htmlFor="client-phone">Teléfono</Label>
           <Input
+            id="client-phone"
             className={FIELD_CLASS}
             type="tel"
             value={form.phone}
@@ -194,8 +205,9 @@ export function ClientFormSheet({ open, onOpenChange, client }: ClientFormSheetP
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className={LABEL_CLASS}>Notas</Label>
+          <Label className={LABEL_CLASS} htmlFor="client-notes">Notas</Label>
           <Textarea
+            id="client-notes"
             className={NOTES_CLASS}
             value={form.notes}
             onChange={(e) => update("notes", e.target.value)}

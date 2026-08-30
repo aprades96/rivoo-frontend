@@ -287,4 +287,46 @@ describe("ClientFormSheet", () => {
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
     expect(toastSuccess).toHaveBeenCalledWith("Cliente creado")
   })
+
+  // M12: el gap y la sombra del contenedor compartido vienen del consumidor
+  // porque los cuatro artboards los fijan distintos a proposito. Un test por
+  // rama de ancho porque el contenedor branchea por ancho (D17).
+  describe("container gap and shadow come from this consumer (M12)", () => {
+    it("passes the mobile sheet gap (16px) to the shared container", () => {
+      mockMatchMedia(false)
+      renderSheet(null)
+
+      const dialog = screen.getByRole("dialog", { name: "Nuevo cliente" })
+      expect(dialog.className).toContain("gap-4")
+    })
+
+    it("passes the desktop dialog gap (20px) and its own shadow to the shared container", () => {
+      mockMatchMedia(true)
+      renderSheet(null)
+
+      const dialog = screen.getByTestId("responsive-form-modal-dialog")
+      expect(dialog.className).toContain("gap-5")
+      expect(dialog.className).toContain("shadow-[0_18px_48px_rgba(42,35,32,0.28)]")
+    })
+  })
+
+  // M1: la app escribe con ortografia correcta aunque los artboards no.
+  it("spells accented labels correctly (M1)", () => {
+    mockMatchMedia(false)
+    renderSheet(null)
+
+    expect(screen.getByText("Teléfono")).toBeInTheDocument()
+  })
+
+  // LOW: cada campo debe anunciarse con su etiqueta real, no como "en blanco".
+  it("wires every label to its field via htmlFor/id (LOW)", () => {
+    mockMatchMedia(false)
+    renderSheet(null)
+
+    expect(screen.getByLabelText("Nombre *")).toBeInTheDocument()
+    expect(screen.getByLabelText("Apellidos *")).toBeInTheDocument()
+    expect(screen.getByLabelText("Email")).toBeInTheDocument()
+    expect(screen.getByLabelText("Teléfono")).toBeInTheDocument()
+    expect(screen.getByLabelText("Notas")).toBeInTheDocument()
+  })
 })
