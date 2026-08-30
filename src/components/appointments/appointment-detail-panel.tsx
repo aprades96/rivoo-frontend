@@ -119,8 +119,10 @@ export function AppointmentDetailPanel({ appointment, onClose }: AppointmentDeta
 
   const handleReschedule = () => {
     // D6: "Reprogramar" solo se dibuja aqui -- si esta tarea no lo cablea, no
-    // lo cablea nadie. Limitacion conocida (`calendar/page.tsx:238-252`): el
-    // asistente de /appointments/new todavia no lee estos parametros.
+    // lo cablea nadie. El asistente de /appointments/new YA lee `date`,
+    // `time` y `employeeId` (la pagina los siembra, el paso 1 los resuelve);
+    // `rescheduleId` se sigue ignorando porque ningun artboard dibuja una
+    // variante de reprogramacion (deuda anotada, no un olvido).
     const date = appointment.startTime.slice(0, 10)
     const time = appointment.startTime.slice(11, 16)
     const params = new URLSearchParams({

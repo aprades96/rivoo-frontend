@@ -281,11 +281,11 @@ export default function CalendarPage() {
    * Pulsar la rejilla lleva al alta con el dia, la hora y -- si se sabe -- el
    * profesional de la franja pulsada.
    *
-   * LIMITE CONOCIDO: el asistente de `/appointments/new` todavia no lee estos
-   * parametros (hace `reset()` al montar y arranca siempre en el paso 1), asi
-   * que hoy la hora llega a la URL pero no al formulario. Prerrellenarlo es
-   * del asistente, no de esta pantalla; lo que aqui se cierra es el otro
-   * extremo: que la intencion viaje en la navegacion en vez de perderse.
+   * El asistente de `/appointments/new` YA lee estos parametros: la pagina
+   * los siembra en el store al montar (`date`, `time`, `employeeId`) y el
+   * paso 1 los resuelve en cuanto `useEmployees` responde. `rescheduleId`
+   * sigue ignorandose a proposito -- ningun artboard dibuja una variante de
+   * reprogramacion (deuda anotada, no un olvido).
    */
   const openNewAppointment = (time: string, employeeId: string | null) => {
     const params = new URLSearchParams({ date: dateStr, time })
