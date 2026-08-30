@@ -3,7 +3,7 @@
 import { ChevronRight, Users } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
-import { BookingSummaryAside, type BookingSummaryRow } from "@/components/booking/booking-summary-aside"
+import { WizardSummaryAside, type WizardSummaryRow } from "@/components/wizard/wizard-summary-aside"
 import { UnavailableNotice } from "@/components/booking/unavailable-notice"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency, initials } from "@/lib/utils/format"
@@ -126,7 +126,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
     </p>
   )
 
-  const summaryRows: BookingSummaryRow[] = [
+  const summaryRows: WizardSummaryRow[] = [
     {
       label: "Servicio",
       value: selectedService?.name,
@@ -145,7 +145,7 @@ export function PublicEmployeeStep({ salon }: PublicEmployeeStepProps) {
   // este paso no tiene un "seleccionar y luego confirmar", asi que el CTA del
   // aside nunca se habilita aqui -- coincide con
   // `design/ReservaDesktopPaso2.dc.html:109`, donde ya sale apagado.
-  const aside = <BookingSummaryAside rows={summaryRows} ctaLabel="Continuar" ctaDisabled />
+  const aside = <WizardSummaryAside rows={summaryRows} ctaLabel="Continuar" ctaDisabled />
 
   // El texto de ayuda del footer movil (`design/ReservaPaso2.dc.html:100-102`)
   // solo tiene sentido cuando la lista es utilizable: en los vacios (lista

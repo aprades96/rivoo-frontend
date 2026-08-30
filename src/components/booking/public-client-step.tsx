@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { addMinutes, format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
-import { BookingSummaryAside } from "@/components/booking/booking-summary-aside"
+import { WizardSummaryAside } from "@/components/wizard/wizard-summary-aside"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -77,7 +77,7 @@ export function PublicClientStep({ salon }: PublicClientStepProps) {
       subtitle="Solo para gestionar esta reserva."
       onBack={prevStep}
       aside={
-        <BookingSummaryAside
+        <WizardSummaryAside
           rows={[
             {
               label: "Servicio",

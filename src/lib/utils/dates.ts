@@ -4,6 +4,11 @@ import { capitalizeFirst } from "./format"
 
 const TIMEZONE = "Europe/Madrid"
 
+// Corte manana/tarde: el artboard reparte los huecos por hora sin un limite
+// explicito en el marcado; 14:00 es el corte de mediodia habitual y coincide
+// con el hueco entre 11:30 y 16:00 que muestran ambos artboards.
+export const AFTERNOON_HOUR = 14
+
 export function formatTime(isoString: string): string {
   return format(parseISO(isoString), "HH:mm")
 }

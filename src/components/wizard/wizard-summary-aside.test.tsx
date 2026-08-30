@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
-import { BookingSummaryAside } from "./booking-summary-aside"
+import { WizardSummaryAside } from "./wizard-summary-aside"
 
-describe("BookingSummaryAside", () => {
+describe("WizardSummaryAside", () => {
   it("un valor ausente pinta el guion largo, no 'undefined' ni una cadena vacia", () => {
     render(
-      <BookingSummaryAside
+      <WizardSummaryAside
         rows={[{ label: "Profesional" }]}
         ctaLabel="Continuar"
       />
@@ -17,7 +17,7 @@ describe("BookingSummaryAside", () => {
 
   it("un valor presente no pinta el guion largo", () => {
     render(
-      <BookingSummaryAside
+      <WizardSummaryAside
         rows={[{ label: "Profesional", value: "Laura Martinez" }]}
         ctaLabel="Continuar"
       />
@@ -30,7 +30,7 @@ describe("BookingSummaryAside", () => {
   it("el CTA deshabilitado no dispara onClick", () => {
     const onCtaClick = vi.fn()
     render(
-      <BookingSummaryAside rows={[]} ctaLabel="Continuar" ctaDisabled onCtaClick={onCtaClick} />
+      <WizardSummaryAside rows={[]} ctaLabel="Continuar" ctaDisabled onCtaClick={onCtaClick} />
     )
 
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }))
@@ -41,7 +41,7 @@ describe("BookingSummaryAside", () => {
   it("el CTA habilitado si dispara onClick", () => {
     const onCtaClick = vi.fn()
     render(
-      <BookingSummaryAside rows={[]} ctaLabel="Continuar" onCtaClick={onCtaClick} />
+      <WizardSummaryAside rows={[]} ctaLabel="Continuar" onCtaClick={onCtaClick} />
     )
 
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }))
@@ -51,7 +51,7 @@ describe("BookingSummaryAside", () => {
 
   it("pinta la fila Total solo cuando se pasa (paso 5)", () => {
     render(
-      <BookingSummaryAside
+      <WizardSummaryAside
         rows={[{ label: "Servicio", value: "Corte + Tinte" }]}
         total="65,00 €"
         ctaLabel="Confirmar reserva"
@@ -64,7 +64,7 @@ describe("BookingSummaryAside", () => {
 
   it("sin total no pinta la fila Total", () => {
     render(
-      <BookingSummaryAside
+      <WizardSummaryAside
         rows={[{ label: "Servicio", value: "Corte + Tinte" }]}
         ctaLabel="Continuar"
       />
@@ -74,7 +74,7 @@ describe("BookingSummaryAside", () => {
   })
 
   it("pinta la nota de confianza con el literal exacto de escritorio", () => {
-    render(<BookingSummaryAside rows={[]} ctaLabel="Continuar" />)
+    render(<WizardSummaryAside rows={[]} ctaLabel="Continuar" />)
 
     expect(
       screen.getByText("Sin registro · cancela gratis hasta 24h antes")
@@ -83,7 +83,7 @@ describe("BookingSummaryAside", () => {
 
   it("acepta un body en vez de filas planas (paso 3)", () => {
     render(
-      <BookingSummaryAside
+      <WizardSummaryAside
         body={<p>Contenido rico del paso 3</p>}
         ctaLabel="Continuar"
         ctaHeight={48}
@@ -91,5 +91,20 @@ describe("BookingSummaryAside", () => {
     )
 
     expect(screen.getByText("Contenido rico del paso 3")).toBeInTheDocument()
+  })
+
+  it("con heading propio pinta ese texto en vez de 'Tu reserva'", () => {
+    render(<WizardSummaryAside rows={[]} ctaLabel="Continuar" heading="Nueva cita" />)
+
+    expect(screen.getByText("Nueva cita")).toBeInTheDocument()
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
+  })
+
+  it("con note={null} no pinta la nota de confianza", () => {
+    render(<WizardSummaryAside rows={[]} ctaLabel="Continuar" note={null} />)
+
+    expect(
+      screen.queryByText("Sin registro · cancela gratis hasta 24h antes")
+    ).not.toBeInTheDocument()
   })
 })

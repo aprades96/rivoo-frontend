@@ -8,13 +8,13 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
-import { BookingSummaryAside } from "@/components/booking/booking-summary-aside"
+import { WizardSummaryAside } from "@/components/wizard/wizard-summary-aside"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { appointmentsApi } from "@/lib/api/appointments"
 import { cn } from "@/lib/utils"
 import { formatCurrency, initials } from "@/lib/utils/format"
-import { formatDuration } from "@/lib/utils/dates"
+import { AFTERNOON_HOUR, formatDuration } from "@/lib/utils/dates"
 import type { AvailabilityResponse, AvailableSlot } from "@/types/appointment"
 import type { BusinessHoursResponse, SalonPublic } from "@/types/salon"
 
@@ -32,11 +32,6 @@ const MOBILE_STRIP_DAYS = 30
 // la tarea para la justificacion de "7 siguientes" frente a semana natural.
 const DESKTOP_WEEK_SIZE = 7
 const DESKTOP_WEEK_PAGES = 4 // 4 x 7 = 28 dias, horizonte similar al de la tira movil.
-
-// Corte manana/tarde: el artboard reparte los huecos por hora sin un limite
-// explicito en el marcado; 14:00 es el corte de mediodia habitual y coincide
-// con el hueco entre 11:30 y 16:00 que muestran ambos artboards.
-const AFTERNOON_HOUR = 14
 
 /**
  * Si `date` cae en un dia que el salon tiene cerrado, segun
@@ -221,7 +216,7 @@ export function PublicDateTimeStep({ salon }: PublicDateTimeStepProps) {
       subtitle={subtitleParts.join(" · ")}
       onBack={prevStep}
       aside={
-        <BookingSummaryAside
+        <WizardSummaryAside
           body={asideBody}
           ctaLabel="Continuar"
           ctaDisabled={!hasValidSelection}

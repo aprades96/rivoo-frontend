@@ -1,9 +1,23 @@
 import { cn } from "@/lib/utils"
 
-const STEP_LABELS = ["Servicio", "Profesional", "Fecha y hora", "Tus datos", "Confirmar"] as const
+const DEFAULT_STEP_LABELS = ["Servicio", "Profesional", "Fecha y hora", "Tus datos", "Confirmar"] as const
 
-interface BookingStepperProps {
+export interface WizardStepperProps {
   step: 1 | 2 | 3 | 4 | 5
+  /** Defaults to the public booking wizard's five labels. */
+  labels?: readonly string[]
+  /**
+   * Breakpoint from which the stepper becomes visible (`hidden` below it).
+   * Defaults to `"md"`, today's public booking behaviour.
+   */
+  visibleFrom?: "md" | "lg"
+}
+
+// Full, literal class strings per `visibleFrom` value -- Tailwind scans the
+// source and would not see `hidden ${bp}:flex` built at runtime.
+const VISIBLE_FROM_CLASSNAMES: Record<NonNullable<WizardStepperProps["visibleFrom"]>, string> = {
+  md: "hidden items-center gap-2 md:flex xl:gap-3.5",
+  lg: "hidden items-center gap-2 lg:flex xl:gap-3.5",
 }
 
 /**
@@ -16,15 +30,15 @@ interface BookingStepperProps {
  * their respective <style> blocks). D3 is the later artboard, so this uses
  * its `#7A6A5F` (== `text-muted-foreground`) for completed labels.
  */
-export function BookingStepper({ step }: BookingStepperProps) {
+export function WizardStepper({ step, labels = DEFAULT_STEP_LABELS, visibleFrom = "md" }: WizardStepperProps) {
   return (
     // `gap` y conectores mas cortos hasta `xl:`, y las etiquetas sin partir.
     // A 1024 —donde el aside ya ocupa 320px de los 1024— los cinco nodos no
     // caben: "Fecha y hora" y "Tus datos" partian en dos lineas y "Confirmar"
     // quedaba cortado contra el aside. Lo vio la comparacion visual; ningun
     // test lo habria visto, porque jsdom no hace layout.
-    <div className="hidden items-center gap-2 md:flex xl:gap-3.5">
-      {STEP_LABELS.map((label, index) => {
+    <div className={VISIBLE_FROM_CLASSNAMES[visibleFrom]}>
+      {labels.map((label, index) => {
         const stepNumber = index + 1
         const isActive = stepNumber === step
         const isCompleted = stepNumber < step

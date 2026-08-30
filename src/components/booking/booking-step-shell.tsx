@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BookingStepper } from "@/components/booking/booking-stepper"
+import { WizardStepper } from "@/components/wizard/wizard-stepper"
 import { BookingDesktopHeader, SalonMark } from "@/components/booking/booking-salon-header"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { formatTimeOfDay, getTodayBusinessHours } from "@/lib/utils/business-hours"
@@ -102,7 +102,7 @@ export function BookingStepShell({
       >
         <div className="flex min-w-0 flex-1 flex-col gap-[18px] md:gap-[26px]">
           <MobileProgress step={step} />
-          <BookingStepper step={step} />
+          <WizardStepper step={step} />
 
           {/*
             Los artboards de escritorio no dibujan boton de volver: confian en

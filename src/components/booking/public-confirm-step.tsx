@@ -7,7 +7,7 @@ import { addMinutes, format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { BookingStepShell } from "@/components/booking/booking-step-shell"
-import { BookingSummaryAside, type BookingSummaryRow } from "@/components/booking/booking-summary-aside"
+import { WizardSummaryAside, type WizardSummaryRow } from "@/components/wizard/wizard-summary-aside"
 import { appointmentsApi } from "@/lib/api/appointments"
 import { usePublicBookingStore } from "@/lib/stores/public-booking-store"
 import { formatCurrency } from "@/lib/utils/format"
@@ -188,7 +188,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
 
   const isSending = mutation.isPending || isCheckingConflict
 
-  const asideRows: BookingSummaryRow[] = [
+  const asideRows: WizardSummaryRow[] = [
     { label: "Servicio", value: selectedService?.name, detail: selectedService ? `${durationDisplay} · ${priceDisplay}` : undefined },
     { label: "Profesional", value: employeeName || undefined },
     { label: "Fecha y hora", value: startDate ? `${shortDateDisplay}, ${timeRangeDisplay}` : undefined },
@@ -203,7 +203,7 @@ export function PublicConfirmStep({ salon }: PublicConfirmStepProps) {
       onBack={prevStep}
       backDisabled={isSending}
       aside={
-        <BookingSummaryAside
+        <WizardSummaryAside
           rows={asideRows}
           total={priceDisplay}
           ctaLabel={isSending ? "Reservando..." : "Confirmar reserva"}

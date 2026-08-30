@@ -4,22 +4,29 @@ import { Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export interface BookingSummaryRow {
+export interface WizardSummaryRow {
   label: string
   /** `undefined`/`null`/`""` renders the `--text-placeholder` "—" instead. */
   value?: ReactNode
   /** Secondary line under the value, e.g. "1h 30min · 65,00 €" (step 2/4/5 "Servicio" row). */
   detail?: ReactNode
+  /**
+   * `"placeholder"` paints `value` with the empty-row style (14px, `#C4B5A6`,
+   * no bold -- `design/NuevaCitaDesktopPaso1.dc.html:125`) instead of the
+   * normal value style, for callers that need to show a literal like "Sin
+   * elegir" without it reading as a real value. Defaults to `"default"`.
+   */
+  valueTone?: "default" | "placeholder"
 }
 
-export interface BookingSummaryAsideProps {
+export interface WizardSummaryAsideProps {
   /**
    * Flat label/value rows (steps 2, 4 and 5:
    * `design/ReservaDesktopPaso2.dc.html:102-108`,
    * `design/ReservaDesktopPaso5.dc.html:85-93`). Mutually exclusive with
    * `body` -- pass one or the other, never both.
    */
-  rows?: BookingSummaryRow[]
+  rows?: WizardSummaryRow[]
   /**
    * Escape hatch for step 3's richer layout (service card + avatar row + time
    * block, `design/ReservaDesktopPaso3.dc.html:157-180`), which doesn't fit
@@ -35,7 +42,23 @@ export interface BookingSummaryAsideProps {
   onCtaClick?: () => void
   /** 46px everywhere except step 3, which asks for 48px (`ReservaDesktopPaso3.dc.html:182`). */
   ctaHeight?: 46 | 48
+  /** Card heading, top-left, uppercase/tracked. Defaults to "Tu reserva". */
+  heading?: string
+  /**
+   * Trust note under the CTA (lock icon + "Sin registro..." line). Defaults to
+   * that block; pass `null` to remove it entirely.
+   */
+  note?: ReactNode
 }
+
+const DEFAULT_NOTE = (
+  <div className="flex items-center justify-center gap-[7px]">
+    <Lock className="size-[13px] text-muted-foreground-2" aria-hidden="true" />
+    <span className="text-[11px] text-muted-foreground-2">
+      Sin registro &middot; cancela gratis hasta 24h antes
+    </span>
+  </div>
+)
 
 /**
  * Right-column card for booking steps 2-5: the booking summary plus the CTA
@@ -43,7 +66,7 @@ export interface BookingSummaryAsideProps {
  * chassis) owns width and position via its `aside` slot. Not wired to any
  * step yet; that is each step task's job.
  */
-export function BookingSummaryAside({
+export function WizardSummaryAside({
   rows,
   body,
   total,
@@ -51,11 +74,13 @@ export function BookingSummaryAside({
   ctaDisabled = false,
   onCtaClick,
   ctaHeight = 46,
-}: BookingSummaryAsideProps) {
+  heading = "Tu reserva",
+  note = DEFAULT_NOTE,
+}: WizardSummaryAsideProps) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-[22px]">
       <span className="text-xs font-semibold tracking-[0.06em] text-muted-foreground-2 uppercase">
-        Tu reserva
+        {heading}
       </span>
 
       {body ?? (
@@ -90,17 +115,12 @@ export function BookingSummaryAside({
         {ctaLabel}
       </Button>
 
-      <div className="flex items-center justify-center gap-[7px]">
-        <Lock className="size-[13px] text-muted-foreground-2" aria-hidden="true" />
-        <span className="text-[11px] text-muted-foreground-2">
-          Sin registro &middot; cancela gratis hasta 24h antes
-        </span>
-      </div>
+      {note}
     </div>
   )
 }
 
-function SummaryRow({ row }: { row: BookingSummaryRow }) {
+function SummaryRow({ row }: { row: WizardSummaryRow }) {
   const hasValue = row.value !== undefined && row.value !== null && row.value !== ""
 
   return (
@@ -108,7 +128,11 @@ function SummaryRow({ row }: { row: BookingSummaryRow }) {
       <span className="text-xs text-muted-foreground-2">{row.label}</span>
       <div className="flex flex-col items-end gap-0.5">
         {hasValue ? (
-          <span className="text-sm font-semibold">{row.value}</span>
+          row.valueTone === "placeholder" ? (
+            <span className="text-sm text-text-placeholder">{row.value}</span>
+          ) : (
+            <span className="text-sm font-semibold">{row.value}</span>
+          )
         ) : (
           <span className="text-sm text-text-placeholder">&mdash;</span>
         )}
