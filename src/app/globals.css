@@ -86,6 +86,8 @@
   --color-warning-soft: var(--warning-soft);
   --color-destructive-tint: var(--destructive-tint);
   --color-border-dashed: var(--border-dashed);
+  --color-border-dashed-strong: var(--border-dashed-strong);
+  --color-avatar-muted: var(--avatar-muted);
   --color-warning-text: var(--warning-text);
   --color-grabber: var(--grabber);
 
@@ -168,6 +170,8 @@
   --border-dashed: #d8c9b8; /* Calendario.dc.html:112 — borde discontinuo del hueco Libre . toca para crear */
   --warning-text: #5f4a28; /* DetalleCitaDesktop.dc.html:305 — cuerpo del recuadro de nota */
   --grabber: #d8c9b8; /* DetalleCita.dc.html:39 — asa de la hoja inferior */
+  --border-dashed-strong: #dcc9bb; /* NuevaCitaPaso4.dc.html:67, NuevaCitaDesktopPaso4.dc.html:78 — borde discontinuo de la tarjeta "Crear nuevo cliente" */
+  --avatar-muted: #f0eae3; /* NuevaCitaPaso1.dc.html:89, NuevaCitaDesktopPaso1.dc.html:113 — fondo del avatar del empleado que hoy no trabaja */
 }
 
 @layer base {

@@ -24,8 +24,25 @@ export function formatRelativeDay(isoString: string): string {
   return format(date, "EEEE d MMM", { locale: es })
 }
 
+// Con espacio bajo 60 min ("45 min"). La dibujan `DetalleEmpleadoDesktop.dc.html:245,255`
+// y `FormularioEmpleadoDesktop.dc.html`, en una pantalla ya construida
+// (`src/app/(app)/staff/[id]/page.tsx:240` -> `ServiceAssignment` ->
+// `src/components/staff/service-assignment.tsx:73`). No unificar con
+// `formatDurationTight`: cambiar el espacio aqui rompe esa pantalla.
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  return remaining > 0 ? `${hours}h ${remaining}min` : `${hours}h`
+}
+
+// Sin espacio bajo 60 min ("45min"). La dibujan los diez artboards del asistente
+// de nueva cita (`design/NuevaCita*.dc.html`) y los siete de la reserva publica.
+// Coincide con `formatDuration` desde 60 min en adelante. No unificar con
+// `formatDuration`: esa funcion ya tiene consumidores en produccion que exigen
+// el espacio (ver comentario alli).
+export function formatDurationTight(minutes: number): string {
+  if (minutes < 60) return `${minutes}min`
   const hours = Math.floor(minutes / 60)
   const remaining = minutes % 60
   return remaining > 0 ? `${hours}h ${remaining}min` : `${hours}h`

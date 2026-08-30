@@ -4,6 +4,7 @@ import {
   formatDate,
   formatDateShort,
   formatDuration,
+  formatDurationTight,
   formatTimeRange,
   formatDateLong,
   formatRelativeTime,
@@ -52,6 +53,18 @@ describe("formatDuration", () => {
   it("formats hours + minutes", () => {
     expect(formatDuration(90)).toBe("1h 30min")
     expect(formatDuration(75)).toBe("1h 15min")
+  })
+})
+
+describe("formatDurationTight", () => {
+  it("formats minutes under 60 without a space", () => {
+    expect(formatDurationTight(45)).toBe("45min")
+    expect(formatDurationTight(30)).toBe("30min")
+  })
+
+  it("matches formatDuration from 60 minutes up", () => {
+    expect(formatDurationTight(90)).toBe("1h 30min")
+    expect(formatDurationTight(120)).toBe("2h")
   })
 })
 
