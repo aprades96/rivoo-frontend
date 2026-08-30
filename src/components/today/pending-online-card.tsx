@@ -41,7 +41,14 @@ export function PendingOnlineCard({ appointments }: PendingOnlineCardProps) {
       data-testid="pending-online-card"
       className="flex flex-col gap-2 rounded-[10px] border border-(--color-warning-border) bg-(--color-warning-soft) p-4"
     >
-      <span className="text-[13px] leading-none font-semibold text-(--color-status-pending-text)">
+      {/* El artboard (design/HoyDesktop.dc.html:231) no declara line-height
+          aqui, asi que hereda el ~1.2 del contenedor -- caja de ~16px, no de
+          13px como dejaba `leading-none`. Es el caso inverso de la trampa
+          habitual: aqui falta alto, no sobra. `leading-tight` va DETRAS de
+          `text-[13px]` por convencion del repo (si esto pasara por `cn()`,
+          tailwind-merge borraria un `leading-*` escrito antes de un
+          `text-[Npx]`). */}
+      <span className="text-[13px] font-semibold leading-tight text-(--color-status-pending-text)">
         {title}
       </span>
       <span className="text-[12px] leading-normal text-muted-foreground">{body}</span>

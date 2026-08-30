@@ -60,6 +60,14 @@ describe("PendingOnlineCard", () => {
     ).toBeInTheDocument()
   })
 
+  it("titulo con leading-tight, no leading-none (design/HoyDesktop.dc.html:231 no declara line-height)", () => {
+    render(<PendingOnlineCard appointments={[makeAppointment()]} />)
+
+    const title = screen.getByText("1 reserva online sin confirmar")
+    expect(title).toHaveClass("leading-tight")
+    expect(title).not.toHaveClass("leading-none")
+  })
+
   it("con dos citas usa plural y las une con 'y'", () => {
     const appointments = [
       makeAppointment(),
