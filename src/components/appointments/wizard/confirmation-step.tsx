@@ -32,7 +32,7 @@ import type { Appointment } from "@/types/appointment"
 // dejaria las dos frases en el DOM a la vez.
 const DESKTOP_QUERY = "(min-width: 1024px)"
 
-const SUBMIT_ERROR_MESSAGE = "Error al crear la cita. Puede que el hueco ya no este disponible."
+const SUBMIT_ERROR_MESSAGE = "Error al crear la cita. Puede que el hueco ya no esté disponible."
 
 export function ConfirmationStep() {
   const router = useRouter()
@@ -52,6 +52,7 @@ export function ConfirmationStep() {
     newClientData,
     notes,
     setNotes,
+    selectClient,
     reset,
   } = useWizardStore()
 
@@ -85,8 +86,16 @@ export function ConfirmationStep() {
           },
           accessToken
         )
+        // Persistir YA en el store, antes de que el POST de la cita pueda
+        // fallar: `selectClient` fija `selectedClient` y limpia `newClientData`
+        // a la vez, asi que un reintento (mismo montaje o tras un remontaje
+        // via `selectDateTime`) recompone esta funcion con `selectedClient.id`
+        // ya puesto y el `if` de arriba se salta -- sin esto, cada reintento
+        // repite el `POST /api/v1/clients` y duplica al cliente. Una `ref`
+        // local no sobrevive al remontaje; el store si.
+        selectClient(createdClient)
         clientId = createdClient.id
-        clientName = `${newClientData.firstName} ${newClientData.lastName}`
+        clientName = `${createdClient.firstName} ${createdClient.lastName}`
       }
 
       // `employeeId` SIEMPRE de `selectedSlotEmployeeId` -- el dueno del hueco
@@ -109,6 +118,10 @@ export function ConfirmationStep() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] })
       queryClient.invalidateQueries({ queryKey: ["clients"] })
+      // Sin esto la cache de disponibilidad del empleado/dia sigue ofreciendo
+      // el hueco que esta cita acaba de ocupar hasta el proximo remontaje de
+      // `useWizardAvailability`.
+      queryClient.invalidateQueries({ queryKey: ["availability"] })
       toast.success("Cita creada correctamente")
       reset()
       router.push("/today")
@@ -200,7 +213,7 @@ export function ConfirmationStep() {
 
   const badge = isDesktop ? (
     <span className="shrink-0 rounded-full bg-status-pending-bg px-2.5 py-1 text-[11px] leading-tight font-semibold text-status-pending-text">
-      Se creara como Pendiente
+      Se creará como Pendiente
     </span>
   ) : (
     <span className="shrink-0 rounded-full bg-status-pending-bg px-[9px] py-[3px] text-[10px] leading-tight font-semibold whitespace-nowrap text-status-pending-text">
