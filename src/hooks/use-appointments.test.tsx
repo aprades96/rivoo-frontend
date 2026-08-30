@@ -284,6 +284,13 @@ describe("useTodayAppointments", () => {
 
     const { show } = renderTodayProbe(TODAY)
     expect(await screen.findByText("citas: 4")).toBeInTheDocument()
+    // `date` here is the SCREEN-level concept (D1): this test mocks the
+    // whole `@/lib/api/appointments` module (see `vi.mock` above), so
+    // `appointmentsApi.list` never runs and `date` reaches the mock as-is,
+    // by design -- it is what lets `differsOnlyByDate` and the day-borrowing
+    // this test exercises stay decoupled from the wire format. The
+    // translation of `date` into `startDate`/`endDate` is implemented and
+    // tested at the API layer, in `src/lib/api/appointments.test.ts`.
     expect(list.mock.calls[0][0]).toEqual({ date: TODAY, page: 0, size: 100 })
 
     show(TOMORROW)

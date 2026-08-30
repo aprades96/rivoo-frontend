@@ -102,6 +102,16 @@ export interface AvailabilityResponse {
   slots: AvailableSlot[]
 }
 
+/**
+ * `date` is a SCREEN-level concept: "show me this one day" (local
+ * calendar date, `YYYY-MM-DD`). It is NOT sent to the server as-is --
+ * `appointmentsApi.list` (`src/lib/api/appointments.ts`) translates it into
+ * `startDate`/`endDate`, the two instants the server actually understands,
+ * before building the request. `startDate`/`endDate` here document that
+ * server-side shape (a half-open UTC instant range); they are not meant to
+ * be filled in alongside `date` by a caller -- `date`, when present, wins
+ * and overwrites whatever `startDate`/`endDate` would have been sent.
+ */
 export interface AppointmentListParams {
   date?: string
   startDate?: string
