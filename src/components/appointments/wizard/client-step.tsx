@@ -11,8 +11,10 @@ import { NewAppointmentShell } from "./new-appointment-shell"
 import { WizardContextPills } from "./wizard-context-pills"
 import { useWizardNavigation } from "./use-wizard-navigation"
 import { getWizardSummaryCta, getWizardSummaryRows } from "./wizard-summary"
+import type { WizardSummaryState } from "./wizard-summary"
 import { WizardSummaryAside } from "@/components/wizard/wizard-summary-aside"
 import { useClients } from "@/hooks/use-clients"
+import { useEmployees } from "@/hooks/use-staff"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useWizardStore } from "@/lib/stores/wizard-store"
 import { initials } from "@/lib/utils/format"
@@ -48,6 +50,9 @@ export function ClientStep() {
   const { data, isLoading } = useClients(search)
   const clients = data?.content ?? []
 
+  const { data: employeesData } = useEmployees()
+  const employees = employeesData?.content ?? []
+
   const handleSelectClient = (client: Client) => {
     selectClient(client)
     nextStep()
@@ -59,8 +64,28 @@ export function ClientStep() {
     nextStep()
   }
 
-  const rows = getWizardSummaryRows(wizardState, 4)
-  const cta = getWizardSummaryCta(wizardState, 4)
+  // `slotEmployee` resuelto desde `selectedSlotEmployeeId` (el dueno del hueco
+  // elegido, no `selectedEmployee`): con "Sin preferencia" en cuanto hay hueco
+  // la cita ya tiene un profesional concreto, y `getProfessionalRow`
+  // (`wizard-summary.ts:108-113`) solo deja de decir "Sin preferencia" si se lo
+  // pasamos. Sin esto el aside nombraria a la persona en los pasos 3 y 5 y
+  // diria "Sin preferencia" en el 4, contradiciendose entre pantallas
+  // consecutivas del mismo asistente. Mismo patron que
+  // `datetime-step.tsx:240` y `confirmation-step.tsx:139-140`.
+  const slotEmployee =
+    employees.find((candidate) => candidate.id === wizardState.selectedSlotEmployeeId) ?? null
+  const summaryState: WizardSummaryState = {
+    selectedEmployee: wizardState.selectedEmployee,
+    anyEmployee: wizardState.anyEmployee,
+    selectedService: wizardState.selectedService,
+    selectedDate: wizardState.selectedDate,
+    selectedSlot: wizardState.selectedSlot,
+    selectedClient: wizardState.selectedClient,
+    newClientData,
+    slotEmployee,
+  }
+  const rows = getWizardSummaryRows(summaryState, 4)
+  const cta = getWizardSummaryCta(summaryState, 4)
   // `heading`/`note` defaults on `WizardSummaryAside` ("Tu reserva" + trust
   // note) belong to the PUBLIC booking flow. This is a salon-staff wizard for
   // a manually-created appointment: `NuevaCitaDesktopPaso4.dc.html:129` says

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { ClientStep } from "./client-step"
 import { useWizardStore } from "@/lib/stores/wizard-store"
 import { useClients } from "@/hooks/use-clients"
+import { useEmployees } from "@/hooks/use-staff"
 import type { Client } from "@/types/client"
 
 vi.mock("@/hooks/use-clients", () => ({ useClients: vi.fn() }))
@@ -76,6 +77,12 @@ describe("ClientStep", () => {
     useWizardStore.getState().reset({ step: 4 })
     mockMatchMedia(false)
     mockClients([makeClient()])
+    // El fichero no resetea mocks entre tests: sin re-sembrar aqui el valor por
+    // defecto, un `mockReturnValue` de cualquier test se filtraria a todos los
+    // siguientes.
+    vi.mocked(useEmployees).mockReturnValue({
+      data: { content: [] },
+    } as unknown as ReturnType<typeof useEmployees>)
   })
 
   afterEach(() => {
@@ -179,6 +186,28 @@ describe("ClientStep", () => {
     expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
     expect(screen.queryByText(/Sin registro/)).not.toBeInTheDocument()
     expect(screen.queryByText(/cancela gratis/)).not.toBeInTheDocument()
+  })
+
+  // Con "Sin preferencia" la cita YA tiene profesional en cuanto hay hueco: es
+  // el dueno del hueco (`selectedSlotEmployeeId`). Los pasos 3 y 5 lo nombran
+  // en su aside; si el 4 no lo hiciera, el asistente afirmaria "Sin
+  // preferencia" en una pantalla y el nombre en las dos de al lado.
+  it("con 'Sin preferencia' y hueco elegido el aside nombra al dueno del hueco", () => {
+    mockMatchMedia(true)
+    vi.mocked(useEmployees).mockReturnValue({
+      data: { content: [{ id: "emp_2", firstName: "Mia", lastName: "Soler" }] },
+    } as unknown as ReturnType<typeof useEmployees>)
+    useWizardStore.setState({
+      anyEmployee: true,
+      selectedEmployee: null,
+      selectedSlotEmployeeId: "emp_2",
+      selectedDate: "2026-08-28",
+      selectedSlot: "2026-08-28T11:00:00",
+    })
+    render(<ClientStep />)
+
+    expect(screen.getByText("Mia Soler")).toBeInTheDocument()
+    expect(screen.queryByText("Sin preferencia")).not.toBeInTheDocument()
   })
 
   describe("alta de cliente en linea", () => {
