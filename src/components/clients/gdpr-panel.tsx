@@ -72,7 +72,7 @@ export function GdprPanel({
 
   return (
     <>
-      <Card className="space-y-3 border border-warning-border bg-warning-soft p-4">
+      <Card className="space-y-3 border border-warning-border ring-0 bg-warning-soft p-4">
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-status-pending-text" />
           <h3 className="text-sm font-semibold text-status-pending-text">Protección de datos (GDPR)</h3>
@@ -126,9 +126,9 @@ export function GdprPanel({
           <DialogHeader>
             <DialogTitle>Anonimizar cliente</DialogTitle>
             <DialogDescription>
-              Se eliminaran todos los datos personales de {clientName}.
-              Sus citas se mantendran pero sin datos identificativos.
-              Esta accion no se puede deshacer.
+              Se eliminarán todos los datos personales de {clientName}.
+              Sus citas se mantendrán pero sin datos identificativos.
+              Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

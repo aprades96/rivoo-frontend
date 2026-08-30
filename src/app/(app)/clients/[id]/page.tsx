@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ClientFormSheet } from "@/components/clients/client-form"
 import { GdprPanel } from "@/components/clients/gdpr-panel"
-import { ClientAppointmentHistory } from "@/components/clients/client-appointment-history"
+import { ClientAppointmentHistory, HISTORY_PAGE_SIZE } from "@/components/clients/client-appointment-history"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
 import { PageShell } from "@/components/layout/page-shell"
@@ -29,11 +29,6 @@ import type { Client } from "@/types/client"
 // Sustituye a los dos `lg:hidden` de hoy (`:69`, `:76-86`), que dejaban dos
 // botones "Editar" a la vez en el DOM porque jsdom no aplica CSS.
 const DESKTOP_QUERY = "(min-width: 1024px)"
-
-// B3: el historial pide `size=7` por defecto (D24) -- una sola consulta
-// alimenta el footer del historial Y los dos KPIs (D36), asi que se declara
-// una sola vez y se comparte.
-const HISTORY_SIZE = 7
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -60,9 +55,18 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   // centimetros de "14 citas · 612,00 € facturados" en la misma pantalla.
   // Salen del RESUMEN del historial, que B3 ya carga para la cabecerilla:
   // la misma `queryKey` que `ClientAppointmentHistory` monta abajo, asi que
-  // esto sale gratis (una sola peticion en vuelo, no dos).
-  const { data: appointmentsPage, isError: appointmentsError } = useClientAppointments(id, {
-    size: HISTORY_SIZE,
+  // esto sale gratis (una sola peticion en vuelo, no dos). R4: `size` viene
+  // de `HISTORY_PAGE_SIZE`, IMPORTADA de `client-appointment-history.tsx`
+  // en vez de una copia local -- las dos peticiones solo comparten
+  // `queryKey` si `size` coincide de verdad, y dos constantes que coinciden
+  // por casualidad divergen en silencio en cuanto alguien toca una sin la
+  // otra.
+  const {
+    data: appointmentsPage,
+    isLoading: appointmentsLoading,
+    isError: appointmentsError,
+  } = useClientAppointments(id, {
+    size: HISTORY_PAGE_SIZE,
   })
   const summary = appointmentsPage?.summary
 
@@ -97,18 +101,19 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const fullName = `${client.firstName} ${client.lastName}`
   const clientSince = `Cliente desde ${formatDate(client.createdAt)}`
   const isOnlineBooking = client.source === "ONLINE_BOOKING"
-  // D38, aplicado a los KPIs (F2): si el historial esta en error, los dos
-  // numeros de aqui derivan de su `summary` y no pueden pintar cifras
-  // reales -- un "Visitas 0" ahi mismo se leeria como un dato ("el cliente
-  // nunca ha venido"), no como un fallo de red. Se reusa "—" (D21), el mismo
-  // valor vacio que ya usa una fecha ausente: no hace falta inventar un
-  // tercer tratamiento visual para el mismo problema.
-  const visits = appointmentsError ? "—" : (summary?.completedCount ?? 0)
-  const lastVisit = appointmentsError
-    ? "—"
-    : summary?.lastCompletedAt
-      ? formatDate(summary.lastCompletedAt)
-      : "—"
+  // D38, aplicado a los KPIs (F2 + R1): los dos numeros de aqui derivan del
+  // `summary` del historial y NO pueden pintar cifras reales mientras ese
+  // resumen no exista -- ni en error (F2) ni, el hueco que R1 cierra aqui,
+  // mientras la peticion sigue en vuelo. Sin `appointmentsLoading`,
+  // `summary` es `undefined` durante toda esa ventana y `summary?.
+  // completedCount ?? 0` pintaba "Visitas 0" como si el cliente nunca
+  // hubiera venido, en vez de "todavia no lo sabemos". Se reusa "—" (D21),
+  // el mismo valor vacio que ya usa una fecha ausente: no hace falta
+  // inventar un tercer tratamiento visual para el mismo problema.
+  const hasVisitsSummary = !appointmentsLoading && !appointmentsError
+  const visits = hasVisitsSummary ? (summary?.completedCount ?? 0) : "—"
+  const lastVisit =
+    hasVisitsSummary && summary?.lastCompletedAt ? formatDate(summary.lastCompletedAt) : "—"
 
   return (
     <PageShell
@@ -143,7 +148,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
         <div className="flex gap-6">
           {/* §1.7 DetalleClienteDesktop:100 -- columna izquierda FIJA 400px. */}
           <div className="flex w-[400px] shrink-0 flex-col gap-4">
-            <Card className="gap-4 border border-border p-5">
+            <Card className="gap-4 border border-border ring-0 p-5">
               <div className="flex items-center gap-3.5">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="text-xl font-bold">
@@ -263,7 +268,7 @@ function ClientKpis({ visits, lastVisit, isDesktop }: ClientKpisProps) {
     <div className={cn("grid grid-cols-2", isDesktop ? "gap-3" : "gap-2.5")}>
       <Card
         className={cn(
-          "gap-0.5 rounded-[10px] border border-border",
+          "gap-0.5 rounded-[10px] border border-border ring-0",
           isDesktop ? "px-4 py-3.5" : "px-3.5 py-3"
         )}
       >
@@ -272,7 +277,7 @@ function ClientKpis({ visits, lastVisit, isDesktop }: ClientKpisProps) {
       </Card>
       <Card
         className={cn(
-          "gap-0.5 rounded-[10px] border border-border",
+          "gap-0.5 rounded-[10px] border border-border ring-0",
           isDesktop ? "px-4 py-3.5" : "px-3.5 py-3"
         )}
       >

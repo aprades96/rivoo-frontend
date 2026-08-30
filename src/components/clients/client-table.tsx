@@ -65,7 +65,7 @@ export function ClientTable({ clients, totalElements, pageSize }: ClientTablePro
       header: "Última visita",
       width: "150px",
       cell: (client) => (
-        <span className="text-[13px] tabular-nums text-muted-foreground">
+        <span className="text-[13px] leading-none tabular-nums text-muted-foreground">
           {client.lastVisitAt ? formatDate(client.lastVisitAt) : "—"}
         </span>
       ),
@@ -121,7 +121,7 @@ function ContactCell({ client }: { client: Client }) {
   if (client.email && client.phone) {
     return (
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-[13px]">{client.email}</span>
+        <span className="truncate text-[13px] leading-tight">{client.email}</span>
         <span className="truncate text-xs tabular-nums text-muted-foreground-2">
           {formatPhone(client.phone)}
         </span>
@@ -132,15 +132,15 @@ function ContactCell({ client }: { client: Client }) {
   if (client.phone) {
     return (
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-[13px] tabular-nums">{formatPhone(client.phone)}</span>
+        <span className="truncate text-[13px] leading-tight tabular-nums">{formatPhone(client.phone)}</span>
         <span className="text-xs text-muted-foreground-2">Sin correo</span>
       </div>
     )
   }
 
   if (client.email) {
-    return <span className="truncate text-[13px]">{client.email}</span>
+    return <span className="truncate text-[13px] leading-tight">{client.email}</span>
   }
 
-  return <span className="text-[13px] text-muted-foreground-2">Sin contacto</span>
+  return <span className="text-[13px] leading-tight text-muted-foreground-2">Sin contacto</span>
 }

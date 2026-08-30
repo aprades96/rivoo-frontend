@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { ClientAppointmentHistory } from "./client-appointment-history"
+import { ClientAppointmentHistory, HISTORY_PAGE_SIZE } from "./client-appointment-history"
 import { useClientAppointments } from "@/hooks/use-clients"
 import type { ClientAppointment, ClientAppointmentsPage } from "@/types/client"
 
@@ -64,6 +64,19 @@ describe("ClientAppointmentHistory", () => {
 
     expect(document.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
     expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  })
+
+  // R4 (residuo de auditoria): `clients/[id]/page.tsx` importa esta misma
+  // `HISTORY_PAGE_SIZE` para su propia llamada a `useClientAppointments` --
+  // dos constantes locales que solo coincidian por casualidad (7 y 7) se
+  // desincronizarian en silencio en cuanto alguien tocase una sin la otra,
+  // rompiendo el `queryKey` compartido sin que ningun test lo notara.
+  it("R4: pide el historial con HISTORY_PAGE_SIZE", () => {
+    mockAppointments({ data: makePage(SEVEN_APPOINTMENTS) })
+
+    render(<ClientAppointmentHistory clientId="cli_1" isDesktop />)
+
+    expect(useClientAppointmentsMock).toHaveBeenCalledWith("cli_1", { size: HISTORY_PAGE_SIZE })
   })
 
   // D38: el endpoint SI propaga el fallo -- "sin citas" y "no se pudo
@@ -189,6 +202,18 @@ describe("ClientAppointmentHistory", () => {
       render(<ClientAppointmentHistory clientId="cli_1" isDesktop={false} />)
 
       expect(screen.queryByText("Ver todas")).not.toBeInTheDocument()
+    })
+
+    // #17 (residuo de auditoria): `text-[10px]` sin `leading-*` propio
+    // hereda el `line-height: 1.5` de preflight, donde el artboard dibuja
+    // ~1.2.
+    it("#17: el badge de estado de cada fila declara su propio leading-*", () => {
+      mockAppointments({ data: makePage(SEVEN_APPOINTMENTS) })
+
+      render(<ClientAppointmentHistory clientId="cli_1" isDesktop={false} />)
+
+      const badge = screen.getAllByText("Completada")[0]
+      expect(badge.className).toMatch(/text-\[10px\] leading-\S+/)
     })
   })
 })

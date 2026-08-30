@@ -37,6 +37,13 @@ describe("ClientCard", () => {
     expect(screen.getByText("visitas")).toBeInTheDocument()
   })
 
+  // #17 (residuo de auditoria): `text-[10px]` sin `leading-*` propio hereda
+  // el `line-height: 1.5` de preflight, donde el artboard dibuja ~1.2.
+  it("#17: la etiqueta 'visitas' declara su propio leading-*", () => {
+    render(<ClientCard client={mockClient} index={0} />)
+    expect(screen.getByText("visitas").className).toMatch(/text-\[10px\] leading-\S+/)
+  })
+
   it("shows 'Sin contacto' when no phone or email", () => {
     const noContact = { ...mockClient, email: null, phone: null }
     render(<ClientCard client={noContact} index={0} />)

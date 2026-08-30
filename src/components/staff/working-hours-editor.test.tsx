@@ -143,6 +143,18 @@ describe("WorkingHoursEditor", () => {
     expect(daySwitches().some((s) => s.getAttribute("aria-disabled") === "true")).toBe(false)
   })
 
+  // #17 (audit residue, block 6): a `text-[Npx]` without its own `leading-*`
+  // inherits preflight's `line-height: 1.5`, where the artboard draws no
+  // explicit value at all for this flex-centered control -- an explicit
+  // `leading-*` removes that mismatch instead of leaving it to chance.
+  it("#17: each time input declares its own leading-*", () => {
+    const { timeInputs } = renderEditor(serverHours)
+
+    const inputs = timeInputs()
+    expect(inputs.length).toBeGreaterThan(0)
+    expect(inputs.every((i) => /text-\[13px\] leading-\S+/.test(i.className))).toBe(true)
+  })
+
   it("shows the internal save button by default", () => {
     const { getByRole } = renderEditor(serverHours)
 

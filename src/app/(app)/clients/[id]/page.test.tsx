@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import ClientDetailPage from "./page"
 import { useClientAppointments } from "@/hooks/use-clients"
+import { HISTORY_PAGE_SIZE } from "@/components/clients/client-appointment-history"
 import type { Client, ClientAppointmentsPage } from "@/types/client"
 
 const push = vi.fn()
@@ -41,6 +42,10 @@ vi.mock("@/components/clients/client-appointment-history", () => ({
   ClientAppointmentHistory: ({ clientId, isDesktop }: { clientId: string; isDesktop: boolean }) => (
     <div data-testid="appointment-history" data-client-id={clientId} data-desktop={String(isDesktop)} />
   ),
+  // R4: `page.tsx` importa `HISTORY_PAGE_SIZE` de este modulo (fuente unica
+  // compartida con `ClientAppointmentHistory`) -- el doble tiene que
+  // reexportarla o la importacion real revienta en tiempo de carga.
+  HISTORY_PAGE_SIZE: 7,
 }))
 
 /**
@@ -283,6 +288,45 @@ describe("ClientDetailPage", () => {
 
       expect(push).toHaveBeenCalledWith("/appointments/new?clientId=cli_42")
     })
+
+    // R3 (residuo de auditoria): `ui/card.tsx` fuerza `ring-1
+    // ring-foreground/10` -- anadir `border` sin anular ese ring pinta DOS
+    // lineas donde el artboard dibuja una (AGENTS.md:73-90). Las tres tarjetas
+    // de esta columna (perfil + los dos KPIs) tienen que anular el ring con
+    // `ring-0` explicito.
+    it("R3: la tarjeta de perfil y las dos de KPIs anulan el `ring` que impone `Card`", async () => {
+      mockMatchMedia(true)
+      getClientById.mockResolvedValue(makeClient())
+
+      renderPage()
+      await screen.findByRole("heading", { name: "Ana Garcia" })
+
+      const cards = document.querySelectorAll('[data-slot="card"]')
+      const relevantCards = [...cards].filter(
+        (card) => !card.closest('[data-testid="gdpr-panel"]')
+      )
+      expect(relevantCards.length).toBeGreaterThanOrEqual(3)
+      for (const card of relevantCards) {
+        expect(card.className).toMatch(/\bring-0\b/)
+        expect(card.className).not.toMatch(/\bring-1\b/)
+      }
+    })
+  })
+
+  // R4 (residuo de auditoria): antes de este arreglo, esta pantalla y
+  // `ClientAppointmentHistory` declaraban su PROPIA constante local, ambas
+  // en 7 por casualidad. Coincidian solo mientras nadie tocase una sin la
+  // otra -- si divergen, dejan de compartir `queryKey` y React Query las
+  // trata como DOS peticiones distintas, sin que ningun test lo notara. Con
+  // `HISTORY_PAGE_SIZE` importada desde una unica fuente, las dos SIEMPRE
+  // coinciden en tiempo de compilacion.
+  it("R4: pide el historial con `HISTORY_PAGE_SIZE`, la misma fuente que usa ClientAppointmentHistory", async () => {
+    getClientById.mockResolvedValue(makeClient({ id: "cli_1" }))
+
+    renderPage()
+    await screen.findAllByText("Ana Garcia")
+
+    expect(useClientAppointmentsMock).toHaveBeenCalledWith("cli_1", { size: HISTORY_PAGE_SIZE })
   })
 
   // D21: `formatDate`, no `toLocaleDateString` a mano -- el repo entero usa
@@ -339,6 +383,32 @@ describe("ClientDetailPage", () => {
         data: undefined,
         isLoading: false,
         isError: true,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useClientAppointments>)
+
+      renderPage()
+
+      const visitsCard = (await screen.findByText("Visitas")).closest('[data-slot="card"]')
+      const lastVisitCard = screen.getByText("Última visita").closest('[data-slot="card"]')
+      expect(visitsCard!.textContent).not.toContain("0")
+      expect(visitsCard!.textContent).toContain("—")
+      expect(lastVisitCard!.textContent).toContain("—")
+    })
+
+    // R1 (residuo de la auditoria final): la guarda de F2 solo miraba
+    // `appointmentsError`, asi que la VENTANA de carga (el cliente ya llego,
+    // el historial todavia esta en `isLoading`) se colaba por el mismo hueco
+    // que F2 cerro para el error -- `summary` es `undefined` y
+    // `summary?.completedCount ?? 0` pintaba "Visitas 0" como si fuera un
+    // dato real. D36: los dos KPIs SOLO existen una vez que el resumen del
+    // historial llega, sea porque fallo (F2) o porque todavia esta en vuelo
+    // (este caso).
+    it("R1: mientras el historial esta en isLoading, los KPIs NO pintan '0' -- todavia no hay resumen", async () => {
+      getClientById.mockResolvedValue(makeClient())
+      useClientAppointmentsMock.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
         refetch: vi.fn(),
       } as unknown as ReturnType<typeof useClientAppointments>)
 

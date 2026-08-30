@@ -54,7 +54,7 @@ export function ClientCard({ client, index }: ClientCardProps) {
         <span className="font-heading font-semibold tracking-display tabular-nums text-[20px] leading-[1.1]">
           {client.totalVisits}
         </span>
-        <span className="text-[10px] text-muted-foreground-2">visitas</span>
+        <span className="text-[10px] leading-tight text-muted-foreground-2">visitas</span>
       </div>
     </Link>
   )

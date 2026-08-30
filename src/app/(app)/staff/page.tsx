@@ -50,7 +50,20 @@ function employeesCounterText(
   if (totalElements === 0) return null
 
   const totalLabel = `${totalElements} empleado${totalElements !== 1 ? "s" : ""}`
-  if (!isDesktop) return totalLabel
+
+  // R2 (residuo de auditoria): `/staff/employees` pide una sola pagina de
+  // `EMPLOYEES_PAGE_SIZE` (arriba) sin paginacion real, igual que el caso de
+  // escritorio que `EmployeeTable` ya resuelve con su linea "Mostrando X de
+  // Y". En movil no hay esa linea (D8), pero "callar" no puede significar
+  // afirmar `totalElements` cuando `content.length` es menor -- el contador
+  // mentiria sobre cuantas tarjetas hay debajo de las que de verdad se
+  // pintan. Coincide con `totalLabel` en el caso normal (ningun salon supera
+  // el tope), asi que ningun test existente cambia.
+  if (!isDesktop) {
+    const shownCount = content.length
+    if (shownCount === totalElements) return totalLabel
+    return `${shownCount} empleado${shownCount !== 1 ? "s" : ""}`
+  }
 
   const hasInactiveInPage = content.some((employee) => !employee.isActive)
   const showsBreakdown = hasInactiveInPage || totalElements === content.length

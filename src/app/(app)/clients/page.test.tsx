@@ -110,6 +110,23 @@ describe("ClientsPage", () => {
     expect(screen.queryByText(/la lista pide/)).not.toBeInTheDocument()
   })
 
+  // R2 (residuo de auditoria): `/clients` pide una sola pagina de 50 sin
+  // paginacion real (D22, `PAGE_SIZE`). Con mas de 50 clientes, el backend
+  // sirve `totalElements: 248` pero `content` solo trae la pagina -- el
+  // contador de movil NO puede afirmar "248 clientes" cuando solo hay UNA
+  // tarjeta pintada debajo: eso es mentir sobre el recorte, no "callar" la
+  // linea "Mostrando X de Y" que el artboard de movil no dibuja.
+  it("R2: con mas clientes que los que trae la pagina, el contador de movil NO afirma el total recortado", async () => {
+    mockMatchMedia(false)
+    list.mockResolvedValue(makePage([makeClient()], 248))
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    expect(screen.queryByText("248 clientes")).not.toBeInTheDocument()
+    expect(screen.getByText("1 cliente")).toBeInTheDocument()
+  })
+
   it("en escritorio, pinta una tabla con las cinco columnas, formatDate, y la línea de paginacion FUERA de la tabla (D21, D22)", async () => {
     mockMatchMedia(true)
     list.mockResolvedValue(

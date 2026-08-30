@@ -79,6 +79,22 @@ describe("GdprPanel", () => {
     expect(card?.className).toMatch(/bg-warning-soft/)
   })
 
+  // R3 (residuo de auditoria): `ui/card.tsx` fuerza `ring-1
+  // ring-foreground/10` (AGENTS.md:73-90) -- anadir `border` sin anular ese
+  // ring pinta DOS lineas donde el artboard dibuja una. `ring-0` (ring-width
+  // 0) es el grupo de `tailwind-merge` que compite con `ring-1`: el ultimo en
+  // el string combinado gana y apaga la anchura del ring (visualmente
+  // invisible aunque el color siga declarado, igual que cualquier `ring-0`
+  // del repo).
+  it("R3: anula el `ring` que impone `Card` -- solo el borde propio se pinta", () => {
+    renderPanel()
+
+    const heading = screen.getByText("Protección de datos (GDPR)")
+    const card = heading.closest('[data-slot="card"]')
+    expect(card?.className).toMatch(/\bring-0\b/)
+    expect(card?.className).not.toMatch(/\bring-1\b/)
+  })
+
   it("exportar descarga un JSON con los datos y muestra un toast de exito", async () => {
     const user = userEvent.setup()
     const createObjectURL = vi.fn(() => "blob:mock-url")
@@ -114,6 +130,21 @@ describe("GdprPanel", () => {
     await user.click(screen.getByRole("button", { name: /Exportar datos/ }))
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("Error al exportar datos"))
+  })
+
+  // #16 (residuo de auditoria): el dialogo de una operacion IRREVERSIBLE es
+  // el peor sitio para que el texto vaya sin tilde -- "eliminaran",
+  // "mantendran" y "accion" sin acento se leen como un texto sin acabar de
+  // revisar, justo en la confirmacion mas delicada del panel.
+  it("#16: el aviso de anonimizacion lleva las tildes correctas", async () => {
+    const user = userEvent.setup()
+    renderPanel({ clientName: "Ana Garcia" })
+
+    await user.click(screen.getByRole("button", { name: "Anonimizar" }))
+
+    expect(
+      screen.getByText((_, element) => element?.textContent === "Se eliminarán todos los datos personales de Ana Garcia. Sus citas se mantendrán pero sin datos identificativos. Esta acción no se puede deshacer.")
+    ).toBeInTheDocument()
   })
 
   it("anonimizar con exito: cierra el dialogo, muestra un toast y llama a onAnonymized", async () => {

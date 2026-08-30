@@ -13,7 +13,15 @@ import type { ClientAppointment } from "@/types/client"
 // B3: el endpoint sirve `size=7` por defecto y ordena `startTime DESC`. Una
 // SOLA consulta alimenta los dos anchos (D24): escritorio pinta las 7 filas,
 // movil solo las 3 primeras.
-const HISTORY_PAGE_SIZE = 7
+//
+// R4 (residuo de auditoria): exportada porque `clients/[id]/page.tsx` pide su
+// PROPIA copia del historial (D36, para los KPIs) con la MISMA `queryKey` --
+// misma `size` incluida -- para que React Query trate las dos peticiones como
+// una sola en vuelo. Con dos constantes locales que solo COINCIDEN por
+// casualidad, cambiar una sin la otra las desincroniza en silencio: ningun
+// test lo nota porque hoy comparten valor, no fuente. Una sola fuente cierra
+// ese hueco.
+export const HISTORY_PAGE_SIZE = 7
 const MOBILE_VISIBLE_COUNT = 3
 
 // D25: el importe de una cita que no se cobro se atenua, en los DOS anchos --
@@ -209,7 +217,7 @@ function MobileHistoryRow({ appointment }: { appointment: ClientAppointment }) {
           {appointment.employeeName} &middot; {formatAppointmentPrice(appointment.price)}
         </p>
       </div>
-      <StatusBadge status={appointment.status as AppointmentStatus} className="mt-0.5 shrink-0 text-[10px]" />
+      <StatusBadge status={appointment.status as AppointmentStatus} className="mt-0.5 shrink-0 text-[10px] leading-tight" />
     </div>
   )
 }

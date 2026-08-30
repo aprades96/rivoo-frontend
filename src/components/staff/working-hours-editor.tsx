@@ -27,7 +27,7 @@ const DEFAULT_HOURS: WorkingHoursRequest[] = Array.from({ length: 7 }, (_, i) =>
 // widget) precisely so it keeps full keyboard support (typing digits,
 // arrow keys to step, Tab to move between the hour/minute segments).
 const TIME_INPUT_CLASS_NAME = cn(
-  "h-9 flex-1 rounded-lg border-border bg-card px-[10px] text-[13px] font-medium tabular-nums md:w-[92px] md:flex-none",
+  "h-9 flex-1 rounded-lg border-border bg-card px-[10px] text-[13px] leading-none font-medium tabular-nums md:w-[92px] md:flex-none",
   "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-clear-button]:hidden [&::-webkit-inner-spin-button]:hidden"
 )
 

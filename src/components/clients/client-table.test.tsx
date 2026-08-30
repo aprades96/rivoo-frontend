@@ -129,4 +129,24 @@ describe("ClientTable", () => {
     expect(within(table).queryByText(/Mostrando/)).not.toBeInTheDocument()
     expect(screen.getByText("Mostrando 2 de 248 · la lista pide 50 por página")).toBeInTheDocument()
   })
+
+  // #17 (residuo de auditoria): un `text-[Npx]` SIN `leading-*` propio hereda
+  // el `line-height: 1.5` de preflight, donde los artboards dibujan ~1.2 --
+  // AGENTS.md exige un `leading-*` explicito, escrito DESPUES del
+  // `text-[Npx]` (tailwind-merge borra el que va antes).
+  it("#17: las celdas 13px (última visita y contacto) declaran su propio leading-*", () => {
+    const { rerender } = render(
+      <ClientTable clients={[makeClient({ lastVisitAt: "2026-08-12T10:00:00Z" })]} totalElements={1} pageSize={50} />
+    )
+    expect(screen.getByText("12 ago 2026").className).toMatch(/text-\[13px\] leading-\S+/)
+    expect(screen.getByText("ana@test.com").className).toMatch(/text-\[13px\] leading-\S+/)
+
+    rerender(
+      <ClientTable clients={[makeClient({ email: null, phone: "612345678" })]} totalElements={1} pageSize={50} />
+    )
+    expect(screen.getByText("612 345 678").className).toMatch(/text-\[13px\] leading-\S+/)
+
+    rerender(<ClientTable clients={[makeClient({ email: null, phone: null })]} totalElements={1} pageSize={50} />)
+    expect(screen.getByText("Sin contacto").className).toMatch(/text-\[13px\] leading-\S+/)
+  })
 })

@@ -120,8 +120,18 @@ export default function ClientsPage() {
           <ClientTable clients={clients} totalElements={totalElements} pageSize={PAGE_SIZE} />
         ) : (
           <div className="flex flex-col gap-2">
+            {/* R2 (residuo de auditoria): `/clients` pide una sola pagina de
+                `PAGE_SIZE` (D22) sin paginacion real -- con mas clientes que
+                eso, `clients.length < totalElements` y esta linea NO puede
+                afirmar `totalElements` sin mentir sobre cuantas tarjetas hay
+                debajo de las que de verdad se pintan. `Clientes.dc.html` no
+                dibuja la linea "Mostrando X de Y" que si tiene el escritorio
+                (`ClientTable`) -- inventarla aqui incumpliria el artboard.
+                La salida menos inventiva: el contador afirma el numero que
+                se PUEDE mostrar (coincide con `totalElements` en el caso
+                normal, ningun salon con <=PAGE_SIZE clientes lo nota). */}
             <p className="text-xs text-muted-foreground">
-              {totalElements} cliente{totalElements !== 1 ? "s" : ""}
+              {clients.length} cliente{clients.length !== 1 ? "s" : ""}
             </p>
             {clients.map((client, index) => (
               <ClientCard key={client.id} client={client} index={index} />

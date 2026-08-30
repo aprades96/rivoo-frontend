@@ -423,5 +423,28 @@ describe("StaffPage", () => {
       expect(addButtons).toHaveLength(1)
       expect(screen.getByRole("tabpanel")).toContainElement(addButtons[0])
     })
+
+    // R2 (residuo de auditoria): con mas empleados que los que trae la
+    // pagina (tope de `EMPLOYEES_PAGE_SIZE`), el contador de movil NO puede
+    // afirmar "150 empleados" cuando solo hay 100 tarjetas pintadas debajo --
+    // eso es mentir sobre el recorte, no "callar" una linea que ningun
+    // artboard de movil dibuja.
+    it("R2: con mas empleados que los que trae la pagina, el contador de movil NO afirma el total recortado", () => {
+      const manyActive: Employee[] = Array.from({ length: 100 }, (_, i) => ({
+        ...laura,
+        id: `emp_${i}`,
+        firstName: `Empleado${i}`,
+      }))
+      useEmployeesMock.mockReturnValue({
+        data: { content: manyActive, totalElements: 150 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      const panel = screen.getByRole("tabpanel")
+      expect(panel).not.toHaveTextContent("150 empleados")
+      expect(panel).toHaveTextContent("100 empleados")
+    })
   })
 })
