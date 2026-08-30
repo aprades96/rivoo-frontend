@@ -11,6 +11,19 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}"],
     css: false,
     /**
+     * Pinned so date/timezone tests (e.g. src/lib/api/appointments.test.ts)
+     * are deterministic regardless of the runner's OS timezone (CI
+     * containers and GitHub Actions default to UTC). Europe/Madrid is the
+     * business timezone and, unlike UTC, has a non-zero and DST-shifting
+     * offset, so it can actually distinguish a correct local-time
+     * conversion from an incorrect fixed-UTC-offset one. Vitest applies
+     * `test.env` to `process.env` before test files run, so this also
+     * overrides any TZ already exported in the shell running the suite.
+     */
+    env: {
+      TZ: "Europe/Madrid",
+    },
+    /**
      * Por encima del `asyncUtilTimeout: 5000` de `src/test/setup.ts`, y ese es
      * todo el motivo. El defecto de Vitest son 5000 ms tambien, o sea el MISMO
      * numero: una prueba que agote el presupuesto de su `findBy*` expira en el
