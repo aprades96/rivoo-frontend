@@ -4,7 +4,7 @@ import { useCallback } from "react"
 import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query"
 import { staffApi } from "@/lib/api/staff"
 import { useAuth } from "@/hooks/use-auth"
-import type { Employee, WorkingHoursResponse } from "@/types/employee"
+import type { Employee, WorkingHoursResponse, EmployeeServiceResponse } from "@/types/employee"
 import type { ServiceOffering } from "@/types/service"
 import type { Page } from "@/types/api"
 
@@ -99,5 +99,55 @@ export function useEmployeeServices(employeeId: string | undefined) {
     queryKey: ["employee-services", employeeId],
     queryFn: () => staffApi.getEmployeeServices(employeeId!, accessToken!),
     enabled: isAuthenticated && !!accessToken && !!employeeId,
+  })
+}
+
+/**
+ * Gemelo exacto de `useEmployeesWorkingHours` (arriba): mismo `useQueries`,
+ * mismo `combine` MEMORIZADO con `useCallback` y las mismas trampas.
+ *
+ * `queryKey` replica EXACTAMENTE la de `useEmployeeServices` (arriba) para
+ * compartir cache con el paso 2 del asistente de nueva cita: al elegir varios
+ * empleados aqui, el paso de servicio de cada uno individual ya esta cargado.
+ *
+ * Un empleado cuya peticion falla simplemente no aparece en el mapa, igual
+ * que en `useEmployeesWorkingHours`: degrada a "ese empleado no tiene
+ * servicios listados" en vez de tumbar la pantalla entera. `isError` queda
+ * expuesto por si la pantalla quiere avisar.
+ *
+ * `combine` va MEMORIZADO. `useQueries` cachea su resultado por
+ * `[results, combine]`, asi que con una flecha inline -- nueva en cada
+ * render -- ese memo fallaba SIEMPRE y `data` era un `Record` nuevo cada vez.
+ * `employeeIds` esta en las dependencias porque el mapa se indexa POR
+ * POSICION (`results[index]`): con una lista distinta y el `combine` viejo,
+ * cada empleado recibiria los servicios de otro.
+ */
+export function useEmployeesServices(employeeIds: string[]) {
+  const { accessToken, isAuthenticated } = useAuth()
+  const enabled = isAuthenticated && !!accessToken
+
+  const combine = useCallback(
+    (results: UseQueryResult<EmployeeServiceResponse[], Error>[]) => ({
+      data: employeeIds.reduce<Record<string, EmployeeServiceResponse[]>>(
+        (byEmployee, employeeId, index) => {
+          const services = results[index]?.data
+          if (services) byEmployee[employeeId] = services
+          return byEmployee
+        },
+        {}
+      ),
+      isLoading: results.some((result) => result.isLoading),
+      isError: results.some((result) => result.isError),
+    }),
+    [employeeIds]
+  )
+
+  return useQueries({
+    queries: employeeIds.map((employeeId) => ({
+      queryKey: ["employee-services", employeeId],
+      queryFn: () => staffApi.getEmployeeServices(employeeId, accessToken!),
+      enabled,
+    })),
+    combine,
   })
 }

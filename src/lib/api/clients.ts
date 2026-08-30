@@ -4,8 +4,11 @@ import type { Page } from "@/types/api"
 
 export const clientsApi = {
   list: (params: { page?: number; size?: number; search?: string }, token: string) => {
+    // `search` vacio se omite en vez de viajar como `search=`: el paso 4 del
+    // asistente ya no exige un minimo de caracteres (`useClients`) y sin este
+    // filtro cada tecla borrada mandaria un parametro vacio inutil.
     const qs = Object.entries(params)
-      .filter(([, v]) => v != null)
+      .filter(([, v]) => v != null && v !== "")
       .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
       .join("&")
     return apiFetch<Page<Client>>(`/api/v1/clients?${qs}`, { token })

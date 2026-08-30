@@ -84,7 +84,7 @@ describe("wizard-store", () => {
     // Set up all selections
     store.getState().selectEmployee(mockEmployee)
     store.getState().selectService(mockService)
-    store.getState().selectDateTime("2026-03-25", "10:00")
+    store.getState().selectDateTime("2026-03-25", "10:00", "emp_1")
 
     // Change employee → service, date, slot should reset
     const otherEmployee = { ...mockEmployee, id: "emp_2", firstName: "Maria" }
@@ -101,7 +101,7 @@ describe("wizard-store", () => {
     const store = useWizardStore
     store.getState().selectEmployee(mockEmployee)
     store.getState().selectService(mockService)
-    store.getState().selectDateTime("2026-03-25", "10:00")
+    store.getState().selectDateTime("2026-03-25", "10:00", "emp_1")
 
     const otherService = { ...mockService, id: "svc_2", name: "Tinte" }
     store.getState().selectService(otherService)
@@ -111,6 +111,37 @@ describe("wizard-store", () => {
     expect(state.selectedService?.id).toBe("svc_2")
     expect(state.selectedDate).toBeNull()
     expect(state.selectedSlot).toBeNull()
+  })
+
+  it("selectDateTime stores the slot's employee and does not clear the service", () => {
+    // Hueco resuelto con "Sin preferencia": el empleado del hueco no tiene
+    // por que ser el `selectedEmployee` (que sigue null en ese caso). El
+    // tercer argumento es OBLIGATORIO -- POST /appointments exige employeeId.
+    const store = useWizardStore
+    store.getState().selectService(mockService)
+    store.getState().selectDateTime("2026-03-25", "2026-03-25T10:00:00", "emp_1")
+
+    const state = store.getState()
+    expect(state.selectedSlotEmployeeId).toBe("emp_1")
+    expect(state.selectedDate).toBe("2026-03-25")
+    expect(state.selectedSlot).toBe("2026-03-25T10:00:00")
+    expect(state.selectedService?.id).toBe("svc_1")
+  })
+
+  it("selectDateTime clears any pending prefill preferences", () => {
+    const store = useWizardStore
+    store.getState().reset({
+      preferredEmployeeId: "emp_9",
+      preferredDate: "2026-03-25",
+      preferredSlot: "2026-03-25T09:00:00",
+    })
+
+    store.getState().selectDateTime("2026-03-25", "2026-03-25T09:00:00", "emp_9")
+
+    const state = store.getState()
+    expect(state.preferredEmployeeId).toBeNull()
+    expect(state.preferredDate).toBeNull()
+    expect(state.preferredSlot).toBeNull()
   })
 
   it("selectClient clears newClientData", () => {
@@ -145,7 +176,7 @@ describe("wizard-store", () => {
     expect(state.newClientData?.firstName).toBe("Nuevo")
   })
 
-  it("reset returns to initial state", () => {
+  it("reset() without a seed returns to initial state", () => {
     const store = useWizardStore
     store.getState().selectEmployee(mockEmployee)
     store.getState().selectService(mockService)
@@ -158,6 +189,29 @@ describe("wizard-store", () => {
     expect(state.selectedEmployee).toBeNull()
     expect(state.selectedService).toBeNull()
     expect(state.notes).toBe("")
+    expect(state.preferredEmployeeId).toBeNull()
+    expect(state.preferredDate).toBeNull()
+    expect(state.preferredSlot).toBeNull()
+    expect(state.selectedSlotEmployeeId).toBeNull()
+  })
+
+  it("reset(seed) merges the seed over the initial state, for prefill", () => {
+    const store = useWizardStore
+    store.getState().setStep(3)
+    store.getState().setNotes("dejar de lado")
+
+    store.getState().reset({
+      preferredEmployeeId: "emp_1",
+      preferredDate: "2026-03-25",
+      preferredSlot: "2026-03-25T10:00:00",
+    })
+
+    const state = store.getState()
+    expect(state.step).toBe(1)
+    expect(state.notes).toBe("")
+    expect(state.preferredEmployeeId).toBe("emp_1")
+    expect(state.preferredDate).toBe("2026-03-25")
+    expect(state.preferredSlot).toBe("2026-03-25T10:00:00")
   })
 
   it("anyEmployee flag works", () => {

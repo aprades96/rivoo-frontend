@@ -43,7 +43,7 @@ export function DateTimeStep() {
   const slots = data?.slots ?? []
 
   const handleSlotSelect = (slot: AvailableSlot) => {
-    selectDateTime(availabilityDate, `${availabilityDate}T${slot.startTime}`)
+    selectDateTime(availabilityDate, `${availabilityDate}T${slot.startTime}`, selectedEmployee?.id ?? "")
     nextStep()
   }
 

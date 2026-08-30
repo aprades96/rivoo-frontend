@@ -12,20 +12,33 @@ export interface WizardState {
   selectedService: ServiceOffering | null
   selectedDate: string | null
   selectedSlot: string | null
+  /** Empleado DUENO del hueco elegido en `selectDateTime`. `POST /appointments`
+   * exige `employeeId`; con "Sin preferencia" ese id no sale de
+   * `selectedEmployee` (sigue `null`) sino del hueco concreto que resolvio la
+   * disponibilidad agregada de varios empleados. */
+  selectedSlotEmployeeId: string | null
   selectedClient: Client | null
   newClientData: { firstName: string; lastName: string; email: string; phone: string } | null
   notes: string
+
+  /** Id del empleado a preseleccionar cuando el asistente arranca con un
+   * prefill. Vive aparte de `selectedEmployee` (que guarda el `Employee`
+   * ENTERO) porque la lista de empleados llega de forma asincrona: el id
+   * espera aqui hasta que la query resuelve y puede completarse el objeto. */
+  preferredEmployeeId: string | null
+  preferredDate: string | null
+  preferredSlot: string | null
 
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
   selectEmployee: (employee: Employee | null, any?: boolean) => void
   selectService: (service: ServiceOffering) => void
-  selectDateTime: (date: string, slot: string) => void
+  selectDateTime: (date: string, slot: string, employeeId: string) => void
   selectClient: (client: Client) => void
   setNewClientData: (data: WizardState["newClientData"]) => void
   setNotes: (notes: string) => void
-  reset: () => void
+  reset: (seed?: Partial<WizardState>) => void
 }
 
 const INITIAL_STATE = {
@@ -35,9 +48,13 @@ const INITIAL_STATE = {
   selectedService: null,
   selectedDate: null,
   selectedSlot: null,
+  selectedSlotEmployeeId: null,
   selectedClient: null,
   newClientData: null,
   notes: "",
+  preferredEmployeeId: null,
+  preferredDate: null,
+  preferredSlot: null,
 }
 
 export const useWizardStore = create<WizardState>((set) => ({
@@ -65,8 +82,17 @@ export const useWizardStore = create<WizardState>((set) => ({
       selectedSlot: null,
     }),
 
-  selectDateTime: (date, slot) =>
-    set({ selectedDate: date, selectedSlot: slot }),
+  selectDateTime: (date, slot, employeeId) =>
+    set({
+      selectedDate: date,
+      selectedSlot: slot,
+      selectedSlotEmployeeId: employeeId,
+      // La preferencia de prefill ya se ha consumido en cuanto el usuario
+      // elige explicitamente una fecha/hora.
+      preferredEmployeeId: null,
+      preferredDate: null,
+      preferredSlot: null,
+    }),
 
   selectClient: (client) =>
     set({ selectedClient: client, newClientData: null }),
@@ -76,5 +102,5 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   setNotes: (notes) => set({ notes }),
 
-  reset: () => set(INITIAL_STATE),
+  reset: (seed) => set({ ...INITIAL_STATE, ...seed }),
 }))

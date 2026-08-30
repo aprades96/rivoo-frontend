@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useEmployeesWorkingHours } from "./use-staff"
-import type { WorkingHoursResponse } from "@/types/employee"
+import { useEmployeesWorkingHours, useEmployeesServices } from "./use-staff"
+import type { WorkingHoursResponse, EmployeeServiceResponse } from "@/types/employee"
 
 const useAuthMock = vi.fn()
 
@@ -11,10 +11,12 @@ vi.mock("@/hooks/use-auth", () => ({
 }))
 
 const getWorkingHours = vi.fn()
+const getEmployeeServices = vi.fn()
 
 vi.mock("@/lib/api/staff", () => ({
   staffApi: {
     getWorkingHours: (...args: unknown[]) => getWorkingHours(...args),
+    getEmployeeServices: (...args: unknown[]) => getEmployeeServices(...args),
   },
 }))
 
@@ -143,5 +145,110 @@ describe("useEmployeesWorkingHours", () => {
 
     expect(getWorkingHours).not.toHaveBeenCalled()
     expect(screen.getByText("emp_1 abre a -")).toBeInTheDocument()
+  })
+})
+
+/** Los servicios de un empleado, distinguibles por cuantos tiene asignados. */
+function servicesOf(...serviceIds: string[]): EmployeeServiceResponse[] {
+  return serviceIds.map((serviceId) => ({
+    employeeId: "irrelevant",
+    serviceId,
+    customDurationMinutes: null,
+    customPrice: null,
+  }))
+}
+
+const SERVICES: Record<string, EmployeeServiceResponse[]> = {
+  emp_1: servicesOf("svc_1", "svc_2"),
+  emp_2: servicesOf("svc_3"),
+}
+
+/**
+ * Igual que `Probe` de arriba pero para servicios: escribe, por empleado, la
+ * lista de `serviceId` que le llego. Es lo asertable de verdad -- QUE
+ * servicios le tocan a QUE empleado, no cuantos han llegado.
+ */
+function ServicesProbe({ employeeIds }: { employeeIds: string[] }) {
+  const { data, isLoading, isError } = useEmployeesServices(employeeIds)
+
+  return (
+    <ul>
+      {employeeIds.map((employeeId) => (
+        <li key={employeeId}>
+          {`${employeeId}: ${data[employeeId]?.map((s) => s.serviceId).join(",") ?? "-"}`}
+        </li>
+      ))}
+      <li>{`cargando: ${isLoading}`}</li>
+      <li>{`error: ${isError}`}</li>
+    </ul>
+  )
+}
+
+function renderServicesProbe(employeeIds: string[]) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+
+  const tree = (ids: string[]) => (
+    <QueryClientProvider client={client}>
+      <ServicesProbe employeeIds={ids} />
+    </QueryClientProvider>
+  )
+
+  const { rerender } = render(tree(employeeIds))
+
+  return { show: (ids: string[]) => rerender(tree(ids)) }
+}
+
+describe("useEmployeesServices", () => {
+  beforeEach(() => {
+    useAuthMock.mockReset()
+    useAuthMock.mockReturnValue({ accessToken: "token", isAuthenticated: true })
+    getEmployeeServices.mockReset()
+    getEmployeeServices.mockImplementation((id: string) =>
+      SERVICES[id] ? Promise.resolve(SERVICES[id]) : Promise.reject(new Error("sin servicios"))
+    )
+  })
+
+  it("indexa por id los servicios de cada empleado", async () => {
+    renderServicesProbe(["emp_1", "emp_2"])
+
+    expect(await screen.findByText("emp_1: svc_1,svc_2")).toBeInTheDocument()
+    expect(screen.getByText("emp_2: svc_3")).toBeInTheDocument()
+    expect(screen.getByText("cargando: false")).toBeInTheDocument()
+    expect(screen.getByText("error: false")).toBeInTheDocument()
+  })
+
+  it("sigue dandole a cada empleado SUS servicios cuando la lista cambia de orden", async () => {
+    // Mismo riesgo que `useEmployeesWorkingHours`: el mapa se arma POR
+    // POSICION, asi que `combine` tiene que rehacerse cuando cambia
+    // `employeeIds`, o cada empleado recibe los servicios de otro.
+    const { show } = renderServicesProbe(["emp_1", "emp_2"])
+
+    expect(await screen.findByText("emp_1: svc_1,svc_2")).toBeInTheDocument()
+
+    show(["emp_2", "emp_1"])
+
+    // `findBy*`, no una afirmacion sincrona (AGENTS.md: `notifyManager`
+    // notifica en un macrotask).
+    expect(await screen.findByText("emp_2: svc_3")).toBeInTheDocument()
+    expect(await screen.findByText("emp_1: svc_1,svc_2")).toBeInTheDocument()
+  })
+
+  it("deja fuera del mapa al empleado cuya peticion falla, y lo avisa, sin tumbar al resto", async () => {
+    renderServicesProbe(["emp_1", "emp_roto"])
+
+    expect(await screen.findByText("error: true")).toBeInTheDocument()
+    expect(screen.getByText("emp_1: svc_1,svc_2")).toBeInTheDocument()
+    expect(screen.getByText("emp_roto: -")).toBeInTheDocument()
+  })
+
+  it("no pide nada sin sesion", () => {
+    useAuthMock.mockReturnValue({ accessToken: null, isAuthenticated: false })
+
+    renderServicesProbe(["emp_1"])
+
+    expect(getEmployeeServices).not.toHaveBeenCalled()
+    expect(screen.getByText("emp_1: -")).toBeInTheDocument()
   })
 })
