@@ -69,3 +69,60 @@ a local-midnight conversion agree when local == UTC.
 This has already happened here: mutating the conversion to a fixed `Z` offset failed on a
 Madrid machine and passed clean under `TZ=UTC` — in the one file guarding the fix that a
 whole block existed to deliver.
+
+# El primitivo `Card` no tiene borde: fija el color y sale de ancho cero
+
+`src/components/ui/card.tsx` fuerza `gap-4 rounded-xl py-4 ring-1 ring-foreground/10`
+y **no incluye ninguna clase `border`**. Escribir `border-warning-border` o
+`border-border` solo fija el COLOR: sin la utilidad `border`, el ancho sigue siendo
+`0` y el borde no se pinta. Lo que se ve es el `ring` gris, que no es el borde que
+pide ningun artboard.
+
+Y una clase de borde tampoco quita el `ring`: son grupos distintos de
+tailwind-merge.
+
+Esto ya paso aqui: en el bloque 6 los **cuatro** paneles de la ficha de cliente
+—perfil, dos KPIs y el bloque GDPR— salieron sin su borde. La trampa estaba
+escrita en el plan, en la seccion que los implementadores tenian orden de leer, y
+cayeron igual. Solo la caza comparar contra el artboard.
+
+**Regla:** con `Card`, escribe `border` **y** el color. Y si el diseno no pide
+`ring`, quitalo explicitamente.
+
+# Un `vi.fn()` que se monta y nunca se afirma no prueba nada — y el test de la capa de API tampoco lo salva
+
+Patron que dejo un fallo **en produccion durante meses** con su fichero de test en
+verde: `staff/[id]/page.tsx` mandaba `{ serviceIds }` a un endpoint que exige
+`{ services: [{ serviceId }] }`, asi que "Guardar servicios" devolvia **400**.
+
+Habia dos redes, y ninguna servia:
+
+1. En el test de la pantalla, `assignServices` era un `vi.fn()` reseteado en
+   `beforeEach` y **jamas afirmado**: nadie pulsaba el boton ni miraba el payload.
+2. El test de la capa de API **si** afirma el contrato, pero llama a
+   `staffApi.assignServices(id, { services: [{ serviceId }] }, token)` — **escribe
+   el cuerpo correcto a mano**. No puede detectar que la PANTALLA construya uno
+   malo.
+
+Se arreglo el bug, y una campana de mutacion demostro despues que **se podia
+reintroducir sin que cayera un solo test**.
+
+**Regla:** si una pantalla construye un payload, el test de la pantalla tiene que
+**ejecutar la accion desde la UI** y afirmar el payload REAL que recibio el doble.
+Afirmar el contrato en la capa de API es necesario y **no** es suficiente: cubre
+la funcion, no a su llamante.
+
+# La cobertura de escritorio puede afirmar el marco y no el contenido
+
+Variante peor de la trampa del ancho: la rama de escritorio **si** tiene test, y
+aun asi no protege nada.
+
+Paso en la ficha de empleado: el test se llamaba "lays out three fixed-width
+cards" y afirmaba los ROTULOS (`"Horario semanal"`, `"Servicios que realiza"`) mas
+la ausencia de `tablist`. Los rotulos son **hermanos** del contenido, no lo
+contienen: se podia vaciar la tarjeta del horario semanal entera —dejar el editor
+fuera de la pantalla— y el test seguia verde. Tampoco afirmaba ningun ancho, pese
+al nombre.
+
+**Regla:** afirma el CONTENIDO de cada region (los `switch`, el CTA, las filas),
+no su encabezado. Y comprueba mutando: vacia la region y mira si algo cae.
