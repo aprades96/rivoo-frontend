@@ -118,6 +118,14 @@ export function ConfirmationStep() {
     },
   })
 
+  // El profesional a mostrar en la tarjeta es SIEMPRE el resuelto en el hueco
+  // (`selectedSlotEmployeeId`), no "Sin preferencia": a estas alturas la cita
+  // ya tiene a alguien concreto asignado, tanto si se eligio a mano como si
+  // lo resolvio la disponibilidad agregada. Cae en `selectedEmployee` solo
+  // mientras `useEmployees` sigue en vuelo y la lista todavia no lo trae.
+  const resolvedEmployee =
+    employees.find((candidate) => candidate.id === selectedSlotEmployeeId) ?? selectedEmployee ?? null
+
   const summaryState: WizardSummaryState = {
     selectedEmployee,
     anyEmployee,
@@ -126,19 +134,16 @@ export function ConfirmationStep() {
     selectedSlot,
     selectedClient,
     newClientData,
+    // Con "Sin preferencia" el aside diria "Sin preferencia" mientras la
+    // tarjeta de al lado nombra a la persona que el hueco asigno. Pasarle el
+    // empleado ya resuelto es lo que evita que la pantalla se contradiga.
+    slotEmployee: resolvedEmployee,
   }
   const summaryRows = getWizardSummaryRows(summaryState, 5)
   const summaryTotal = getWizardSummaryTotal(summaryState, 5)
   const summaryCta = getWizardSummaryCta(summaryState, 5)
   const isSubmitDisabled = summaryCta.disabled || mutation.isPending
 
-  // El profesional a mostrar en la tarjeta es SIEMPRE el resuelto en el hueco
-  // (`selectedSlotEmployeeId`), no "Sin preferencia": a estas alturas la cita
-  // ya tiene a alguien concreto asignado, tanto si se eligio a mano como si
-  // lo resolvio la disponibilidad agregada. Cae en `selectedEmployee` solo
-  // mientras `useEmployees` sigue en vuelo y la lista todavia no lo trae.
-  const resolvedEmployee =
-    employees.find((candidate) => candidate.id === selectedSlotEmployeeId) ?? selectedEmployee ?? null
   const employeeName = resolvedEmployee ? `${resolvedEmployee.firstName} ${resolvedEmployee.lastName}` : ""
   const rawPaletteIndex = resolvedEmployee ? employeePaletteIndex(employees, resolvedEmployee.id) : -1
   const fallbackPaletteIndex = rawPaletteIndex === -1 ? 0 : rawPaletteIndex

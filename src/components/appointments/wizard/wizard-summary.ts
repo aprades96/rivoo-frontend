@@ -8,6 +8,7 @@ import { format, parseISO, addMinutes } from "date-fns"
 import { es } from "date-fns/locale"
 import { capitalizeFirst, formatCurrency } from "@/lib/utils/format"
 import { formatDurationTight } from "@/lib/utils/dates"
+import type { Employee } from "@/types/employee"
 import type { WizardState } from "@/lib/stores/wizard-store"
 import type { WizardSummaryRow } from "@/components/wizard/wizard-summary-aside"
 
@@ -20,7 +21,20 @@ export type WizardSummaryState = Pick<
   | "selectedSlot"
   | "selectedClient"
   | "newClientData"
->
+> & {
+  /**
+   * El empleado DUENO del hueco elegido, ya resuelto a objeto por quien tiene
+   * la lista (`useEmployees`). El store solo guarda su id
+   * (`selectedSlotEmployeeId`) y este modulo es puro, asi que no puede
+   * resolverlo por su cuenta.
+   *
+   * Solo lo pasa quien lo necesita: con "Sin preferencia", en cuanto hay hueco
+   * elegido la cita YA tiene profesional concreto, y decir "Sin preferencia"
+   * ahi seria negar lo que la propia pantalla muestra al lado (ver
+   * `getProfessionalRow`).
+   */
+  slotEmployee?: Employee | null
+}
 
 export interface WizardSummaryCta {
   label: string
@@ -85,6 +99,17 @@ function getProfessionalRow(state: WizardSummaryState, step: number): WizardSumm
   // vacio.
   if (step === 1 && !state.anyEmployee && !state.selectedEmployee) {
     return { label: "Profesional", value: "Sin elegir", valueTone: "placeholder" }
+  }
+  // "Sin preferencia" es cierto MIENTRAS no haya hueco: en cuanto lo hay, la
+  // cita tiene un profesional concreto y el aside tiene que nombrarlo. El paso
+  // 5 pinta ese nombre en su tarjeta (`NuevaCitaDesktopPaso5.dc.html`), asi que
+  // un aside que dijera "Sin preferencia" al lado se estaria contradiciendo
+  // consigo mismo en la misma pantalla.
+  if (state.anyEmployee && state.slotEmployee) {
+    return {
+      label: "Profesional",
+      value: `${state.slotEmployee.firstName} ${state.slotEmployee.lastName}`,
+    }
   }
   if (state.anyEmployee) {
     return { label: "Profesional", value: "Sin preferencia" }

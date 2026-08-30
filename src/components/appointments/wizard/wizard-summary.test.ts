@@ -124,6 +124,26 @@ describe("getWizardSummaryRows", () => {
     expect(row.valueTone).toBeUndefined()
   })
 
+  // REGRESION. "Sin preferencia" es cierto MIENTRAS no hay hueco. En cuanto lo
+  // hay, la cita tiene profesional concreto y el paso 5 lo NOMBRA en su
+  // tarjeta: un aside que siguiera diciendo "Sin preferencia" al lado se
+  // contradiria consigo mismo en la misma pantalla.
+  it('con "Sin preferencia" y hueco ya elegido, el aside nombra al profesional del hueco', () => {
+    const state: WizardSummaryState = {
+      ...EMPTY_STATE,
+      anyEmployee: true,
+      slotEmployee: employee,
+    }
+    const row = rowByLabel(getWizardSummaryRows(state, 5), "Profesional")
+    expect(row.value).toBe(`${employee.firstName} ${employee.lastName}`)
+  })
+
+  it('con "Sin preferencia" y SIN hueco todavia, el aside sigue diciendo "Sin preferencia"', () => {
+    const state: WizardSummaryState = { ...EMPTY_STATE, anyEmployee: true }
+    const row = rowByLabel(getWizardSummaryRows(state, 3), "Profesional")
+    expect(row.value).toBe("Sin preferencia")
+  })
+
   it('paso 1 al volver con "Sin preferencia": el aside lo dice', () => {
     const anyEmp: WizardSummaryState = { ...EMPTY_STATE, anyEmployee: true }
     const row = rowByLabel(getWizardSummaryRows(anyEmp, 1), "Profesional")
