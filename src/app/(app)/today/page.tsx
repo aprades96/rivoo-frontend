@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { CalendarCheck, CheckCircle, Clock, Plus, RefreshCw } from "lucide-react"
@@ -33,7 +34,8 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
 
 export default function TodayPage() {
   const today = format(new Date(), "yyyy-MM-dd")
-  const { data, isLoading, refetch, isRefetching } = useTodayAppointments(today)
+  const { data, dataUpdatedAt, isLoading, refetch, isRefetching } = useTodayAppointments(today)
+  const queryClient = useQueryClient()
   const {
     data: servicesData,
     isLoading: servicesLoading,
@@ -63,10 +65,23 @@ export default function TodayPage() {
 
   const appointments = data?.content ?? []
 
+  // D7/D8: mismo criterio de exclusion que `EXCLUDED_STATUSES` en
+  // `today-facts.ts` (CANCELLED/NO_SHOW no son "una cita de hoy" en ningun
+  // sentido util). La lista y el KPI pintan A PROPOSITO el MISMO conjunto --
+  // filtrando aqui, antes de repartirlo a `getTodayStats`, `getPendingOnline`,
+  // `getNowRows` y al `.map` que dibuja las tarjetas -- para que nadie pueda
+  // "arreglar" uno de los dos por separado y dejarlos desincronizados otra
+  // vez (el KPI diciendo 8 con 10 tarjetas debajo). Si el criterio de
+  // exclusion cambia, cambialo tambien en `EXCLUDED_STATUSES`.
+  const visibleAppointments = useMemo(
+    () => appointments.filter((a) => a.status !== "CANCELLED" && a.status !== "NO_SHOW"),
+    [appointments]
+  )
+
   // Sort by startTime
   const sorted = useMemo(
-    () => [...appointments].sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    [appointments]
+    () => [...visibleAppointments].sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    [visibleAppointments]
   )
 
   const stats = useMemo(() => getTodayStats(sorted), [sorted])
@@ -74,19 +89,24 @@ export default function TodayPage() {
 
   const employees = useMemo(() => employeesData?.content ?? [], [employeesData])
   const employeeIds = useMemo(() => employees.map((employee) => employee.id), [employees])
-  const { data: hoursByEmployee } = useEmployeesWorkingHours(employeeIds)
+  const { data: hoursByEmployee, isLoading: hoursLoading } = useEmployeesWorkingHours(employeeIds)
 
-  // D33: `now` es ESTADO, no `new Date()` leido en cada render -- precedente
-  // exacto en `calendar/page.tsx`: un reloj leido en cada render cambia con
-  // cualquier interaccion (hasta teclear en un buscador) y lo que se pulsa
-  // deja de ser lo que se vio. Alimenta a `getNowRows` y al rotulo de la
-  // hora del subtitulo de escritorio -- NUNCA a `getTodayStats`, que no lo
-  // recibe.
-  const [now, setNow] = useState(() => new Date())
+  // El reloj y los datos vienen SIEMPRE del mismo instante, por construccion
+  // -- no por disciplina. Invariante: "el reloj nunca es mas viejo que los
+  // datos que acompana". `dataUpdatedAt` (react-query) solo se mueve cuando
+  // llega una respuesta nueva, asi que `now` sigue siendo estable entre
+  // renders (no cambia al teclear en un buscador, igual que buscaba D33),
+  // pero deja de poder desincronizarse del panel que alimenta: un refetch en
+  // segundo plano (`refetchOnWindowFocus`, `query-provider.tsx`) trae datos Y
+  // reloj nuevos a la vez, nunca uno sin el otro. Alimenta a `getNowRows` y al
+  // rotulo de la hora del subtitulo de escritorio -- NUNCA a `getTodayStats`,
+  // que no lo recibe. `|| Date.now()` cubre el instante antes de la primera
+  // respuesta, cuando `dataUpdatedAt` todavia vale 0.
+  const now = useMemo(() => new Date(dataUpdatedAt || Date.now()), [dataUpdatedAt])
 
   const nowRows = useMemo(
-    () => getNowRows(sorted, employees, hoursByEmployee, now),
-    [sorted, employees, hoursByEmployee, now]
+    () => getNowRows(sorted, employees, hoursByEmployee, now, hoursLoading),
+    [sorted, employees, hoursByEmployee, now, hoursLoading]
   )
 
   // D37: sin ninguna fila "busy" o "free" no hay nada que decir sobre el
@@ -101,12 +121,18 @@ export default function TodayPage() {
     setSheetOpen(true)
   }
 
-  // D33: el boton "Actualizar" re-siembra `now` ademas de refrescar los
-  // datos -- sin esto "Ahora mismo" miente en cuanto la pestana lleva un
-  // rato abierta, y es justo lo que el usuario espera de ese boton.
+  // El boton "Actualizar" refresca las TRES fuentes que sostienen este panel,
+  // no solo las citas: un empleado cuya peticion de horario fallo
+  // (`use-staff.ts`, deja fuera del mapa a quien falla) o cuyos datos
+  // cambiaron nunca se recuperaba pulsando este boton -- con
+  // `retry: failureCount < 1` y 5 minutos de `staleTime`, el unico remedio
+  // era recargar la pagina entera. `now` ya no necesita re-sembrarse aqui:
+  // al llegar la respuesta de `refetch()`, `dataUpdatedAt` cambia solo y
+  // arrastra el reloj con el (ver comentario de `now` arriba).
   const handleRefresh = () => {
     refetch()
-    setNow(new Date())
+    queryClient.invalidateQueries({ queryKey: ["employees"] })
+    queryClient.invalidateQueries({ queryKey: ["employee-working-hours"] })
   }
 
   const greetingTitle = `${getGreeting()}${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`
@@ -128,9 +154,11 @@ export default function TodayPage() {
       actions={
         <>
           {/*
-            HoyDesktop.dc.html:80-81: 38x38, borde #E7DCCF, fondo blanco,
-            radio 8px, icono de 17px en #7A6A5F -- es un boton `outline`, no
-            `ghost` (que es transparente y sin borde).
+            HoyDesktop.dc.html:80-81: 38x38, borde #E7DCCF, radio 8px, icono
+            de 17px en #7A6A5F -- es un boton `outline`, no `ghost` (que es
+            transparente y sin borde). El fondo NO es blanco: `variant="outline"`
+            trae `bg-background` (#fbf7f2), el mismo color del fondo de la
+            pagina -- convencion de todo el repo, no una excepcion de este boton.
           */}
           <Button
             variant="outline"
@@ -203,7 +231,11 @@ export default function TodayPage() {
                   ) : sorted.length === 0 ? (
                     <TodayEmptyState />
                   ) : (
-                    <div className="space-y-2">
+                    // HoyDesktop.dc.html:113: 10px entre filas -- distinto de
+                    // `space-y-2` (8px), que SI es correcto en la rama movil de
+                    // abajo (Main.dc.html:114): la clase no puede ser comun a
+                    // los dos anchos.
+                    <div className="space-y-[10px]">
                       {sorted.map((appointment) => (
                         <AppointmentCard
                           key={appointment.id}
@@ -215,7 +247,7 @@ export default function TodayPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-[10px]">
                   {showNowPanel && (
                     <NowPanel rows={nowRows} employees={employees} now={now} variant="desktop" />
                   )}
@@ -248,9 +280,9 @@ export default function TodayPage() {
               aria-label="Actualizar"
               onClick={handleRefresh}
               disabled={isRefetching}
-              className="size-11 shrink-0"
+              className="size-11 shrink-0 text-muted-foreground"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+              <RefreshCw className={`size-[18px] ${isRefetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
 
@@ -271,20 +303,20 @@ export default function TodayPage() {
                   variant="mobile"
                   label="Total"
                   value={stats.total}
-                  icon={<CalendarCheck />}
+                  icon={<CalendarCheck strokeWidth={1.75} />}
                 />
                 <KpiCard
                   variant="mobile"
                   label="Pendientes"
                   value={stats.pending}
-                  icon={<Clock />}
+                  icon={<Clock strokeWidth={1.75} />}
                   tone={stats.pending > 0 ? "warning" : "default"}
                 />
                 <KpiCard
                   variant="mobile"
                   label="Completadas"
                   value={stats.completed}
-                  icon={<CheckCircle />}
+                  icon={<CheckCircle strokeWidth={1.75} />}
                 />
               </div>
 

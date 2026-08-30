@@ -55,6 +55,21 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn() }),
 }))
 
+// Arreglo 3: `handleRefresh` invalida tambien `["employees"]` y
+// `["employee-working-hours"]` via `useQueryClient()`. Se mockea SOLO
+// `useQueryClient` (preservando el resto del modulo real) para no montar un
+// `QueryClientProvider` real -- evita por completo la trampa de
+// `notifyManager` de AGENTS.md, y mantiene esta pagina probada a traves de
+// hooks mockeados como el resto del fichero.
+const invalidateQueriesMock = vi.fn()
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>()
+  return {
+    ...actual,
+    useQueryClient: () => ({ invalidateQueries: invalidateQueriesMock }),
+  }
+})
+
 /**
  * El polyfill de `src/test/setup.ts` devuelve SIEMPRE `matches: false`, o sea
  * movil. Escritorio hay que simularlo aqui, y devolverlo a movil en
@@ -89,6 +104,11 @@ function appointmentsResult(overrides: Partial<ReturnType<typeof defaultAppointm
 function defaultAppointments() {
   return {
     data: { content: [] as Appointment[] },
+    // Arreglo 1: `now` (invariante nueva) sale de `dataUpdatedAt`, no de un
+    // estado propio de la pagina -- por defecto coincide con el reloj fijo
+    // `NOW` de este fichero, igual que hacia el `useState(() => new Date())`
+    // que sustituye (misma hora en todos los tests que no la pisan).
+    dataUpdatedAt: NOW.getTime(),
     isLoading: false,
     isRefetching: false,
     refetch: vi.fn(),
@@ -188,6 +208,7 @@ describe("TodayPage", () => {
     useEmployeesMock.mockReturnValue({ data: { content: [] } })
     useEmployeesWorkingHoursMock.mockReset()
     useEmployeesWorkingHoursMock.mockReturnValue({ data: {}, isLoading: false, isError: false })
+    invalidateQueriesMock.mockReset()
     mockMatchMedia(false)
   })
 
@@ -409,12 +430,12 @@ describe("TodayPage", () => {
     expect(screen.getByTestId("now-panel")).toBeInTheDocument()
   })
 
-  // D33 + PRUEBA DE MUTACION: el boton "Actualizar" re-siembra `now`, no
-  // solo `refetch()`. El rotulo de hora del panel movil de `NowPanel` es
-  // propiedad DE `NowPanel`, no de esta pagina -- que avance solo tras
-  // pulsar prueba que `setNow` se llamo de verdad.
-  it("D33: el boton 'Actualizar' re-siembra `now` ademas de refrescar los datos", () => {
-    const refetch = vi.fn()
+  // Arreglo 1 + PRUEBA DE MUTACION: `now` sigue a `dataUpdatedAt` de los
+  // datos QUE PINTA, no al reloj del sistema ni a un estado propio de la
+  // pagina que solo se re-siembre a mano. Si `now` volviera a leer
+  // `Date.now()` (o un estado que no reacciona a `dataUpdatedAt`), la
+  // segunda aseveracion de este test fallaria.
+  it("Arreglo 1: `now` sigue a `dataUpdatedAt`, no al reloj del sistema", () => {
     const current = makeAppointment({
       employeeId: "emp_1",
       startTime: `${TODAY_ISO}T09:45:00`,
@@ -423,22 +444,241 @@ describe("TodayPage", () => {
     })
     useEmployeesMock.mockReturnValue({ data: { content: [makeEmployee()] } })
     useTodayAppointmentsMock.mockReturnValue(
-      appointmentsResult({ data: { content: [current] }, refetch })
+      appointmentsResult({ data: { content: [current] }, dataUpdatedAt: NOW.getTime() })
+    )
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    const { rerender } = render(<TodayPage />)
+
+    expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:15")
+
+    // El reloj del sistema avanza SIN que llegue ningun dato nuevo -- `now`
+    // no debe moverse: no viene de `Date.now()`.
+    vi.setSystemTime(new Date(2026, 7, 27, 10, 40))
+    expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:15")
+
+    // Solo cuando LLEGAN datos nuevos (`dataUpdatedAt` cambia) el reloj
+    // avanza -- por construccion, no por disciplina. Se simula el efecto de
+    // un refetch (`refetchOnWindowFocus`, `query-provider.tsx`) re-sembrando
+    // el mock del hook y re-renderizando, sin pasar por react-query real
+    // (AGENTS.md).
+    useTodayAppointmentsMock.mockReturnValue(
+      appointmentsResult({
+        data: { content: [current] },
+        dataUpdatedAt: new Date(2026, 7, 27, 10, 40).getTime(),
+      })
+    )
+    rerender(<TodayPage />)
+
+    expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:40")
+  })
+
+  // Arreglo 1 (adaptacion de D33): el boton "Actualizar" ya no re-siembra
+  // ningun estado propio -- se limita a refrescar las fuentes (ver Arreglo 3
+  // para las otras dos). El reloj avanza solo cuando `dataUpdatedAt` cambia,
+  // cubierto por el test de arriba.
+  it("el boton 'Actualizar' llama a refetch", () => {
+    const refetch = vi.fn()
+    useEmployeesMock.mockReturnValue({ data: { content: [makeEmployee()] } })
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ refetch }))
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Actualizar" }))
+
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  // Arreglo 3 + PRUEBA DE MUTACION: "Actualizar" debe invalidar TAMBIEN las
+  // otras dos fuentes que sostienen el panel -- sin esto, un empleado cuya
+  // peticion de horario fallo (`use-staff.ts`, fuera del mapa) nunca se
+  // recupera pulsando este boton.
+  it("Arreglo 3: el boton 'Actualizar' invalida tambien `employees` y `employee-working-hours`", () => {
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult())
+
+    render(<TodayPage />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Actualizar" }))
+
+    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["employees"] })
+    expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ["employee-working-hours"] })
+  })
+
+  // Arreglo 2 + PRUEBA DE MUTACION: la lista y el KPI comparten el MISMO
+  // conjunto -- una cita cancelada no debe aparecer en ninguno de los dos.
+  // Se comprueba en la MISMA prueba para que un "arreglo" que solo toque uno
+  // de los dos no la deje pasar.
+  it("Arreglo 2: una cita cancelada no aparece en la lista ni cuenta en el KPI", () => {
+    const live = makeAppointment({ id: "apt_1", clientName: "Cliente Activo", status: "CONFIRMED" })
+    const cancelled = makeAppointment({
+      id: "apt_2",
+      clientName: "Cliente Cancelado",
+      status: "CANCELLED",
+      startTime: `${TODAY_ISO}T11:00:00`,
+      endTime: `${TODAY_ISO}T11:30:00`,
+    })
+    useTodayAppointmentsMock.mockReturnValue(
+      appointmentsResult({ data: { content: [live, cancelled] } })
     )
     useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
 
     render(<TodayPage />)
 
-    expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:15")
+    expect(screen.getAllByTestId("appointment-card")).toHaveLength(1)
+    expect(screen.queryByText("Cliente Cancelado")).not.toBeInTheDocument()
+    expect(screen.getByText("Cliente Activo")).toBeInTheDocument()
+    // KPI movil "Total" (primer `kpi-card-value` en el DOM): una sola cita
+    // cuenta, no dos.
+    expect(screen.getAllByTestId("kpi-card-value")[0]).toHaveTextContent("1")
+  })
 
-    // El reloj del sistema avanza SIN que nadie pulse nada -- si `now` se
-    // releyera en cada render (en vez de vivir en estado), esta prueba no
-    // distinguiria nada.
-    vi.setSystemTime(new Date(2026, 7, 27, 10, 40))
+  // Arreglo 4 + PRUEBA DE MUTACION: mientras `useEmployeesWorkingHours` esta
+  // cargando, un hueco libre sin acotar por el cierre (medido solo hasta la
+  // proxima cita) no se pinta -- sin pasar `hoursLoading`, este caso
+  // pintaria "Libre" con un numero que la respuesta real luego corrige.
+  it("Arreglo 4: mientras los horarios cargan, no se pinta un hueco libre sin acotar por el cierre", () => {
+    const future = makeAppointment({
+      employeeId: "emp_1",
+      startTime: `${TODAY_ISO}T13:00:00`,
+      endTime: `${TODAY_ISO}T13:30:00`,
+      status: "CONFIRMED",
+    })
+    useEmployeesMock.mockReturnValue({ data: { content: [makeEmployee()] } })
+    useEmployeesWorkingHoursMock.mockReturnValue({ data: {}, isLoading: true, isError: false })
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [future] } }))
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
 
-    fireEvent.click(screen.getByRole("button", { name: "Actualizar" }))
+    render(<TodayPage />)
 
-    expect(refetch).toHaveBeenCalledTimes(1)
-    expect(screen.getByTestId("now-panel-current-time")).toHaveTextContent("10:40")
+    expect(screen.queryByTestId("now-panel")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Libre/)).not.toBeInTheDocument()
+  })
+
+  // Arreglo 5.1 + PRUEBA DE MUTACION: el aviso de fallo del catalogo de
+  // servicios tambien vive en la rama de ESCRITORIO -- su unico test previo
+  // era movil (donde `matchMedia` siempre da `false`), asi que quitarlo de
+  // esta rama no lo detectaba nadie.
+  it("Arreglo 5.1: en escritorio, un fallo del catalogo de servicios tambien muestra el aviso", () => {
+    mockMatchMedia(true)
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [] } }))
+    useServicesMock.mockReturnValue(
+      servicesResult({ data: undefined, isLoading: false, error: new Error("network down") })
+    )
+
+    render(<TodayPage />)
+
+    expect(
+      screen.getByText("No se ha podido comprobar tu catalogo de servicios")
+    ).toBeInTheDocument()
+  })
+
+  // Arreglo 5.2 + PRUEBA DE MUTACION: la guarda `showNowPanel` (D37) tambien
+  // aplica en ESCRITORIO -- sus dos tests previos eran moviles.
+  it("Arreglo 5.2: en escritorio, con el salon cerrado y empleados que hoy libran, el panel tampoco se monta", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({ data: { content: [makeEmployee()] } })
+    useEmployeesWorkingHoursMock.mockReturnValue({
+      data: { emp_1: offHours() },
+      isLoading: false,
+      isError: false,
+    })
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [] } }))
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    expect(screen.queryByTestId("now-panel")).not.toBeInTheDocument()
+  })
+
+  // Arreglo 5.3 + PRUEBA DE MUTACION: `PendingOnlineCard` SOLO existe en
+  // escritorio (D17) -- sin un test de este ancho, desmontarla del todo no
+  // lo detectaba nadie.
+  it("Arreglo 5.3: en escritorio, una reserva online pendiente monta 'PendingOnlineCard'", () => {
+    mockMatchMedia(true)
+    const pending = makeAppointment({
+      status: "PENDING",
+      source: "ONLINE",
+      startTime: `${TODAY_ISO}T13:00:00`,
+      endTime: `${TODAY_ISO}T13:30:00`,
+    })
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [pending] } }))
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    expect(screen.getByTestId("pending-online-card")).toBeInTheDocument()
+  })
+
+  // Arreglo 5.4 + PRUEBA DE MUTACION: en escritorio, `NowPanel` debe recibir
+  // `variant="desktop"`, no "mobile" -- `now-panel.test.tsx` prueba las dos
+  // variantes por prop, pero nadie probaba que ESTA PAGINA pasara la variante
+  // correcta segun el ancho. `now-panel-current-time` es EXCLUSIVO de la
+  // variante movil; `now-panel-card`, de la de escritorio.
+  it("Arreglo 5.4: en escritorio, el panel 'Ahora mismo' se monta con variant desktop (no mobile)", () => {
+    mockMatchMedia(true)
+    const current = makeAppointment({
+      employeeId: "emp_1",
+      startTime: `${TODAY_ISO}T09:45:00`,
+      endTime: `${TODAY_ISO}T10:45:00`,
+      status: "CONFIRMED",
+    })
+    useEmployeesMock.mockReturnValue({ data: { content: [makeEmployee()] } })
+    useTodayAppointmentsMock.mockReturnValue(appointmentsResult({ data: { content: [current] } }))
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    expect(screen.getByTestId("now-panel-card")).toBeInTheDocument()
+    expect(screen.queryByTestId("now-panel-current-time")).not.toBeInTheDocument()
+  })
+
+  // Arreglo 6.1 + PRUEBA DE MUTACION: `AppointmentDetailSheet` es la unica de
+  // las piezas sin artboard que seguia sin red -- sobrevivian tanto
+  // desmontarla del arbol como que pulsar una cita no la abriera.
+  it("Arreglo 6.1: al pulsar una cita se abre el panel de detalle", () => {
+    const appointment = makeAppointment()
+    useTodayAppointmentsMock.mockReturnValue(
+      appointmentsResult({ data: { content: [appointment] } })
+    )
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    expect(screen.queryByText("Detalle de cita")).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId("appointment-card"))
+
+    expect(screen.getByText("Detalle de cita")).toBeInTheDocument()
+  })
+
+  // Arreglo 6.2 + PRUEBA DE MUTACION: el `.sort(...)` de la agenda -- ningun
+  // otro test de esta pagina renderiza mas de una cita, asi que quitarlo
+  // quedaba verde en toda la suite salvo aqui.
+  it("Arreglo 6.2: ordena las citas por hora de inicio ascendente", () => {
+    const later = makeAppointment({
+      id: "apt_2",
+      clientName: "Cliente Tarde",
+      startTime: `${TODAY_ISO}T15:00:00`,
+      endTime: `${TODAY_ISO}T15:30:00`,
+    })
+    const earlier = makeAppointment({
+      id: "apt_1",
+      clientName: "Cliente Temprano",
+      startTime: `${TODAY_ISO}T08:00:00`,
+      endTime: `${TODAY_ISO}T08:30:00`,
+    })
+    useTodayAppointmentsMock.mockReturnValue(
+      appointmentsResult({ data: { content: [later, earlier] } })
+    )
+    useServicesMock.mockReturnValue(servicesResult({ data: { content: [oneService] } }))
+
+    render(<TodayPage />)
+
+    const cards = screen.getAllByTestId("appointment-card")
+    expect(cards).toHaveLength(2)
+    expect(cards[0]).toHaveTextContent("Cliente Temprano")
+    expect(cards[1]).toHaveTextContent("Cliente Tarde")
   })
 })
