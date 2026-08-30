@@ -13,6 +13,14 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
 export interface PageShellProps {
   title: string
   /**
+   * Texto de la cabecera MOVIL de 56px. Por defecto = `title`, que es el
+   * comportamiento de hoy en las otras once pantallas. `Main.dc.html:24` pinta
+   * ahi el nombre del salon, distinto del saludo que `:35` pone en el cuerpo
+   * y que en escritorio si es el `h1` de la topbar (`HoyDesktop.dc.html:76`)
+   * -- de ahi que solo la cabecera movil pueda divergir de `title`.
+   */
+  mobileTitle?: string
+  /**
    * Flecha de volver en la cabecera MOVIL. Deliberadamente independiente de
    * `desktopBack`: la flecha es propiedad del breakpoint, no de la pantalla.
    * Las cinco subpaginas de ajustes llevan flecha en movil y no en escritorio
@@ -70,6 +78,7 @@ export interface PageShellProps {
 
 export function PageShell({
   title,
+  mobileTitle = title,
   back = false,
   desktopBack,
   actions,
@@ -162,7 +171,7 @@ export function PageShell({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <MobileHeader
-        title={title}
+        title={mobileTitle}
         onBack={mobileBackResolved}
         actions={mobileActionsContent}
       />

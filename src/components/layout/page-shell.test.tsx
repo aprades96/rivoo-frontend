@@ -47,6 +47,36 @@ describe("PageShell", () => {
     expect(screen.getByText("Equipo")).toBeInTheDocument()
   })
 
+  it("sin `mobileTitle`, la cabecera movil pinta `title` (comportamiento por defecto)", () => {
+    mockMatchMedia(false)
+    render(
+      <PageShell title="Salon Central">
+        <p>contenido</p>
+      </PageShell>
+    )
+    expect(screen.getByRole("heading", { name: "Salon Central" })).toBeInTheDocument()
+  })
+
+  it("con `mobileTitle`, la cabecera movil pinta ese texto y la de escritorio sigue pintando `title`", () => {
+    mockMatchMedia(false)
+    const { rerender } = render(
+      <PageShell title="Hola, Ana" mobileTitle="Salon Central">
+        <p>contenido</p>
+      </PageShell>
+    )
+    expect(screen.getByRole("heading", { name: "Salon Central" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Hola, Ana" })).not.toBeInTheDocument()
+
+    mockMatchMedia(true)
+    rerender(
+      <PageShell title="Hola, Ana" mobileTitle="Salon Central">
+        <p>contenido</p>
+      </PageShell>
+    )
+    expect(screen.getByRole("heading", { name: "Hola, Ana" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Salon Central" })).not.toBeInTheDocument()
+  })
+
   it("con `back` y sin `desktopBack` hay control de volver en movil pero no en escritorio", () => {
     mockMatchMedia(false)
     const { rerender } = render(
