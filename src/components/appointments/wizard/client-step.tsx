@@ -1,27 +1,48 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Plus, User } from "lucide-react"
+import { Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton"
+import { NewAppointmentShell } from "./new-appointment-shell"
+import { WizardContextPills } from "./wizard-context-pills"
+import { useWizardNavigation } from "./use-wizard-navigation"
+import { getWizardSummaryCta, getWizardSummaryRows } from "./wizard-summary"
+import { WizardSummaryAside } from "@/components/wizard/wizard-summary-aside"
 import { useClients } from "@/hooks/use-clients"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { useWizardStore } from "@/lib/stores/wizard-store"
 import { initials } from "@/lib/utils/format"
+import { employeeFallbackAvatarClassName } from "@/lib/utils/avatar"
+import { cn } from "@/lib/utils"
 import type { Client } from "@/types/client"
 
+// Tailwind's `lg:` breakpoint (1024px) -- keep in sync with
+// `new-appointment-shell.tsx`. Needed here (and not just inside the shell)
+// because the mobile/desktop markup genuinely differs in content, not just
+// spacing: the search placeholder text is different in each artboard
+// (`NuevaCitaPaso4.dc.html:62` vs `NuevaCitaDesktopPaso4.dc.html:74`), and the
+// "clientes recientes" label / visits column only exist on one side each. Per
+// the width-difference rule this is decided once in JS, not with paired
+// `hidden lg:...` classes that would leave both wordings in the DOM at once.
+const DESKTOP_QUERY = "(min-width: 1024px)"
+
 export function ClientStep() {
-  const { selectedClient, newClientData, selectClient, setNewClientData, nextStep } = useWizardStore()
+  const { onClose, onBack } = useWizardNavigation()
+  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+
+  const wizardState = useWizardStore()
+  const { selectClient, newClientData, setNewClientData, nextStep } = wizardState
   const [search, setSearch] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    firstName: newClientData?.firstName ?? "",
+    lastName: newClientData?.lastName ?? "",
+    email: newClientData?.email ?? "",
+    phone: newClientData?.phone ?? "",
   })
 
   const { data, isLoading } = useClients(search)
@@ -38,167 +59,265 @@ export function ClientStep() {
     nextStep()
   }
 
-  if (showCreateForm) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold">Nuevo cliente</h2>
-          <p className="text-sm text-muted-foreground">
-            Introduce los datos del cliente
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="firstName" className="text-xs">Nombre *</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                placeholder="Nombre"
-              />
-            </div>
-            <div>
-              <Label htmlFor="lastName" className="text-xs">Apellidos *</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                placeholder="Apellidos"
-              />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="email" className="text-xs">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="email@ejemplo.com"
-            />
-          </div>
-          <div>
-            <Label htmlFor="phone" className="text-xs">Telefono</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="612 345 678"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => setShowCreateForm(false)}
-          >
-            Volver
-          </Button>
-          <Button
-            className="flex-1"
-            disabled={!formData.firstName || !formData.lastName}
-            onClick={handleCreateInline}
-          >
-            Continuar
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  const rows = getWizardSummaryRows(wizardState, 4)
+  const cta = getWizardSummaryCta(wizardState, 4)
+  const aside = <WizardSummaryAside rows={rows} ctaLabel={cta.label} ctaDisabled={cta.disabled} />
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold">Selecciona un cliente</h2>
-        <p className="text-sm text-muted-foreground">
-          Busca o crea un nuevo cliente
-        </p>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {/* Create new button */}
-      <Card
-        className="cursor-pointer p-3 transition-colors hover:bg-muted/50"
-        onClick={() => setShowCreateForm(true)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Plus className="h-5 w-5 text-primary" />
-          </div>
+    <NewAppointmentShell
+      step={4}
+      title="Selecciona un cliente"
+      subtitle="Busca uno existente o crea uno nuevo sin salir del flujo."
+      onBack={onBack}
+      onClose={onClose}
+      aside={aside}
+    >
+      {showCreateForm ? (
+        // Sin artboard propio -- `design/NuevaCita{,Desktop}Paso4.dc.html` solo
+        // dibujan la tarjeta que ABRE este formulario, nunca su contenido. Se
+        // conserva tal cual (sin rediseno) porque quitarlo dejaria esa tarjeta
+        // apuntando a un destino que no existe en ninguno de los dos anchos.
+        // Anotado como hueco de canvas para quien retome este formulario.
+        <div className="flex flex-col gap-4">
           <div>
-            <p className="text-sm font-medium">Crear nuevo cliente</p>
-            <p className="text-xs text-muted-foreground">Anadir datos manualmente</p>
+            <h2 className="text-base font-semibold">Nuevo cliente</h2>
+            <p className="text-sm text-muted-foreground">Introduce los datos del cliente</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="firstName" className="text-xs">
+                  Nombre *
+                </Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  placeholder="Nombre"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName" className="text-xs">
+                  Apellidos *
+                </Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  placeholder="Apellidos"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="email" className="text-xs">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@ejemplo.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone" className="text-xs">
+                Telefono
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="612 345 678"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCreateForm(false)}>
+              Volver
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={!formData.firstName || !formData.lastName}
+              onClick={handleCreateInline}
+            >
+              Continuar
+            </Button>
           </div>
         </div>
-      </Card>
+      ) : (
+        <>
+          {!isDesktop && <WizardContextPills />}
 
-      {/* Search results */}
-      {search.length >= 2 && (
-        <div className="space-y-1">
-          {isLoading ? (
-            <LoadingSkeleton count={3} />
-          ) : clients.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No se encontraron clientes. Puedes crear uno nuevo.
-            </p>
-          ) : (
-            clients.map((client) => (
-              <Card
-                key={client.id}
-                className={`cursor-pointer p-3 transition-colors hover:bg-muted/50 ${
-                  selectedClient?.id === client.id ? "border-primary bg-primary/5" : ""
-                }`}
-                onClick={() => handleSelectClient(client)}
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="text-xs">
-                      {initials(client.firstName, client.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {client.firstName} {client.lastName}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {[client.phone, client.email].filter(Boolean).join(" · ") || "Sin contacto"}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {client.totalVisits} visita{client.totalVisits !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </Card>
-            ))
+          <div className="relative">
+            <Search
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 text-muted-foreground-2",
+                isDesktop ? "left-[14px] size-[18px]" : "left-[13px] size-[17px]"
+              )}
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={
+                isDesktop ? "Buscar por nombre, telefono o email..." : "Buscar por nombre..."
+              }
+              className={cn(
+                "rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground-2",
+                isDesktop ? "h-[46px] pl-[42px] pr-3.5" : "h-11 pl-10 pr-3.5"
+              )}
+            />
+          </div>
+
+          <div className={cn("flex flex-col gap-2", isDesktop && "grid grid-cols-2 gap-[14px]")}>
+            <CreateClientCard isDesktop={isDesktop} onClick={() => setShowCreateForm(true)} />
+
+            {!isDesktop && search === "" && (
+              <span className="mt-1 text-xs leading-tight text-muted-foreground">Clientes recientes</span>
+            )}
+
+            {isLoading ? (
+              <LoadingSkeleton count={4} />
+            ) : clients.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No se encontraron clientes. Puedes crear uno nuevo.
+              </p>
+            ) : (
+              clients.map((client, index) => (
+                <ClientCard
+                  key={client.id}
+                  client={client}
+                  index={index}
+                  isDesktop={isDesktop}
+                  onSelect={() => handleSelectClient(client)}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </NewAppointmentShell>
+  )
+}
+
+interface CreateClientCardProps {
+  isDesktop: boolean
+  onClick: () => void
+}
+
+/**
+ * `.row`/`.card` con borde discontinuo (`NuevaCitaPaso4.dc.html:67`,
+ * `...Desktop...:78`). `border-border-dashed-strong` es el COLOR
+ * (`#dcc9bb`) y `border-dashed` el ESTILO nativo de Tailwind -- hacen falta
+ * las dos clases, receta ya usada en `free-slot-hint.tsx:43`.
+ */
+function CreateClientCard({ isDesktop, onClick }: CreateClientCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-lg border border-dashed border-border-dashed-strong bg-accent p-3 text-left transition-colors hover:bg-accent/80",
+        isDesktop && "gap-[14px] rounded-[10px] p-4"
+      )}
+    >
+      <div
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary",
+          isDesktop && "size-11"
+        )}
+      >
+        <Plus className={isDesktop ? "size-5" : "size-[19px]"} strokeWidth={2} />
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span
+          className={cn(
+            "text-sm leading-tight font-semibold text-primary-pressed",
+            isDesktop && "text-[15px]"
           )}
+        >
+          Crear nuevo cliente
+        </span>
+        <span className="text-xs text-muted-foreground">Anadir datos manualmente</span>
+      </div>
+    </button>
+  )
+}
+
+interface ClientCardProps {
+  client: Client
+  /** Posicion en la lista tal como llega, no el `id` -- misma regla que
+   * `employeePaletteIndex` (`avatar.ts:98-114`): asi dos clientes contiguos
+   * nunca comparten color y el reparto es estable mientras no cambie el
+   * orden. `Client` no tiene `colorHex` (no es un `Employee`), asi que aqui
+   * SIEMPRE se usa el color de reserva, nunca uno propio. */
+  index: number
+  isDesktop: boolean
+  onSelect: () => void
+}
+
+/**
+ * `.row` (`NuevaCitaPaso4.dc.html:79-109`) y `.card`
+ * (`NuevaCitaDesktopPaso4.dc.html:86-124`) son la misma tarjeta cliente con
+ * distinto padding/tamano y una segunda linea/columna de visitas que cambia
+ * de forma entre anchos -- de ahi un unico componente con `isDesktop`, igual
+ * que `ServiceCard` en `service-step.tsx:205`.
+ *
+ * El numero de visitas sale de `client.totalVisits` tal cual. HOY vale 0 para
+ * todos los clientes (`ClientService.java:66,193` lo fija a 0 al crear y
+ * ningun endpoint lo incrementa) -- pintar "0 visitas" es correcto y
+ * deliberado, no un bug de este componente. Derivarlo contando citas aqui
+ * anadiria N peticiones por pantalla, daria un numero distinto del que
+ * enseña la ficha de cliente, y taparia el hueco de backend justo donde mas
+ * se nota. Deuda anotada, arreglo pendiente en el backend.
+ */
+function ClientCard({ client, index, isDesktop, onSelect }: ClientCardProps) {
+  const hasPhone = Boolean(client.phone)
+  const contactLine = client.phone ?? "Sin contacto"
+  const visitsLabel = `${client.totalVisits} visita${client.totalVisits === 1 ? "" : "s"}`
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted/50",
+        isDesktop && "gap-[14px] rounded-[10px] p-4"
+      )}
+    >
+      <Avatar className={cn("size-10", isDesktop && "size-11")}>
+        <AvatarFallback
+          className={cn(isDesktop ? "text-sm" : "text-[13px]", "font-semibold", employeeFallbackAvatarClassName(index))}
+        >
+          {initials(client.firstName, client.lastName)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <p className={cn("truncate text-sm leading-tight font-semibold", isDesktop && "text-[15px]")}>
+          {client.firstName} {client.lastName}
+        </p>
+        {isDesktop ? (
+          <p className="truncate text-xs text-muted-foreground">{contactLine}</p>
+        ) : (
+          <p
+            className={cn(
+              "truncate text-xs tabular-nums",
+              hasPhone ? "text-muted-foreground" : "text-muted-foreground-2"
+            )}
+          >
+            {contactLine} &middot; {visitsLabel}
+          </p>
+        )}
+      </div>
+      {isDesktop && (
+        <div className="flex shrink-0 flex-col items-end">
+          <span className="text-[13px] leading-tight font-semibold tabular-nums">{client.totalVisits}</span>
+          <span className="text-[10px] leading-tight text-muted-foreground-2">visitas</span>
         </div>
       )}
-
-      {/* Skip client option */}
-      <button
-        className="w-full py-2 text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
-        onClick={() => {
-          setNewClientData(null)
-          nextStep()
-        }}
-      >
-        Continuar sin cliente
-      </button>
-    </div>
+    </button>
   )
 }
