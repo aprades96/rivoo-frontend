@@ -52,8 +52,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // with different types at index 0 (`<main>` vs `<AppSidebar>`) made React
   // unmount/remount all of `children` on every breakpoint crossing, which
   // `use-media-query.ts` forces once per desktop load (SSR/first paint always
-  // report `false`). That wiped in-progress form state and reset the
-  // `/appointments/new` wizard on resize. Keeping one shared tree with the
+  // report `false`). That wiped in-progress form state on any grid/form
+  // screen still in this route group -- `/appointments/new` used to be the
+  // textbook example, but it has since moved to `(fullscreen)`, where
+  // `NewAppointmentShell` pays the same invariant on its own
+  // (`new-appointment-shell.tsx`). Keeping one shared tree with the
   // sidebar/bottom-nav/FAB as optional siblings around a stable `<main>`
   // lets React reconcile `<main>` (and `children`) across the switch instead.
   return (

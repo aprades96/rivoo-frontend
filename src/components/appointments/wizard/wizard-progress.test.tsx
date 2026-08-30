@@ -1,30 +1,47 @@
 import { describe, it, expect } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render } from "@testing-library/react"
 import { WizardProgress } from "./wizard-progress"
 
+/** Los cinco tramos comparten padre: es el unico nodo que pinta este componente. */
+function segments(container: HTMLElement): Element[] {
+  return Array.from(container.firstElementChild?.children ?? [])
+}
+
 describe("WizardProgress", () => {
-  it("renders 5 step numbers", () => {
-    render(<WizardProgress currentStep={1} />)
-    for (let i = 1; i <= 5; i++) {
-      expect(screen.getByText(String(i))).toBeInTheDocument()
-    }
+  it("pinta cinco tramos por defecto", () => {
+    const { container } = render(<WizardProgress step={1} />)
+    expect(segments(container)).toHaveLength(5)
   })
 
-  it("highlights the current step with primary color", () => {
-    render(<WizardProgress currentStep={3} />)
-    const step3 = screen.getByText("3")
-    expect(step3.closest("div")).toHaveClass("bg-primary")
+  it("colorea en primario los tramos hasta el paso actual INCLUIDO, y el resto en el tono apagado", () => {
+    const { container } = render(<WizardProgress step={3} />)
+    const bars = segments(container)
+
+    bars.forEach((bar, index) => {
+      if (index < 3) {
+        expect(bar).toHaveClass("bg-primary")
+      } else {
+        expect(bar).toHaveClass("bg-border")
+      }
+    })
   })
 
-  it("marks completed steps with lighter style", () => {
-    render(<WizardProgress currentStep={3} />)
-    const step1 = screen.getByText("1")
-    expect(step1.closest("div")).toHaveClass("bg-primary/20")
+  it("en el paso 1 solo el primer tramo va en primario", () => {
+    const { container } = render(<WizardProgress step={1} />)
+    const bars = segments(container)
+
+    expect(bars[0]).toHaveClass("bg-primary")
+    expect(bars[1]).toHaveClass("bg-border")
+    expect(bars[4]).toHaveClass("bg-border")
   })
 
-  it("marks future steps with muted style", () => {
-    render(<WizardProgress currentStep={2} />)
-    const step4 = screen.getByText("4")
-    expect(step4.closest("div")).toHaveClass("bg-muted")
+  it("no pinta ningun texto -- a diferencia del progreso de la reserva publica, no lleva contador N / total", () => {
+    const { container } = render(<WizardProgress step={2} />)
+    expect(container.textContent).toBe("")
+  })
+
+  it("respeta un totalSteps distinto de 5", () => {
+    const { container } = render(<WizardProgress step={2} totalSteps={3} />)
+    expect(segments(container)).toHaveLength(3)
   })
 })

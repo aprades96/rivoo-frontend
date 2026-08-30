@@ -1,45 +1,29 @@
-const STEP_LABELS = ["Empleado", "Servicio", "Fecha y hora", "Cliente", "Confirmar"]
+import { cn } from "@/lib/utils"
 
-interface WizardProgressProps {
-  currentStep: number
+export interface WizardProgressProps {
+  step: 1 | 2 | 3 | 4 | 5
   totalSteps?: number
 }
 
-export function WizardProgress({ currentStep, totalSteps = 5 }: WizardProgressProps) {
+/**
+ * Cinco (o `totalSteps`) barras planas de progreso, MOVIL unicamente
+ * (`design/NuevaCitaPaso1.dc.html:33-39`). Sin contador "N / 5": a
+ * diferencia del progreso de la reserva publica (`MobileProgress` en
+ * `booking-step-shell.tsx:231-247`), ningun artboard de este asistente lo
+ * dibuja.
+ *
+ * Sin clase de visibilidad propia -- la monta o no `NewAppointmentShell`
+ * segun el breakpoint, en JS, no aqui.
+ */
+export function WizardProgress({ step, totalSteps = 5 }: WizardProgressProps) {
   return (
-    <div className="flex items-center gap-2">
-      {Array.from({ length: totalSteps }).map((_, i) => {
-        const stepNum = i + 1
-        const isActive = stepNum === currentStep
-        const isCompleted = stepNum < currentStep
-        return (
-          <div key={stepNum} className="flex items-center gap-2">
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : isCompleted
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {stepNum}
-              </div>
-              <span className="mt-0.5 hidden text-[10px] text-muted-foreground sm:block">
-                {STEP_LABELS[i]}
-              </span>
-            </div>
-            {stepNum < totalSteps && (
-              <div
-                className={`h-0.5 w-4 rounded-full transition-colors sm:w-6 ${
-                  isCompleted ? "bg-primary/40" : "bg-muted"
-                }`}
-              />
-            )}
-          </div>
-        )
-      })}
+    <div className="flex gap-[5px]">
+      {Array.from({ length: totalSteps }, (_, i) => (
+        <div
+          key={i}
+          className={cn("h-[3px] flex-1 rounded-full", i < step ? "bg-primary" : "bg-border")}
+        />
+      ))}
     </div>
   )
 }
