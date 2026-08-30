@@ -93,6 +93,8 @@
   --color-surface-now-text: var(--surface-now-text);
   --color-warning-text: var(--warning-text);
   --color-grabber: var(--grabber);
+  --color-segmented-track: var(--segmented-track);
+  --color-input-border-attention: var(--input-border-attention);
 
   /* Tracking de titulos */
   --tracking-display: -0.02em;
@@ -178,6 +180,8 @@
   --surface-now: #faefe9; /* HoyDesktop.dc.html:190 — fondo del panel "Ahora mismo". Mismo valor que --destructive-soft, que viene de ReservaError y aqui seria un nombre enganoso */
   --surface-now-border: #ebd3c8; /* HoyDesktop.dc.html:190,203 — borde y separadores del panel "Ahora mismo" */
   --surface-now-text: #904226; /* Main.dc.html:69-70 — rotulo "AHORA MISMO" y hora, SOLO movil. Es accentDark = mix(#B4522F, #000, .2). NO es --primary-pressed (#8f3f24) */
+  --segmented-track: #f0e7dc; /* Equipo.dc.html:27 — carril del control segmentado */
+  --input-border-attention: #dfb3a8; /* DetalleEmpleadoDesktop.dc.html:218,220 — campo de hora vacio de un dia recien activado */
 }
 
 @layer base {

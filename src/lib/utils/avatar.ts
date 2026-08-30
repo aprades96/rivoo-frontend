@@ -79,6 +79,32 @@ export function employeeAvatarAlphaStyle(colorHex: string): CSSProperties {
 }
 
 /**
+ * Par por defecto de `employeeAvatarStyle` cuando no hay `colorHex` -- calca
+ * las clases `bg-muted text-muted-foreground` que `AvatarFallback` ya aplica
+ * de serie (`ui/avatar.tsx:49`). Se deja como estilo en linea concreto (no
+ * `undefined`) para que las dos copias literales que sustituye
+ * (`staff/[id]/page.tsx:155`, `employee-card.tsx:24`) puedan llamar al
+ * helper sin condicional propio.
+ */
+const DEFAULT_EMPLOYEE_AVATAR_STYLE: CSSProperties = {
+  backgroundColor: "var(--muted)",
+  color: "var(--muted-foreground)",
+}
+
+/**
+ * Estilo del avatar de iniciales de un empleado (D14): fondo con alfa +
+ * color pleno cuando tiene `colorHex` propio (delega en
+ * `employeeAvatarAlphaStyle`), o el par por defecto ya usado por el repo
+ * para un avatar sin color en caso contrario. Unifica la concatenacion
+ * `employee.colorHex + "20"` duplicada literalmente en
+ * `staff/[id]/page.tsx:155` y `employee-card.tsx:24`.
+ */
+export function employeeAvatarStyle(colorHex: string | null): CSSProperties {
+  if (!colorHex) return DEFAULT_EMPLOYEE_AVATAR_STYLE
+  return employeeAvatarAlphaStyle(colorHex)
+}
+
+/**
  * Color PLENO para el punto solido de la fila de empleado en la hoja de
  * detalle de movil (`design/DetalleCita.dc.html:84`) -- D12. El resolutor de
  * alfa de arriba da un fondo al 12,5%; reutilizarlo para el punto lo dejaria

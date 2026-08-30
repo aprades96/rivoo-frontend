@@ -6,6 +6,7 @@ import {
   employeeFallbackAvatarClassName,
   employeeFallbackAvatarColor,
   employeeAvatarAlphaStyle,
+  employeeAvatarStyle,
   employeeSolidColor,
   employeePaletteIndex,
 } from "./avatar"
@@ -85,6 +86,22 @@ describe("employeeAvatarAlphaStyle · fondo con alfa para el avatar de iniciales
     expect(employeeAvatarAlphaStyle("#B4522F")).toEqual({
       backgroundColor: "#B4522F20",
       color: "#B4522F",
+    })
+  })
+})
+
+describe("employeeAvatarStyle · el helper compartido del color de empleado (D14)", () => {
+  it("con colorHex, fondo al 12,5% (sufijo hex '20') y texto al color pleno", () => {
+    expect(employeeAvatarStyle("#B4522F")).toEqual({
+      backgroundColor: "#B4522F20",
+      color: "#B4522F",
+    })
+  })
+
+  it("sin colorHex, cae en el par por defecto que ya usa el repo para un avatar sin color", () => {
+    expect(employeeAvatarStyle(null)).toEqual({
+      backgroundColor: "var(--muted)",
+      color: "var(--muted-foreground)",
     })
   })
 })
