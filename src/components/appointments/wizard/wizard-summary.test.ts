@@ -107,11 +107,27 @@ describe("formatWizardContextPill", () => {
 })
 
 describe("getWizardSummaryRows", () => {
-  it('paso 1: "Profesional" es SIEMPRE "Sin elegir" en tono placeholder, no la raya', () => {
-    const withEmployee: WizardSummaryState = { ...EMPTY_STATE, selectedEmployee: employee }
-    const row = rowByLabel(getWizardSummaryRows(withEmployee, 1), "Profesional")
+  it('paso 1 SIN eleccion: "Profesional" es "Sin elegir" en tono placeholder, no la raya', () => {
+    const row = rowByLabel(getWizardSummaryRows(EMPTY_STATE, 1), "Profesional")
     expect(row.value).toBe("Sin elegir")
     expect(row.valueTone).toBe("placeholder")
+  })
+
+  // REGRESION. "Sin elegir" retrata el instante que dibuja el artboard, no una
+  // regla del paso 1. Elegir avanza al paso 2, asi que estar en el paso 1 con
+  // seleccion solo pasa al VOLVER, y ahi el aside no puede negar lo que la
+  // rejilla muestra marcado.
+  it("paso 1 al volver con un profesional ya elegido: el aside lo dice, no miente", () => {
+    const withEmployee: WizardSummaryState = { ...EMPTY_STATE, selectedEmployee: employee }
+    const row = rowByLabel(getWizardSummaryRows(withEmployee, 1), "Profesional")
+    expect(row.value).toBe(`${employee.firstName} ${employee.lastName}`)
+    expect(row.valueTone).toBeUndefined()
+  })
+
+  it('paso 1 al volver con "Sin preferencia": el aside lo dice', () => {
+    const anyEmp: WizardSummaryState = { ...EMPTY_STATE, anyEmployee: true }
+    const row = rowByLabel(getWizardSummaryRows(anyEmp, 1), "Profesional")
+    expect(row.value).toBe("Sin preferencia")
   })
 
   it("desde el paso 2: muestra el nombre del profesional elegido", () => {

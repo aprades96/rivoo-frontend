@@ -72,10 +72,18 @@ export function formatWizardContextPill(dateIso: string, slotIso: string): strin
 }
 
 function getProfessionalRow(state: WizardSummaryState, step: number): WizardSummaryRow {
-  // Paso 1: el aside dibuja SIEMPRE "Sin elegir" en tono placeholder para esta
-  // fila (`NuevaCitaDesktopPaso1.dc.html:125`), nunca la raya por defecto --
-  // es el propio paso el que resuelve la seleccion, no un resumen de ella.
-  if (step === 1) {
+  // Paso 1 SIN eleccion todavia: el artboard pinta el texto "Sin elegir" en tono
+  // placeholder (`NuevaCitaDesktopPaso1.dc.html:125`), no la raya por defecto que
+  // llevan las otras filas vacias.
+  //
+  // Acotado a "sin eleccion" A PROPOSITO: el artboard dibuja ese texto porque
+  // retrata el instante en que no hay nada elegido, no porque el paso 1 deba
+  // decir eso siempre. Elegir profesional avanza al paso 2, asi que estar en el
+  // paso 1 CON seleccion solo pasa al volver atras -- y ahi el aside afirmaria
+  // "Sin elegir" con la fila de esa persona marcada delante. El aside resume lo
+  // elegido en los cinco pasos; en el paso 1 solo cambia el texto del hueco
+  // vacio.
+  if (step === 1 && !state.anyEmployee && !state.selectedEmployee) {
     return { label: "Profesional", value: "Sin elegir", valueTone: "placeholder" }
   }
   if (state.anyEmployee) {
