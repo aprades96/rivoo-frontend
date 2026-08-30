@@ -80,4 +80,17 @@ export function formatRelativeTime(isoString: string, now: Date = new Date()): s
   return `hace ${diffDays} d`
 }
 
+/**
+ * Convenio de `WorkingHoursResponse.dayOfWeek`: lunes = 1 ... domingo = 7
+ * (`business-hours.ts:79`, `calendar/page.test.tsx:128`). `Date#getDay()`
+ * devuelve domingo = 0, de ahi la envoltura. Compartida por el paso 1 del
+ * asistente de nueva cita (`wizard/employee-step.tsx`) y `today-facts.ts`:
+ * los dos necesitan el mismo criterio de "que dia es hoy" y no pueden
+ * divergir en silencio.
+ */
+export function todayDayOfWeek(now: Date): number {
+  const jsDay = now.getDay()
+  return jsDay === 0 ? 7 : jsDay
+}
+
 export { TIMEZONE }

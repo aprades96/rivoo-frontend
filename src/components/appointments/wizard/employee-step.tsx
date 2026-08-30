@@ -21,6 +21,7 @@ import {
   employeePaletteIndex,
 } from "@/lib/utils/avatar"
 import { cn } from "@/lib/utils"
+import { todayDayOfWeek } from "@/lib/utils/dates"
 import type { Employee, WorkingHoursResponse } from "@/types/employee"
 
 // Tailwind's `lg:` breakpoint (1024px) -- keep in sync with `new-appointment-shell.tsx`.
@@ -30,16 +31,6 @@ import type { Employee, WorkingHoursResponse } from "@/types/employee"
 // is decided once in JS, not with `hidden lg:...` pairs that would leave
 // both variants in the DOM (see `booking-step-shell.test.tsx:24`).
 const DESKTOP_QUERY = "(min-width: 1024px)"
-
-/**
- * Convenio de `WorkingHoursResponse.dayOfWeek`: lunes = 1 ... domingo = 7
- * (`business-hours.ts:79`, `calendar/page.test.tsx:128`). `Date#getDay()`
- * devuelve domingo = 0, de ahi la envoltura.
- */
-function todayDayOfWeek(now: Date): number {
-  const jsDay = now.getDay()
-  return jsDay === 0 ? 7 : jsDay
-}
 
 /**
  * `undefined` (horario todavia sin resolver, `useEmployeesWorkingHours`
