@@ -140,12 +140,12 @@ describe("ClientStep", () => {
   it("en movil el buscador pide nombre, en escritorio nombre/telefono/email", () => {
     const { unmount } = render(<ClientStep />)
     expect(screen.getByPlaceholderText("Buscar por nombre...")).toBeInTheDocument()
-    expect(screen.queryByPlaceholderText("Buscar por nombre, telefono o email...")).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText("Buscar por nombre, teléfono o email...")).not.toBeInTheDocument()
     unmount()
 
     mockMatchMedia(true)
     render(<ClientStep />)
-    expect(screen.getByPlaceholderText("Buscar por nombre, telefono o email...")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("Buscar por nombre, teléfono o email...")).toBeInTheDocument()
     expect(screen.queryByPlaceholderText("Buscar por nombre...")).not.toBeInTheDocument()
   })
 
@@ -161,5 +161,72 @@ describe("ClientStep", () => {
     render(<ClientStep />)
 
     expect(screen.getByText(/Sin contacto/)).toBeInTheDocument()
+  })
+
+  it("con 1 visita usa el singular", () => {
+    mockClients([makeClient({ totalVisits: 1 })])
+    render(<ClientStep />)
+
+    expect(screen.getByText(/1 visita(?!s)/)).toBeInTheDocument()
+    expect(screen.queryByText(/1 visitas/)).not.toBeInTheDocument()
+  })
+
+  it("el aside de escritorio pinta 'Resumen', no la cabecera ni la nota de la reserva publica", () => {
+    mockMatchMedia(true)
+    render(<ClientStep />)
+
+    expect(screen.getByText("Resumen")).toBeInTheDocument()
+    expect(screen.queryByText("Tu reserva")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Sin registro/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/cancela gratis/)).not.toBeInTheDocument()
+  })
+
+  describe("alta de cliente en linea", () => {
+    async function openForm(user: ReturnType<typeof userEvent.setup>) {
+      render(<ClientStep />)
+      await user.click(screen.getByRole("button", { name: /Crear nuevo cliente/ }))
+    }
+
+    it("rellenar nombre y apellidos y pulsar 'Continuar' escribe newClientData y avanza al paso 5", async () => {
+      const user = userEvent.setup()
+      await openForm(user)
+
+      await user.type(screen.getByLabelText("Nombre *"), "Fernando")
+      await user.type(screen.getByLabelText("Apellidos *"), "Perez")
+      await user.click(screen.getByRole("button", { name: "Continuar" }))
+
+      const state = useWizardStore.getState()
+      expect(state.newClientData).toMatchObject({ firstName: "Fernando", lastName: "Perez" })
+      expect(state.step).toBe(5)
+    })
+
+    it("sin apellidos, 'Continuar' esta deshabilitado y no avanza", async () => {
+      const user = userEvent.setup()
+      await openForm(user)
+
+      await user.type(screen.getByLabelText("Nombre *"), "Fernando")
+      const continueButton = screen.getByRole("button", { name: "Continuar" })
+      expect(continueButton).toBeDisabled()
+
+      await user.click(continueButton)
+
+      const state = useWizardStore.getState()
+      expect(state.newClientData).toBeNull()
+      expect(state.step).toBe(4)
+    })
+
+    it("con nombre y apellidos completos, 'Continuar' se habilita", async () => {
+      const user = userEvent.setup()
+      await openForm(user)
+
+      const continueButton = screen.getByRole("button", { name: "Continuar" })
+      expect(continueButton).toBeDisabled()
+
+      await user.type(screen.getByLabelText("Nombre *"), "Fernando")
+      expect(continueButton).toBeDisabled()
+
+      await user.type(screen.getByLabelText("Apellidos *"), "Perez")
+      expect(continueButton).toBeEnabled()
+    })
   })
 })

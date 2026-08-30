@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import type { ReactElement } from "react"
+import { act, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useClients } from "./use-clients"
 import type { Client } from "@/types/client"
@@ -113,5 +114,51 @@ describe("useClients", () => {
     renderProbe("")
 
     expect(list).not.toHaveBeenCalled()
+  })
+
+  it("teclear rapido no dispara una peticion por letra: solo el valor asentado tras ~250ms", async () => {
+    // Timers falsos, no `userEvent`/`fireEvent`: aqui no hay ningun `<input>`
+    // que pulsar, solo cambios de la prop `search` en sucesion -- el mismo
+    // "teclear" que hace `ClientStep` al reescribir su estado local en cada
+    // `onChange`, sin el conflicto de AGENTS.md entre timers falsos y la
+    // simulacion de click/type de `userEvent`.
+    vi.useFakeTimers()
+    try {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      const tree = (search: string) => (
+        <QueryClientProvider client={client}>
+          <Probe search={search} />
+        </QueryClientProvider>
+      )
+      let rerender!: (ui: ReactElement) => void
+      await act(async () => {
+        ;({ rerender } = render(tree("")))
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      // Peticion inicial en el montaje: 1 llamada de partida.
+      expect(list).toHaveBeenCalledTimes(1)
+
+      // Tres cambios de prop separados 80ms, cada uno por debajo del
+      // debounce de 250ms: si cada tecla disparase su propia peticion,
+      // `list` tendria 4 llamadas aqui.
+      for (const partial of ["F", "Fe", "Fer"]) {
+        await act(async () => {
+          rerender(tree(partial))
+          await vi.advanceTimersByTimeAsync(80)
+        })
+      }
+      expect(list).toHaveBeenCalledTimes(1)
+
+      // Pasado el debounce completo desde el ultimo cambio, se asienta UNA
+      // sola peticion con el valor final.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(250)
+      })
+      expect(list).toHaveBeenCalledTimes(2)
+      expect(list).toHaveBeenLastCalledWith({ search: "Fer", page: 0, size: 10 }, "token")
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

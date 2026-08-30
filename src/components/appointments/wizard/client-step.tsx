@@ -61,7 +61,20 @@ export function ClientStep() {
 
   const rows = getWizardSummaryRows(wizardState, 4)
   const cta = getWizardSummaryCta(wizardState, 4)
-  const aside = <WizardSummaryAside rows={rows} ctaLabel={cta.label} ctaDisabled={cta.disabled} />
+  // `heading`/`note` defaults on `WizardSummaryAside` ("Tu reserva" + trust
+  // note) belong to the PUBLIC booking flow. This is a salon-staff wizard for
+  // a manually-created appointment: `NuevaCitaDesktopPaso4.dc.html:129` says
+  // "Resumen", and none of the ten wizard artboards carry the "Sin registro
+  // ... cancela gratis" note -- it would be a false claim here.
+  const aside = (
+    <WizardSummaryAside
+      rows={rows}
+      ctaLabel={cta.label}
+      ctaDisabled={cta.disabled}
+      heading="Resumen"
+      note={null}
+    />
+  )
 
   return (
     <NewAppointmentShell
@@ -123,7 +136,7 @@ export function ClientStep() {
             </div>
             <div>
               <Label htmlFor="phone" className="text-xs">
-                Telefono
+                Teléfono
               </Label>
               <Input
                 id="phone"
@@ -163,7 +176,7 @@ export function ClientStep() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={
-                isDesktop ? "Buscar por nombre, telefono o email..." : "Buscar por nombre..."
+                isDesktop ? "Buscar por nombre, teléfono o email..." : "Buscar por nombre..."
               }
               className={cn(
                 "rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground-2",
@@ -235,13 +248,13 @@ function CreateClientCard({ isDesktop, onClick }: CreateClientCardProps) {
       <div className="flex flex-col gap-0.5">
         <span
           className={cn(
-            "text-sm leading-tight font-semibold text-primary-pressed",
-            isDesktop && "text-[15px]"
+            "text-sm font-semibold text-primary-pressed",
+            isDesktop ? "text-[15px] leading-tight" : "leading-tight"
           )}
         >
           Crear nuevo cliente
         </span>
-        <span className="text-xs text-muted-foreground">Anadir datos manualmente</span>
+        <span className="text-xs text-muted-foreground">Añadir datos manualmente</span>
       </div>
     </button>
   )
@@ -290,13 +303,17 @@ function ClientCard({ client, index, isDesktop, onSelect }: ClientCardProps) {
     >
       <Avatar className={cn("size-10", isDesktop && "size-11")}>
         <AvatarFallback
-          className={cn(isDesktop ? "text-sm" : "text-[13px]", "font-semibold", employeeFallbackAvatarClassName(index))}
+          className={cn(
+            isDesktop ? "text-sm" : "text-[13px] leading-tight",
+            "font-semibold",
+            employeeFallbackAvatarClassName(index)
+          )}
         >
           {initials(client.firstName, client.lastName)}
         </AvatarFallback>
       </Avatar>
-      <div className="min-w-0 flex-1">
-        <p className={cn("truncate text-sm leading-tight font-semibold", isDesktop && "text-[15px]")}>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className={cn("truncate text-sm font-semibold", isDesktop ? "text-[15px] leading-tight" : "leading-tight")}>
           {client.firstName} {client.lastName}
         </p>
         {isDesktop ? (
