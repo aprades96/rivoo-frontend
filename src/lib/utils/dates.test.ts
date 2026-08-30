@@ -8,6 +8,7 @@ import {
   formatTimeRange,
   formatDateLong,
   formatRelativeTime,
+  todayDayOfWeek,
   AFTERNOON_HOUR,
 } from "./dates"
 
@@ -152,5 +153,26 @@ describe("formatRelativeTime", () => {
       const now = new Date(2026, 2, 23, 10, 0, 0)
       expect(formatRelativeTime(createdAt, now)).toBe("hace 1 d")
     })
+  })
+})
+
+describe("todayDayOfWeek", () => {
+  // Dates use noon local time (no trailing "Z") so parsing is stable
+  // regardless of the runner timezone -- a date-only string like
+  // "2026-08-30" would be parsed as UTC and could shift a day depending
+  // on the host offset.
+  it("wraps Sunday (JS getDay() 0) to 7, matching WorkingHoursResponse.dayOfWeek", () => {
+    const sunday = new Date("2026-08-30T12:00:00")
+    expect(todayDayOfWeek(sunday)).toBe(7)
+  })
+
+  it("keeps Monday as 1", () => {
+    const monday = new Date("2026-08-31T12:00:00")
+    expect(todayDayOfWeek(monday)).toBe(1)
+  })
+
+  it("keeps a mid-week day (Wednesday) as 3", () => {
+    const wednesday = new Date("2026-09-02T12:00:00")
+    expect(todayDayOfWeek(wednesday)).toBe(3)
   })
 })
