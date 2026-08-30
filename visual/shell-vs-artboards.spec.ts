@@ -12,6 +12,45 @@ import fs from "node:fs"
  * y falsos verdes por igual. Lo que produce es el par de imagenes para que las
  * mire una persona, que es lo que falta por hacer en este bloque.
  *
+ * QUE MIRAR en el par de `/today` (bloque 5, T9) -- la pantalla se acaba de
+ * reconstruir entera, asi que esto apunta a lo que de verdad puede haber
+ * salido mal, no a un repaso generico. Leer esto ANTES de abrir las imagenes:
+ *
+ *  - MOVIL (`Main`, 390): cabecera de 56px con el NOMBRE DEL SALON (no el
+ *    saludo -- el saludo va en el cuerpo, 27px con `line-height 1.1`); TRES
+ *    KPIs con icono de 14px y label de 11px, el de "Pendientes" con fondo y
+ *    texto de alerta; tarjeta "Ahora mismo" con el rotulo DENTRO y la hora
+ *    actual al lado; filas de cita con icono de tijeras, precio dentro de la
+ *    linea de servicio y una TERCERA linea (empleado + rango horario). NO debe
+ *    haber tarjeta de reservas online, ni KPI de facturacion, ni tarjeta
+ *    "Proxima cita". El FAB y la barra inferior los pinta el layout, no la
+ *    pagina: comprobar que no salen duplicados.
+ *
+ *  - ESCRITORIO (`HoyDesktop`, 1440): CUATRO KPIs SIN icono, label de 12px; el
+ *    de facturacion dice "412 €" ENTERO, sin decimales. Dos columnas
+ *    `1.6fr / 1fr`. Rotulo "Ahora mismo" FUERA de la tarjeta y sin hora. Filas
+ *    de cita con "servicio · empleado", precio en columna propia, sin tercera
+ *    linea. Tarjeta de reservas online debajo del panel.
+ *
+ *  - DIFERENCIA ESPERADA, NO ES UN FALLO DE ESTA PANTALLA: a 1440px el
+ *    contenido sale a 1084px de ancho porque `page-shell.tsx:131` impone
+ *    `max-w-[1084px]`, mientras el artboard dibuja 1136px (1440 - 248 de barra
+ *    lateral - 56 de `px-7`). Es deuda del chasis que comparten las doce
+ *    rutas de este bloque, no algo especifico de "Hoy". El padding SI coincide
+ *    (`px-7 py-6` = los `24px 28px` del artboard).
+ *
+ *  - TAMBIEN INTENCIONAL, NO LO REPORTES: en el par de escritorio, la fila
+ *    "En curso" NO lleva un borde distinto de las demas -- va con el mismo
+ *    `#E7DCCF` de siempre. El artboard dibuja `#DCC9BB` ahi, pero se decidio
+ *    no seguirlo porque el artboard MOVIL dibuja esa misma fila sin borde
+ *    diferenciado: seguir al de escritorio habria introducido una
+ *    inconsistencia entre los dos artboards, no resuelto una.
+ *
+ *  - EN LOS DOS PARES: que ningun texto quede con el `line-height` 1.5 de la
+ *    preflight de Tailwind donde el artboard dibuja ~1.25 (el fallo mas
+ *    repetido de este repo), y que no aparezcan hexes sueltos donde el resto
+ *    del repo usa tokens.
+ *
  * Requisitos: la pila levantada (Keycloak, gateway, salon/staff/client/billing)
  * y `npm run dev`.
  *
