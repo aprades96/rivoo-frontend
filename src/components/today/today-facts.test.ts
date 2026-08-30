@@ -196,6 +196,31 @@ describe("getNowRows", () => {
     expect(rows).toEqual([{ kind: "off", employee }])
   })
 
+  it("gives a busy row for an appointment overlapping now even when isOpen is false (off/busy precedence)", () => {
+    const employee = makeEmployee({ id: "emp_4b" })
+    const overlapping = makeAppointment({
+      employeeId: "emp_4b",
+      clientName: "Laura Gomez",
+      serviceName: "Manicura",
+      startTime: `${DAY}T10:30:00`,
+      endTime: `${DAY}T11:30:00`,
+    })
+
+    const rows = getNowRows(
+      [overlapping],
+      [employee],
+      { emp_4b: [makeHours({ isOpen: false })] },
+      NOW
+    )
+
+    // La cita en curso gana sobre "hoy no trabaja" -- misma jerarquia que
+    // D19 corregido aplica al horario declarado: es evidencia mas dura
+    // sobre AHORA que un horario (o su ausencia) configurado de antemano.
+    expect(rows).toEqual([
+      { kind: "busy", employee, clientName: "Laura Gomez", serviceName: "Manicura", until: "11:30" },
+    ])
+  })
+
   it("omits an employee whose shift already ended", () => {
     const employee = makeEmployee({ id: "emp_5" })
 
@@ -374,6 +399,58 @@ describe("getNowRows", () => {
     expect(rows).toEqual([
       { kind: "busy", employee, clientName: "Ana Garcia", serviceName: "Corte", until: "11:30" },
     ])
+  })
+
+  it("treats isOpen: true with a null closeTime as unresolved, without a current appointment, without crashing", () => {
+    const employee = makeEmployee({ id: "emp_11b" })
+    const brokenHours = makeHours({ closeTime: null as unknown as string })
+
+    // Sin cita en curso: esta es la unica forma de ejercer de verdad la
+    // guarda de `classifyShift` -- si hubiera una cita en curso, `current`
+    // se resolveria antes de llegar a `timeOnSameDay` y el test pasaria
+    // igual con o sin la guarda.
+    const rows = getNowRows([], [employee], { emp_11b: [brokenHours] }, NOW)
+
+    expect(rows).toEqual([])
+  })
+
+  it("treats isOpen: true with a null openTime as unresolved, without a current appointment, without crashing", () => {
+    const employee = makeEmployee({ id: "emp_11c" })
+    const brokenHours = makeHours({ openTime: null as unknown as string })
+
+    const rows = getNowRows([], [employee], { emp_11c: [brokenHours] }, NOW)
+
+    expect(rows).toEqual([])
+  })
+
+  describe("hoursLoading: N working-hours requests still in flight", () => {
+    it("an appointment overlapping now still produces 'busy' while hours are loading", () => {
+      const employee = makeEmployee({ id: "emp_15" })
+      const overlapping = makeAppointment({
+        employeeId: "emp_15",
+        startTime: `${DAY}T10:30:00`,
+        endTime: `${DAY}T11:30:00`,
+      })
+
+      const rows = getNowRows([overlapping], [employee], {}, NOW, true)
+
+      expect(rows).toEqual([
+        { kind: "busy", employee, clientName: "Ana Garcia", serviceName: "Corte", until: "11:30" },
+      ])
+    })
+
+    it("an employee with only a future appointment produces no row while hours are loading (no free-gap guess)", () => {
+      const employee = makeEmployee({ id: "emp_16" })
+      const next = makeAppointment({
+        employeeId: "emp_16",
+        startTime: `${DAY}T18:00:00`,
+        endTime: `${DAY}T18:30:00`,
+      })
+
+      const rows = getNowRows([next], [employee], {}, NOW, true)
+
+      expect(rows).toEqual([])
+    })
   })
 
   it("orders busy first, then free by DESCENDING gap, then off (D37)", () => {

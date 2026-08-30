@@ -166,15 +166,21 @@ function freeRow(employee: Employee, freeMinutes: number, next: Appointment | un
  * criterio que `formatRelativeTime`, `dates.ts:70`).
  *
  * D19 (corregido): solo las filas "free" exigen jornada abierta -- una cita
- * en curso produce "busy" incluso fuera de horario declarado, porque es
- * evidencia mas dura sobre el presente que una jornada configurada de
- * antemano.
+ * en curso produce "busy" incluso fuera de horario declarado, o con
+ * `isOpen: false`, porque es evidencia mas dura sobre el presente que una
+ * jornada configurada de antemano.
+ *
+ * `hoursLoading` (opcional, default `false`): mientras las peticiones de
+ * horario todavia estan en vuelo, la rama "unresolved" solo produce filas
+ * "busy", nunca "free" -- un hueco libre medido sin cierre conocido es una
+ * suposicion que este panel no pinta en ningun otro sitio.
  */
 export function getNowRows(
   appointments: Appointment[],
   employees: Employee[],
   hoursByEmployee: Record<string, WorkingHoursResponse[]>,
-  now: Date
+  now: Date,
+  hoursLoading: boolean = false
 ): NowRow[] {
   const dayOfWeek = todayDayOfWeek(now)
   const entries: { row: NowRow; group: 0 | 1 | 2; freeMinutes: number }[] = []
@@ -182,15 +188,26 @@ export function getNowRows(
   for (const employee of employees) {
     const classification = classifyShift(hoursByEmployee[employee.id], dayOfWeek)
 
-    if (classification.kind === "off") {
-      entries.push({ row: { kind: "off", employee }, group: 2, freeMinutes: 0 })
-      continue
-    }
-
     const activeAppointments = appointments.filter(
       (a) => a.employeeId === employee.id && isLive(a.status)
     )
     const current = findCurrentAppointment(activeAppointments, now)
+
+    if (classification.kind === "off") {
+      // Misma jerarquia que la rama "shift" de abajo (commit 3b82a68): una
+      // cita EN CURSO es evidencia mas dura sobre AHORA que "hoy no
+      // trabaja" declarado en el horario -- que puede haberse marcado
+      // DESPUES de reservar, o directamente nunca haberse validado al
+      // reservar (`AppointmentService.java:71-118` no comprueba horario
+      // laboral). `current` se mira ANTES del `continue` de "off" por la
+      // misma razon que se mira antes del cierre en la rama "shift".
+      if (current) {
+        entries.push({ row: busyRow(employee, current), group: 0, freeMinutes: 0 })
+        continue
+      }
+      entries.push({ row: { kind: "off", employee }, group: 2, freeMinutes: 0 })
+      continue
+    }
 
     if (classification.kind === "unresolved") {
       // Horario sin resolver: solo produce fila si se sostiene con las
@@ -203,6 +220,14 @@ export function getNowRows(
         continue
       }
 
+      // Con las N peticiones de horario todavia en vuelo, un hueco libre
+      // medido solo hasta la proxima cita (sin cierre que lo acote) es una
+      // suposicion -- se pintaria "Libre 7h" para pasar a "Libre 3h" en
+      // cuanto llegue el horario real. Sin horario no hay suposicion segura
+      // que mostrar como "free"; "busy" si vale, porque esa cita solapa el
+      // reloj y eso se sabe sin horarios.
+      if (hoursLoading) continue
+
       const next = findNextAppointment(activeAppointments, now)
       if (!next) continue
 
@@ -211,15 +236,6 @@ export function getNowRows(
       continue
     }
 
-    // classification.kind === "shift": jornada conocida. Una cita EN CURSO
-    // gana siempre sobre el horario declarado, este dentro o fuera de la
-    // jornada -- es evidencia mas dura sobre lo que pasa AHORA que un
-    // horario que alguien configuro una vez, y un panel titulado "Ahora
-    // mismo" que calle a quien esta con un cliente a las 20:00 con cierre a
-    // las 18:00 miente por omision (mismo fallo que D18 corrige por el otro
-    // lado). Por eso `current` se comprueba ANTES que la ventana horaria:
-    // la guarda de jornada solo protege las filas "free", nunca las "busy"
-    // (D19 corregido).
     // classification.kind === "shift": jornada conocida. Una cita EN CURSO
     // gana siempre sobre el horario declarado, este dentro o fuera de la
     // jornada -- es evidencia mas dura sobre lo que pasa AHORA que un
