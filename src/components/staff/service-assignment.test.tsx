@@ -32,9 +32,11 @@ vi.mock("@/hooks/use-staff", () => ({
 
 const assigned: EmployeeServiceResponse[] = [
   {
-    employeeId: "emp_1",
     serviceId: "svc_1",
-    customDurationMinutes: null,
+    serviceName: "Corte",
+    effectiveDuration: 30,
+    effectivePrice: 20,
+    customDuration: null,
     customPrice: null,
   },
 ]

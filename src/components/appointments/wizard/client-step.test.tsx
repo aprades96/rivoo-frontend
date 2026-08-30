@@ -46,7 +46,6 @@ function makeClient(overrides: Partial<Client> = {}): Client {
     email: null,
     phone: "612345678",
     gender: null,
-    dateOfBirth: null,
     notes: null,
     source: null,
     totalVisits: 14,

@@ -1,5 +1,10 @@
 import { apiFetch } from "./client"
-import type { Client, CreateClientRequest, UpdateClientRequest } from "@/types/client"
+import type {
+  Client,
+  ClientAppointmentsPage,
+  CreateClientRequest,
+  UpdateClientRequest,
+} from "@/types/client"
 import type { Page } from "@/types/api"
 
 export const clientsApi = {
@@ -28,4 +33,13 @@ export const clientsApi = {
 
   exportData: (id: string, token: string) =>
     apiFetch<unknown>(`/api/v1/clients/${id}/export`, { token }),
+
+  // Historial de citas del cliente (D38). A diferencia de `/export`, este
+  // endpoint NO se traga los errores del backend: un fallo se propaga como
+  // `ApiError` y la pantalla pinta su propia rama de error.
+  listAppointments: (id: string, params: { page?: number; size?: number }, token: string) =>
+    apiFetch<ClientAppointmentsPage>(
+      `/api/v1/clients/${id}/appointments?page=${params.page ?? 0}&size=${params.size ?? 10}`,
+      { token }
+    ),
 }

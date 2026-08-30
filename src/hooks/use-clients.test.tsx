@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { ReactElement } from "react"
 import { act, render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useClients } from "./use-clients"
-import type { Client } from "@/types/client"
+import { useClients, useClientAppointments } from "./use-clients"
+import type { Client, ClientAppointmentsPage } from "@/types/client"
 import type { Page } from "@/types/api"
 
 const useAuthMock = vi.fn()
@@ -13,10 +13,12 @@ vi.mock("@/hooks/use-auth", () => ({
 }))
 
 const list = vi.fn()
+const listAppointments = vi.fn()
 
 vi.mock("@/lib/api/clients", () => ({
   clientsApi: {
     list: (...args: unknown[]) => list(...args),
+    listAppointments: (...args: unknown[]) => listAppointments(...args),
   },
 }))
 
@@ -29,7 +31,6 @@ function makePage(names: string[]): Page<Client> {
       email: null,
       phone: null,
       gender: null,
-      dateOfBirth: null,
       notes: null,
       source: null,
       totalVisits: 0,
@@ -160,5 +161,100 @@ describe("useClients", () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+function makeAppointmentsPage(totalAppointments: number): ClientAppointmentsPage {
+  return {
+    content: [
+      {
+        id: "apt_1",
+        startTime: "2026-08-05T10:00:00",
+        serviceName: "Corte + Secado",
+        employeeName: "Laura Martinez",
+        price: 35,
+        status: "COMPLETED",
+      },
+    ],
+    page: 0,
+    size: 7,
+    totalElements: totalAppointments,
+    totalPages: 1,
+    summary: {
+      totalAppointments,
+      billedAmount: 612,
+      completedCount: 11,
+      lastCompletedAt: "2026-08-05T10:00:00Z",
+    },
+  }
+}
+
+function AppointmentsProbe({
+  clientId,
+  page,
+  size,
+}: {
+  clientId: string | undefined
+  page?: number
+  size?: number
+}) {
+  const { data, isError } = useClientAppointments(clientId, { page, size })
+
+  return (
+    <ul>
+      <li>{`total: ${data?.summary.totalAppointments ?? "-"}`}</li>
+      <li>{`error: ${isError}`}</li>
+    </ul>
+  )
+}
+
+describe("useClientAppointments", () => {
+  beforeEach(() => {
+    useAuthMock.mockReset()
+    useAuthMock.mockReturnValue({ accessToken: "token", isAuthenticated: true })
+    listAppointments.mockReset()
+  })
+
+  it("passes page and size through to clientsApi.listAppointments, and reads them back from the queryKey", async () => {
+    listAppointments.mockResolvedValue(makeAppointmentsPage(14))
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
+    render(
+      <QueryClientProvider client={client}>
+        <AppointmentsProbe clientId="cli_1" page={1} size={7} />
+      </QueryClientProvider>
+    )
+
+    expect(await screen.findByText("total: 14")).toBeInTheDocument()
+    expect(listAppointments).toHaveBeenCalledWith("cli_1", { page: 1, size: 7 }, "token")
+    expect(client.getQueryData(["client-appointments", "cli_1", 1, 7])).toBeDefined()
+  })
+
+  it("exposes isError instead of hiding a failed fetch behind an empty list (D38)", async () => {
+    listAppointments.mockRejectedValue(new Error("appointment-service unavailable"))
+
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <AppointmentsProbe clientId="cli_1" />
+      </QueryClientProvider>
+    )
+
+    // `findBy*` on the error flag itself: it is what the component does NOT
+    // own until the rejected promise's macrotask notification lands
+    // (AGENTS.md: `notifyManager` / `await act(async () => {})` cannot flush
+    // it). A synchronous assertion here would read the initial render and
+    // pass even if `isError` were never wired up.
+    expect(await screen.findByText("error: true")).toBeInTheDocument()
+    expect(screen.getByText("total: -")).toBeInTheDocument()
+  })
+
+  it("does not fetch when there is no clientId", () => {
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <AppointmentsProbe clientId={undefined} />
+      </QueryClientProvider>
+    )
+
+    expect(listAppointments).not.toHaveBeenCalled()
   })
 })

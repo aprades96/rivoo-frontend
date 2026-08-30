@@ -1,7 +1,8 @@
+import type { ReactElement } from "react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useEmployeesWorkingHours, useEmployeesServices } from "./use-staff"
+import { useEmployees, useEmployeesWorkingHours, useEmployeesServices } from "./use-staff"
 import type { WorkingHoursResponse, EmployeeServiceResponse } from "@/types/employee"
 
 const useAuthMock = vi.fn()
@@ -12,13 +13,61 @@ vi.mock("@/hooks/use-auth", () => ({
 
 const getWorkingHours = vi.fn()
 const getEmployeeServices = vi.fn()
+const listEmployees = vi.fn()
 
 vi.mock("@/lib/api/staff", () => ({
   staffApi: {
     getWorkingHours: (...args: unknown[]) => getWorkingHours(...args),
     getEmployeeServices: (...args: unknown[]) => getEmployeeServices(...args),
+    listEmployees: (...args: unknown[]) => listEmployees(...args),
   },
 }))
+
+function renderWithClient(ui: ReactElement, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+  render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+  return { client }
+}
+
+function EmployeesProbe({ includeInactive }: { includeInactive?: boolean }) {
+  const { data } = useEmployees(includeInactive === undefined ? undefined : { includeInactive })
+  return <div>{`empleados: ${data?.content.length ?? "-"}`}</div>
+}
+
+describe("useEmployees", () => {
+  beforeEach(() => {
+    useAuthMock.mockReset()
+    useAuthMock.mockReturnValue({ accessToken: "token", isAuthenticated: true })
+    listEmployees.mockReset()
+    listEmployees.mockResolvedValue({ content: [{ id: "emp_1" }], totalElements: 1 })
+  })
+
+  it("calls listEmployees without includeInactive by default (D35: consumers keep seeing only active employees)", async () => {
+    renderWithClient(<EmployeesProbe />)
+
+    expect(await screen.findByText("empleados: 1")).toBeInTheDocument()
+    expect(listEmployees).toHaveBeenCalledWith("token", { includeInactive: false })
+  })
+
+  it("keeps includeInactive:true and includeInactive:false in separate cache entries (D34)", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    renderWithClient(<EmployeesProbe includeInactive={false} />, client)
+
+    expect(await screen.findByText("empleados: 1")).toBeInTheDocument()
+
+    // A DIFFERENT payload for the "includeInactive: true" query key: proves
+    // the two do not collide (a deeply-equal payload would prove nothing --
+    // `structuralSharing` would hand back the same object either way).
+    listEmployees.mockResolvedValue({ content: [{ id: "emp_1" }, { id: "emp_2" }], totalElements: 2 })
+    renderWithClient(<EmployeesProbe includeInactive={true} />, client)
+
+    expect(await screen.findByText("empleados: 2")).toBeInTheDocument()
+    expect(listEmployees).toHaveBeenLastCalledWith("token", { includeInactive: true })
+
+    expect(
+      client.getQueryData(["employees", { includeInactive: false }])
+    ).toEqual({ content: [{ id: "emp_1" }], totalElements: 1 })
+  })
+})
 
 /** El horario de un empleado, distinguible por su hora de apertura. */
 function hoursOpeningAt(openTime: string): WorkingHoursResponse[] {
@@ -151,9 +200,11 @@ describe("useEmployeesWorkingHours", () => {
 /** Los servicios de un empleado, distinguibles por cuantos tiene asignados. */
 function servicesOf(...serviceIds: string[]): EmployeeServiceResponse[] {
   return serviceIds.map((serviceId) => ({
-    employeeId: "irrelevant",
     serviceId,
-    customDurationMinutes: null,
+    serviceName: serviceId,
+    effectiveDuration: 30,
+    effectivePrice: 20,
+    customDuration: null,
     customPrice: null,
   }))
 }

@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { clientsApi } from "@/lib/api/clients"
 import { useAuth } from "@/hooks/use-auth"
-import type { Client, CreateClientRequest } from "@/types/client"
+import type { Client, ClientAppointmentsPage } from "@/types/client"
 import type { Page } from "@/types/api"
 
 /** ~250ms so typing does not fire one request per keystroke, without adding
@@ -50,15 +50,23 @@ export function useClients(search: string) {
   })
 }
 
-export function useCreateClient() {
-  const queryClient = useQueryClient()
-  const { accessToken } = useAuth()
+/**
+ * Historial de citas del cliente (D38). `page`/`size` van en la queryKey, y
+ * `isError` queda expuesto por decision explicita: a diferencia del `/export`
+ * -- que degrada a lista vacia --, este endpoint SI propaga el fallo, y "sin
+ * citas" y "no se pudo cargar" tienen que distinguirse en la pantalla.
+ */
+export function useClientAppointments(
+  clientId: string | undefined,
+  params: { page?: number; size?: number } = {}
+) {
+  const { accessToken, isAuthenticated } = useAuth()
+  const page = params.page ?? 0
+  const size = params.size ?? 10
 
-  return useMutation({
-    mutationFn: (data: CreateClientRequest) =>
-      clientsApi.create(data, accessToken!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] })
-    },
+  return useQuery<ClientAppointmentsPage>({
+    queryKey: ["client-appointments", clientId, page, size],
+    queryFn: () => clientsApi.listAppointments(clientId!, { page, size }, accessToken!),
+    enabled: isAuthenticated && !!accessToken && !!clientId,
   })
 }

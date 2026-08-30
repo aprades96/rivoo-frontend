@@ -78,8 +78,15 @@ const service: ServiceOffering = {
   isActive: true,
 }
 
-function assignedTo(serviceId: string, employeeId = "emp_1"): EmployeeServiceResponse {
-  return { employeeId, serviceId, customDurationMinutes: null, customPrice: null }
+function assignedTo(serviceId: string): EmployeeServiceResponse {
+  return {
+    serviceId,
+    serviceName: serviceId,
+    effectiveDuration: 30,
+    effectivePrice: 20,
+    customDuration: null,
+    customPrice: null,
+  }
 }
 
 function mockEmployees(list: Employee[], isLoading = false) {
@@ -471,7 +478,7 @@ describe("DateTimeStep", () => {
       selectedSlotEmployeeId: "emp_2",
     })
     mockEmployees([laura, mia])
-    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id, "emp_2")] })
+    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id)] })
     mockAvailability([{ startTime: "09:00:00", endTime: "09:30:00", employeeId: "emp_2" }])
 
     render(<DateTimeStep />)
@@ -487,7 +494,7 @@ describe("DateTimeStep", () => {
 
     useWizardStore.setState({ anyEmployee: true, selectedEmployee: null, selectedService: service })
     mockEmployees([laura, mia])
-    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id, "emp_2")] })
+    mockEmployeesServices({ emp_1: [assignedTo(service.id)], emp_2: [assignedTo(service.id)] })
     mockWorkingHours({
       emp_1: [
         { dayOfWeek: dow, isOpen: false, openTime: "09:00", closeTime: "20:00", breakStartTime: null, breakEndTime: null },

@@ -93,7 +93,11 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
 
   const saveServicesMutation = useMutation({
     mutationFn: (serviceIds: string[]) =>
-      staffApi.assignServices(id, { serviceIds }, accessToken!),
+      staffApi.assignServices(
+        id,
+        { services: serviceIds.map((serviceId) => ({ serviceId })) },
+        accessToken!
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-services", id] })
       toast.success("Servicios actualizados")

@@ -93,7 +93,6 @@ const client: Client = {
   email: "ana@example.com",
   phone: "612345678",
   gender: null,
-  dateOfBirth: null,
   notes: null,
   source: null,
   totalVisits: 3,

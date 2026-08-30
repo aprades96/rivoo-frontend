@@ -97,7 +97,14 @@ function mockEmployeeServices(assigned: EmployeeServiceResponse[] | undefined, i
 }
 
 function assignedTo(serviceId: string): EmployeeServiceResponse {
-  return { employeeId: laura.id, serviceId, customDurationMinutes: null, customPrice: null }
+  return {
+    serviceId,
+    serviceName: serviceId,
+    effectiveDuration: 30,
+    effectivePrice: 20,
+    customDuration: null,
+    customPrice: null,
+  }
 }
 
 describe("ServiceStep", () => {

@@ -49,12 +49,14 @@ export interface UpdateEmployeeRequest {
 }
 
 export interface EmployeeServiceResponse {
-  employeeId: string
   serviceId: string
-  customDurationMinutes: number | null
+  serviceName: string
+  effectiveDuration: number
+  effectivePrice: number
+  customDuration: number | null
   customPrice: number | null
 }
 
 export interface AssignServicesRequest {
-  serviceIds: string[]
+  services: { serviceId: string; customDuration?: number; customPrice?: number }[]
 }

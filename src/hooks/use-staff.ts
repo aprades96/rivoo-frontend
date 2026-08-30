@@ -8,12 +8,20 @@ import type { Employee, WorkingHoursResponse, EmployeeServiceResponse } from "@/
 import type { ServiceOffering } from "@/types/service"
 import type { Page } from "@/types/api"
 
-export function useEmployees() {
+/**
+ * `includeInactive` va en la queryKey (D34): el calendario, `/today` y el
+ * asistente comparten `useEmployees()` sin argumentos y DEBEN seguir viendo
+ * solo activos. Si `includeInactive` no estuviera en la clave, una pantalla
+ * que pidiera los inactivos podria pisar o heredar la cache de las que solo
+ * quieren activos.
+ */
+export function useEmployees(opts?: { includeInactive?: boolean }) {
   const { accessToken, isAuthenticated } = useAuth()
+  const includeInactive = opts?.includeInactive ?? false
 
   return useQuery<Page<Employee>>({
-    queryKey: ["employees"],
-    queryFn: () => staffApi.listEmployees(accessToken!),
+    queryKey: ["employees", { includeInactive }],
+    queryFn: () => staffApi.listEmployees(accessToken!, { includeInactive }),
     enabled: isAuthenticated && !!accessToken,
   })
 }

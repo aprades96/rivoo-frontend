@@ -10,7 +10,6 @@ const mockClient: Client = {
   email: "ana@test.com",
   phone: "612345678",
   gender: null,
-  dateOfBirth: null,
   notes: null,
   source: null,
   totalVisits: 5,
