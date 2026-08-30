@@ -140,10 +140,31 @@ describe("AppointmentCard", () => {
       expect(bar()).toHaveStyle({ backgroundColor: "#5C7A5E" })
 
       expect(screen.getByText("Carla Ruiz")).toBeInTheDocument()
-      expect(screen.getByText(exact("Corte y secado · 35,00 €"))).toBeInTheDocument()
+
+      // Servicio, separador y precio son TRES nodos hermanos en el artboard
+      // (design/Main.dc.html:130-132), separados por el gap del contenedor.
+      // El `truncate` recorta SOLO el nombre del servicio.
+      const serviceNode = screen.getByText("Corte y secado")
+      expect(serviceNode).toHaveClass("truncate")
+      const priceNode = screen.getByText(exact("35,00 €"))
+      expect(priceNode).toHaveClass("shrink-0")
+      expect(priceNode).not.toHaveClass("truncate")
 
       // Tercera linea exclusiva de movil: empleado + rango horario.
       expect(screen.getByText(exact("Sofia Puig · 09:00 - 09:45"))).toBeInTheDocument()
+    })
+
+    it("con nombre de servicio largo, el precio no se lo come el truncate (D-fidelidad Main.dc.html:130-132)", () => {
+      render(
+        <AppointmentCard
+          appointment={makeAppointment({ serviceName: "Mechas balayage con tratamiento" })}
+        />
+      )
+
+      // El precio vive en su PROPIO nodo -- si volviera a compartir texto con
+      // el nombre del servicio, ni el nombre ni el precio matchearian exactos.
+      expect(screen.getByText("Mechas balayage con tratamiento")).toBeInTheDocument()
+      expect(screen.getByText(exact("35,00 €"))).toBeInTheDocument()
     })
 
     it("padding 12px, gap 12px en la fila y gap 5px en la columna de datos", () => {

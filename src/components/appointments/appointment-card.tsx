@@ -134,7 +134,14 @@ export function AppointmentCard({ appointment, onTap }: AppointmentCardProps) {
         </div>
         <div className="flex items-center gap-1.5 text-xs leading-tight text-muted-foreground">
           <Scissors className="size-3 shrink-0" strokeWidth={1.75} />
-          <span className="truncate tabular-nums">{`${serviceName} · ${price}`}</span>
+          {/* Servicio, separador y precio son TRES nodos hermanos en el
+              artboard (design/Main.dc.html:130-132), espaciados por el `gap`
+              del contenedor. El `truncate` recorta SOLO el nombre del
+              servicio -- si comparte nodo con el precio, un nombre largo se
+              come el precio entero, y el precio no es un adorno. */}
+          <span className="min-w-0 truncate">{serviceName}</span>
+          <span className="shrink-0">·</span>
+          <span className="shrink-0 tabular-nums">{price}</span>
         </div>
         <span className="truncate text-xs leading-tight text-muted-foreground">
           {employeeName} · {formatTimeRange(startTime, endTime)}
