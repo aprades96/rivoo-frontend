@@ -7,7 +7,7 @@ import type { Employee } from "@/types/employee"
 import type { ServiceOffering } from "@/types/service"
 
 // The repo's usual `next/navigation` double (e.g. `staff/[id]/page.test.tsx`)
-// hands back an inert `replace: vi.fn()`: with the Tabs now controlled by
+// hands back an inert `replace: vi.fn()`: with the panel now controlled by
 // the URL, clicking a tab would only record that call -- `useSearchParams()`
 // would stay frozen, the panel would never switch, and the test would be a
 // permanent false green for the exact defect this suite exists to catch
@@ -69,6 +69,66 @@ const service: ServiceOffering = {
   isActive: true,
 }
 
+// Los cinco empleados dibujados por los dos artboards de Equipo (§1.3):
+// cuatro activos y un inactivo (Nil Bosch, sin telefono ni color), en el
+// orden `active DESC` que ya da el backend (B1).
+const laura: Employee = {
+  id: "emp_laura",
+  firstName: "Laura",
+  lastName: "Martinez",
+  email: "laura@rivoo.test",
+  phone: "612345678",
+  jobTitle: "Estilista",
+  colorHex: "#B4522F",
+  isActive: true,
+  createdAt: "2026-01-01T00:00:00Z",
+}
+const sofia: Employee = {
+  id: "emp_sofia",
+  firstName: "Sofia",
+  lastName: "Prat",
+  email: "sofia@rivoo.test",
+  phone: "622345678",
+  jobTitle: "Colorista",
+  colorHex: "#3B82F6",
+  isActive: true,
+  createdAt: "2026-01-01T00:00:00Z",
+}
+const marc: Employee = {
+  id: "emp_marc",
+  firstName: "Marc",
+  lastName: "Oliva",
+  email: "marc@rivoo.test",
+  phone: "632345678",
+  jobTitle: "Barbero",
+  colorHex: null,
+  isActive: true,
+  createdAt: "2026-01-01T00:00:00Z",
+}
+const laia: Employee = {
+  id: "emp_laia",
+  firstName: "Laia",
+  lastName: "Serra",
+  email: "laia@rivoo.test",
+  phone: "642345678",
+  jobTitle: "Estilista junior",
+  colorHex: null,
+  isActive: true,
+  createdAt: "2026-01-01T00:00:00Z",
+}
+const nil: Employee = {
+  id: "emp_nil",
+  firstName: "Nil",
+  lastName: "Bosch",
+  email: "nil@rivoo.test",
+  phone: null,
+  jobTitle: "Recepcion",
+  colorHex: null,
+  isActive: false,
+  createdAt: "2026-01-01T00:00:00Z",
+}
+const fiveEmployees = [laura, sofia, marc, laia, nil]
+
 /** `matches: desktop` para simular `(min-width: 1024px)`; jsdom no tiene layout real. */
 function mockMatchMedia(desktop: boolean) {
   window.matchMedia = ((query: string) => ({
@@ -109,7 +169,10 @@ describe("StaffPage", () => {
     replaceMock.mockClear()
     useEmployeesMock.mockReset()
     useServicesMock.mockReset()
-    useEmployeesMock.mockReturnValue({ data: { content: [employee] }, isLoading: false })
+    useEmployeesMock.mockReturnValue({
+      data: { content: [employee], totalElements: 1 },
+      isLoading: false,
+    })
     useServicesMock.mockReturnValue({ data: { content: [service] }, isLoading: false })
   })
 
@@ -160,15 +223,13 @@ describe("StaffPage", () => {
   })
 
   it("sigue a la query cuando cambia sin remontar (navegacion de cliente desde la barra lateral)", async () => {
-    // A diferencia de los dos tests anteriores, aqui no hay clic sobre las
-    // propias Tabs ni remontaje con la query ya puesta: se monta en /staff
-    // (sin query), la query cambia por debajo -- como hace el <Link> de la
-    // barra lateral hacia /staff?tab=services, que es navegacion de cliente
-    // dentro de la MISMA ruta, no un remount -- y solo entonces se
-    // re-renderiza. Con `value={tab}` el panel visible sigue a la query; con
-    // `defaultValue={tab}` (el defecto que este test existe para atrapar) las
-    // Tabs se quedarian ancladas al valor leido en el primer render y el
-    // panel seguiria mostrando Empleados.
+    // A diferencia de los dos tests anteriores, aqui no hay clic sobre el
+    // propio segmentado ni remontaje con la query ya puesta: se monta en
+    // /staff (sin query), la query cambia por debajo -- como hace el
+    // <Link> de la barra lateral hacia /staff?tab=services, que es
+    // navegacion de cliente dentro de la MISMA ruta, no un remount -- y
+    // solo entonces se re-renderiza. Con `value={tab}` el panel visible
+    // sigue a la query.
     const { rerenderPage } = renderPage()
 
     expect(screen.getByRole("tabpanel")).toHaveTextContent("Ana Garcia")
@@ -179,5 +240,113 @@ describe("StaffPage", () => {
     const servicesPanel = await screen.findByRole("tabpanel")
     expect(servicesPanel).toHaveTextContent("Corte de pelo")
     expect(servicesPanel).not.toHaveTextContent("Ana Garcia")
+  })
+
+  describe("panel Empleados en escritorio", () => {
+    beforeEach(() => {
+      mockMatchMedia(true)
+      useEmployeesMock.mockReturnValue({
+        data: { content: fiveEmployees, totalElements: 5 },
+        isLoading: false,
+      })
+    })
+
+    it("pinta una tabla con las seis columnas de §1.3", () => {
+      renderPage()
+
+      expect(screen.getByRole("table")).toBeInTheDocument()
+      const headers = screen.getAllByRole("columnheader")
+      expect(headers.map((h) => h.textContent)).toEqual([
+        "Empleado",
+        "Puesto",
+        "Contacto",
+        "Color",
+        "Estado",
+        "",
+      ])
+    })
+
+    it("el contador dice '5 empleados · 4 activos' (D8: la pagina contiene a todo el mundo)", () => {
+      renderPage()
+
+      expect(screen.getByRole("tabpanel")).toHaveTextContent("5 empleados · 4 activos")
+    })
+
+    it("la fila inactiva lleva su clase de tinte (D9) y hay un enlace por fila", () => {
+      renderPage()
+
+      const links = screen.getAllByRole("link")
+      // El CTA de escritorio ("Añadir empleado") tambien es un <button>, no
+      // un <Link>, asi que los cinco enlaces son exactamente las cinco filas.
+      expect(links).toHaveLength(5)
+
+      const nilRow = links.find((link) => link.textContent?.includes("Nil Bosch"))
+      expect(nilRow).toHaveClass("bg-muted-subtle")
+
+      const lauraRow = links.find((link) => link.textContent?.includes("Laura Martinez"))
+      expect(lauraRow).not.toHaveClass("bg-muted-subtle")
+    })
+
+    it("'Sin teléfono' y 'Por defecto' aparecen para el empleado sin telefono ni color", () => {
+      renderPage()
+
+      // Nil Bosch es el unico sin telefono; Marc y Laia tambien carecen de
+      // `colorHex` (§1.3 solo fija el color de Laura y Sofia en el
+      // artboard), asi que "Por defecto" puede aparecer mas de una vez.
+      expect(screen.getByText("Sin teléfono")).toBeInTheDocument()
+      expect(screen.getAllByText("Por defecto").length).toBeGreaterThan(0)
+    })
+
+    it("con mas gente por debajo de la pagina y ningun inactivo visto, calla el desglose (D8)", () => {
+      const manyActive: Employee[] = Array.from({ length: 100 }, (_, i) => ({
+        ...laura,
+        id: `emp_${i}`,
+        firstName: `Empleado${i}`,
+      }))
+      useEmployeesMock.mockReturnValue({
+        data: { content: manyActive, totalElements: 150 },
+        isLoading: false,
+      })
+
+      renderPage()
+
+      const panel = screen.getByRole("tabpanel")
+      expect(panel).toHaveTextContent("150 empleados")
+      expect(panel).not.toHaveTextContent("activos")
+    })
+  })
+
+  describe("panel Empleados en movil", () => {
+    beforeEach(() => {
+      mockMatchMedia(false)
+      useEmployeesMock.mockReturnValue({
+        data: { content: fiveEmployees, totalElements: 5 },
+        isLoading: false,
+      })
+    })
+
+    it("no pinta ninguna tabla y muestra cinco tarjetas enlazadas", () => {
+      renderPage()
+
+      expect(screen.queryByRole("table")).not.toBeInTheDocument()
+      const links = screen.getAllByRole("link")
+      expect(links).toHaveLength(5)
+    })
+
+    it("el contador dice '5 empleados' sin desglose", () => {
+      renderPage()
+
+      const panel = screen.getByRole("tabpanel")
+      expect(panel).toHaveTextContent("5 empleados")
+      expect(panel).not.toHaveTextContent("activos")
+    })
+
+    it("el CTA 'Añadir' esta en el cuerpo del panel, no en la cabecera", () => {
+      renderPage()
+
+      const addButtons = screen.getAllByRole("button", { name: "Añadir" })
+      expect(addButtons).toHaveLength(1)
+      expect(screen.getByRole("tabpanel")).toContainElement(addButtons[0])
+    })
   })
 })

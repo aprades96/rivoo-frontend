@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect } from "vitest"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { EmployeeCard } from "./employee-card"
 import type { Employee } from "@/types/employee"
 
@@ -45,10 +46,27 @@ describe("EmployeeCard", () => {
     expect(screen.getByText("CG")).toBeInTheDocument()
   })
 
-  it("calls onTap when clicked", () => {
-    const onTap = vi.fn()
-    render(<EmployeeCard employee={activeEmployee} onTap={onTap} />)
-    fireEvent.click(screen.getByText("Carlos Garcia"))
-    expect(onTap).toHaveBeenCalledWith(activeEmployee)
+  // D5: la fila es un enlace de verdad, no un `<Card onClick>` sin `role`.
+  // Sustituye al viejo test de `onTap` -- la navegacion ahora es
+  // responsabilidad del propio `<Link>`, no de un callback del padre.
+  it("is a real link toward the employee's detail page, reachable by keyboard", async () => {
+    const user = userEvent.setup()
+    render(<EmployeeCard employee={activeEmployee} />)
+
+    const link = screen.getByRole("link", { name: /Carlos Garcia/ })
+    expect(link).toHaveAttribute("href", "/staff/emp_1")
+
+    await user.tab()
+    expect(link).toHaveFocus()
+  })
+
+  // D9: en movil la fila inactiva NO tinta el fondo (a diferencia de la
+  // tabla de escritorio); solo el nombre y el puesto atenuan su color.
+  it("does not tint the background of an inactive row in mobile (D9)", () => {
+    render(<EmployeeCard employee={inactiveEmployee} />)
+
+    const link = screen.getByRole("link", { name: /Maria Lopez/ })
+    expect(link).not.toHaveClass("bg-muted-subtle")
+    expect(screen.getByText("Maria Lopez")).toHaveClass("text-muted-foreground")
   })
 })
