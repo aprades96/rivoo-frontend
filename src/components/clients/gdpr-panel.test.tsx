@@ -160,6 +160,27 @@ describe("GdprPanel", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
   })
 
+  // ALTO: el boton irreversible en si ("Anonimizar permanentemente") no
+  // llevaba ninguna asercion propia -- un doble clic mientras la mutacion
+  // esta en vuelo dispararia un segundo POST /anonymize sobre una operacion
+  // que no se puede deshacer.
+  it("mientras la anonimizacion esta en vuelo, 'Anonimizar permanentemente' tambien esta deshabilitado", async () => {
+    const user = userEvent.setup()
+    let resolveAnonymize!: () => void
+    anonymize.mockReturnValue(new Promise<void>((resolve) => { resolveAnonymize = resolve }))
+
+    renderPanel()
+    await user.click(screen.getByRole("button", { name: "Anonimizar" }))
+    await user.click(screen.getByRole("button", { name: "Anonimizar permanentemente" }))
+
+    const confirmButton = await screen.findByRole("button", { name: "Anonimizar permanentemente" })
+    expect(confirmButton).toBeDisabled()
+    expect(anonymize).toHaveBeenCalledTimes(1)
+
+    resolveAnonymize()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  })
+
   // D27 -- el hueco real 2/2: el `onOpenChange` no se bloqueaba durante
   // `isPending`, asi que un `Esc` cerraba el dialogo sobre una operacion
   // irreversible en curso.

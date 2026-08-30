@@ -242,6 +242,24 @@ describe("StaffPage", () => {
     expect(servicesPanel).not.toHaveTextContent("Ana Garcia")
   })
 
+  // BAJO: `employeesCounterText` calla el contador cuando `totalElements ===
+  // 0` porque ahi manda el EmptyState, no una cifra a cero. Con cero
+  // empleados en escritorio (donde el contador vive junto al segmentado, no
+  // dentro del panel), un fallo en esa condicion pintaria "0 empleados" al
+  // lado del EmptyState.
+  it("con cero empleados en escritorio, no pinta ningun contador junto al segmentado (D8: null cuando totalElements===0)", () => {
+    mockMatchMedia(true)
+    useEmployeesMock.mockReturnValue({
+      data: { content: [], totalElements: 0 },
+      isLoading: false,
+    })
+
+    renderPage()
+
+    expect(screen.getByText("Sin empleados")).toBeInTheDocument()
+    expect(screen.queryByText(/^\d+ empleados?/i)).not.toBeInTheDocument()
+  })
+
   it("cuando falla la petición de empleados, avisa del fallo en vez de afirmar 'Sin empleados' (F1)", async () => {
     const refetch = vi.fn()
     useEmployeesMock.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch })

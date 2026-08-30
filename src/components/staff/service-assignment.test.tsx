@@ -113,6 +113,55 @@ describe("ServiceAssignment", () => {
     expect(screen.getByText("2 de 2")).toBeInTheDocument()
   })
 
+  // MEDIO: the copy at the bottom of the card claims "Solo aparecen los
+  // servicios activos del catálogo" but no fixture ever had an inactive
+  // service to prove it -- an archived service would be offered for
+  // assignment and counted in the "N de M" denominator without this.
+  it("filters out archived (isActive: false) services from both the list and the 'N de M' counter", () => {
+    useServicesMock.mockReturnValue({
+      data: {
+        content: [
+          ...catalog.content,
+          {
+            id: "svc_archived",
+            name: "Permanente (descatalogado)",
+            description: null,
+            durationMinutes: 90,
+            price: 60,
+            category: null,
+            isActive: false,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    })
+
+    render(<ServiceAssignment assignedServices={assigned} onSave={vi.fn().mockResolvedValue(undefined)} />)
+
+    expect(screen.queryByText("Permanente (descatalogado)")).not.toBeInTheDocument()
+    expect(screen.queryByRole("checkbox", { name: /Permanente/ })).not.toBeInTheDocument()
+    // Denominator stays 2 (the two active services), not 3.
+    expect(screen.getByText("1 de 2")).toBeInTheDocument()
+  })
+
+  // MEDIO: `assignServices` deletes-then-recreates on the backend -- a
+  // double submit while the mutation is in flight would race two
+  // delete+recreate calls. The twin editor (WorkingHoursEditor) already has
+  // this freeze tested; this one did not.
+  it("disables the save button while isSaving", () => {
+    render(
+      <ServiceAssignment
+        assignedServices={assigned}
+        onSave={vi.fn().mockResolvedValue(undefined)}
+        isSaving
+      />
+    )
+
+    expect(screen.getByRole("button", { name: /guardar servicios/i })).toBeDisabled()
+  })
+
   // D12: the desktop card title ("Servicios que realiza") is desktop-only --
   // the mobile panel reuses this same component but the enumeration of
   // "same pieces" it reuses names the counter, not the card title.

@@ -58,6 +58,32 @@ describe("ResponsiveFormModal", () => {
     expect(screen.getByTestId("responsive-form-modal-dialog")).toBeInTheDocument()
   })
 
+  // D17/T3: SCRIM_CLASS unifies the twelve artboards' overlay to
+  // `bg-foreground/42` (`rgba(42,35,32,0.42)`) -- the one discrepant artboard
+  // (`FormularioEmpleadoDesktop.dc.html:297` gives 0.34) is exactly the value
+  // someone "corrects toward" when reverting against raw data. Neither branch
+  // had a single assertion on it. Same pattern as
+  // `appointment-detail-sheet.test.tsx`.
+  describe("D17/T3: unified scrim (bg-foreground/42)", () => {
+    it("applies the scrim to the mobile sheet's overlay via overlayClassName", () => {
+      mockMatchMedia(false)
+
+      const { baseElement } = renderModal(vi.fn())
+
+      const overlay = baseElement.querySelector('[data-slot="sheet-overlay"]')
+      expect(overlay).toHaveClass("bg-foreground/42")
+    })
+
+    it("applies the scrim to the desktop dialog's overlay via className", () => {
+      mockMatchMedia(true)
+
+      const { baseElement } = renderModal(vi.fn())
+
+      const overlay = baseElement.querySelector('[data-slot="dialog-overlay"]')
+      expect(overlay).toHaveClass("bg-foreground/42")
+    })
+  })
+
   it("propagates onOpenChange(false) from the close button on mobile", async () => {
     mockMatchMedia(false)
     const onOpenChange = vi.fn()

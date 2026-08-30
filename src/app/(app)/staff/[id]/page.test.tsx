@@ -298,6 +298,36 @@ describe("EmployeeDetailPage", () => {
     expect(await screen.findByRole("button", { name: /guardar servicios \(1\)/i })).toBeEnabled()
   })
 
+  // §1.11.1 CRITICAL: `staffApi.assignServices` expects `{ services: [{
+  // serviceId }] }` (see staff.test.ts), but that contract test writes the
+  // body BY HAND -- it can never catch this SCREEN building the wrong one.
+  // Drives the real "tick a box, press Guardar" flow and asserts the actual
+  // payload the mutation received, the only thing that ties the UI to the
+  // contract.
+  it("§1.11.1 CRITICAL: builds the assignServices payload as { services: [{ serviceId }] }, not { serviceIds }, from a real Guardar click", async () => {
+    mockMatchMedia(false)
+    getEmployee.mockResolvedValue(employee)
+    getWorkingHours.mockResolvedValue([])
+    useEmployeeServicesMock.mockReturnValue({ data: [], isError: false, refetch: vi.fn() })
+    assignServices.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+
+    renderPage()
+
+    expect(await screen.findByText("Ana Garcia")).toBeInTheDocument()
+    await user.click(screen.getByRole("tab", { name: "Servicios" }))
+
+    await user.click(await screen.findByRole("checkbox", { name: /Corte/ }))
+    await user.click(screen.getByRole("button", { name: /guardar servicios \(1\)/i }))
+
+    await waitFor(() => expect(assignServices).toHaveBeenCalledTimes(1))
+    expect(assignServices).toHaveBeenCalledWith(
+      "emp_1",
+      { services: [{ serviceId: "svc_1" }] },
+      "token"
+    )
+  })
+
   it("shows an error with a retry action instead of an infinite skeleton for services when the assignment fails to load", async () => {
     mockMatchMedia(false)
     getEmployee.mockResolvedValue(employee)
@@ -354,6 +384,33 @@ describe("EmployeeDetailPage", () => {
     expect(screen.getByText("Horas propias de Ana")).toBeInTheDocument()
     expect(await screen.findByText("Servicios que realiza")).toBeInTheDocument()
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument()
+
+    // The two labels above are SIBLINGS of each card's content, not containers
+    // of it -- asserting only the labels would still pass with an empty card
+    // 2 (`{hoursContent}` swapped for `{null}`). Assert the actual content of
+    // each: card 2's WorkingHoursEditor (a day switch + its own save button)
+    // and card 3's ServiceAssignment (a service checkbox + its own counter).
+    expect(screen.getAllByRole("switch").length).toBeGreaterThan(0)
+    expect(screen.getByRole("button", { name: /guardar horarios/i })).toBeInTheDocument()
+    expect(screen.getByRole("checkbox", { name: /Corte/ })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /guardar servicios/i })).toBeInTheDocument()
+  })
+
+  // BAJO: `EmployeeColor` (square-sm, showHex) has its own unit test, but its
+  // USE inside the desktop profile card (card 1) had none -- the swatch and
+  // hex text could vanish from this specific call site without any test
+  // noticing.
+  it("desktop profile card renders the employee's colour swatch and hex (EmployeeColor square-sm)", async () => {
+    mockMatchMedia(true)
+    getEmployee.mockResolvedValue({ ...employee, colorHex: "#B4522F" })
+    getWorkingHours.mockResolvedValue([])
+    useEmployeeServicesMock.mockReturnValue({ data: [], isError: false, refetch: vi.fn() })
+
+    renderPage()
+
+    expect(await screen.findByRole("heading", { name: "Ana Garcia" })).toBeInTheDocument()
+    expect(screen.getByTestId("employee-color-swatch")).toBeInTheDocument()
+    expect(screen.getByTestId("employee-color-hex")).toHaveTextContent("#B4522F")
   })
 
   it("D14/D29: shows the employee's colour swatch and the formatted phone number instead of the raw digits", async () => {

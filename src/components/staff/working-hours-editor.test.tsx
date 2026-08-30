@@ -231,6 +231,55 @@ describe("WorkingHoursEditor", () => {
       expect(getByRole("button", { name: /guardar horarios/i })).toBeDisabled()
     })
 
+    // ALTO: every incomplete fixture in this file sets BOTH times to null.
+    // The whole reason `isIncomplete` reads `!openTime || !closeTime` (an OR)
+    // instead of an AND is the far more likely slip: writing the opening
+    // time and forgetting the closing one. With an AND, that half-written
+    // day would stop counting as incomplete -- no banner, no attention
+    // border, and the CTA would unfreeze and save a half schedule.
+    it("open with ONLY one time written (the other still blank): still counts as incomplete -- banner shown, CTA disabled", () => {
+      const halfWrittenSunday: WorkingHoursResponse[] = [
+        {
+          dayOfWeek: 7,
+          isOpen: true,
+          openTime: "09:00",
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+      ]
+      const { getByRole, getByText } = renderEditor(halfWrittenSunday)
+
+      expect(
+        getByText(
+          "El domingo llega sin horas guardadas. Al activarlo hay que escribirlas antes de guardar."
+        )
+      ).toBeInTheDocument()
+      expect(getByRole("button", { name: /guardar horarios/i })).toBeDisabled()
+    })
+
+    // MEDIO: a brand new employee arrives with Saturday/Sunday CLOSED and
+    // both times null (EmployeeService.java) -- `isIncomplete` must not flag
+    // a closed day at all, no matter what its times are. Without the
+    // `day.isOpen` guard, this genuinely-fine fixture would freeze the CTA
+    // and show a banner about a day that isn't even open.
+    it("closed, no stored hours: does NOT count as incomplete -- no banner, CTA stays enabled", () => {
+      const closedSunday: WorkingHoursResponse[] = [
+        {
+          dayOfWeek: 7,
+          isOpen: false,
+          openTime: null as unknown as string,
+          closeTime: null as unknown as string,
+          breakStartTime: null,
+          breakEndTime: null,
+        },
+      ]
+      const { getByRole, queryByText } = renderEditor(closedSunday)
+
+      expect(queryByText(/llega sin horas guardadas/i)).not.toBeInTheDocument()
+      expect(getByRole("button", { name: /guardar horarios/i })).toBeEnabled()
+    })
+
     it("open with hours: no banner, CTA enabled", () => {
       const openSunday: WorkingHoursResponse[] = [
         { dayOfWeek: 7, isOpen: true, openTime: "10:00", closeTime: "14:00", breakStartTime: null, breakEndTime: null },

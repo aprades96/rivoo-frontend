@@ -55,6 +55,26 @@ describe("ClientTable", () => {
     expect(screen.getByText("14").closest('[role="cell"]')).toHaveClass("text-right")
   })
 
+  // BAJO: avatar fallback colour comes from `employeeFallbackAvatarClassName(
+  // clients.indexOf(client))` -- by POSITION, so two contiguous clients never
+  // share a colour. Nothing exercised this with more than one client, so a
+  // regression pinning every row to index 0 went unnoticed.
+  it("gives each client row a different fallback avatar colour by position (M13)", () => {
+    render(
+      <ClientTable
+        clients={[makeClient({ id: "cli_1" }), makeClient({ id: "cli_2", firstName: "Marc", lastName: "Oliva" })]}
+        totalElements={2}
+        pageSize={50}
+      />
+    )
+
+    const avatars = document.querySelectorAll('[data-slot="avatar-fallback"]')
+    expect(avatars).toHaveLength(2)
+    expect(avatars[0].className).toContain("bg-chart-1/12")
+    expect(avatars[1].className).toContain("bg-chart-2/12")
+    expect(avatars[0].className).not.toBe(avatars[1].className)
+  })
+
   it("shows email + formatted phone when both exist (D29)", () => {
     render(
       <ClientTable
