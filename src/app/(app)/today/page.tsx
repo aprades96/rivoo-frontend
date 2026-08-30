@@ -63,7 +63,11 @@ export default function TodayPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  const appointments = data?.content ?? []
+  // `useMemo` y no `data?.content ?? []` a secas: el `?? []` crea un array
+  // NUEVO en cada render, asi que la cadena de memos que cuelga de el
+  // (`visibleAppointments` -> `sorted` -> stats/panel/reservas) se
+  // recalcularia entera cada vez y los memos no servirian de nada.
+  const appointments = useMemo(() => data?.content ?? [], [data])
 
   // D7/D8: mismo criterio de exclusion que `EXCLUDED_STATUSES` en
   // `today-facts.ts` (CANCELLED/NO_SHOW no son "una cita de hoy" en ningun
@@ -101,8 +105,18 @@ export default function TodayPage() {
   // reloj nuevos a la vez, nunca uno sin el otro. Alimenta a `getNowRows` y al
   // rotulo de la hora del subtitulo de escritorio -- NUNCA a `getTodayStats`,
   // que no lo recibe. `|| Date.now()` cubre el instante antes de la primera
-  // respuesta, cuando `dataUpdatedAt` todavia vale 0.
-  const now = useMemo(() => new Date(dataUpdatedAt || Date.now()), [dataUpdatedAt])
+  // respuesta, cuando `dataUpdatedAt` todavia vale 0 -- ahi cae en el instante
+  // del montaje. Ese respaldo va en `useState` con inicializador perezoso y NO
+  // como un `Date.now()` dentro del `useMemo`: `react-hooks/purity` prohibe
+  // llamar funciones impuras durante el render, y con razon -- el render debe
+  // poder repetirse dando lo mismo. En la practica ese instante no llega a
+  // pintarse nunca: sin la primera respuesta la pantalla esta en el esqueleto
+  // de carga.
+  const [mountedAt] = useState(() => new Date())
+  const now = useMemo(
+    () => (dataUpdatedAt ? new Date(dataUpdatedAt) : mountedAt),
+    [dataUpdatedAt, mountedAt]
+  )
 
   const nowRows = useMemo(
     () => getNowRows(sorted, employees, hoursByEmployee, now, hoursLoading),
